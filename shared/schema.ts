@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, date, time, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, date, time, boolean, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -32,6 +32,15 @@ export const teams = pgTable("teams", {
   name: text("name").notNull(),
   teamCode: text("team_code").notNull().unique(),
   contactEmail: text("contact_email").notNull(),
+  ownerName: text("owner_name"),
+  ownerEmail: text("owner_email"),
+  representativeEmail: text("representative_email"),
+  address: text("address"),
+  sportType: text("sport_type"), // サッカー、野球、バスケットボール、テニス、ダンス、バドミントン、ラグビー、水泳、その他
+  monthlyFeeMember: integer("monthly_fee_member"), // 部活生の月謝
+  monthlyFeeSchool: integer("monthly_fee_school"), // スクール生の月謝
+  siblingDiscount: integer("sibling_discount"), // 兄弟割引額
+  annualFee: integer("annual_fee"), // 年会費
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -39,6 +48,25 @@ export const insertTeamSchema = createInsertSchema(teams).omit({ id: true, creat
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
 export type Team = typeof teams.$inferSelect;
 
+export const players = pgTable("players", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  teamId: varchar("team_id").notNull(),
+  categoryId: varchar("category_id"),
+  schoolName: text("school_name"),
+  birthDate: date("birth_date"),
+  photoUrl: text("photo_url"),
+  playerType: text("player_type"), // "member" (部活生) or "school" (スクール生)
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertPlayerSchema = createInsertSchema(players).omit({ id: true, createdAt: true });
+export type InsertPlayer = z.infer<typeof insertPlayerSchema>;
+export type Player = typeof players.$inferSelect;
+
+// Keep students table for backward compatibility
 export const students = pgTable("students", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
@@ -46,6 +74,10 @@ export const students = pgTable("students", {
   password: text("password").notNull(),
   teamId: varchar("team_id").notNull(),
   categoryId: varchar("category_id"),
+  schoolName: text("school_name"),
+  birthDate: date("birth_date"),
+  photoUrl: text("photo_url"),
+  playerType: text("player_type"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -57,13 +89,21 @@ export const schedules = pgTable("schedules", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
   date: date("date").notNull(),
-  startTime: time("start_time"),
-  endTime: time("end_time"),
+  startHour: integer("start_hour"),
+  startMinute: integer("start_minute"),
+  endHour: integer("end_hour"),
+  endMinute: integer("end_minute"),
+  gatherHour: integer("gather_hour"),
+  gatherMinute: integer("gather_minute"),
   categoryId: varchar("category_id").notNull(),
   venue: text("venue").notNull(),
-  gatherTime: text("gather_time").notNull(),
   notes: text("notes"),
   studentCanRegister: boolean("student_can_register").notNull().default(true),
+  recurrenceRule: text("recurrence_rule"), // none, daily, weekly, monthly
+  recurrenceInterval: integer("recurrence_interval").default(1), // 繰り返し間隔
+  recurrenceDays: text("recurrence_days"), // 週の曜日 (JSON array: [0,1,2,3,4,5,6])
+  recurrenceEndDate: date("recurrence_end_date"), // 繰り返し終了日
+  parentScheduleId: varchar("parent_schedule_id"), // 繰り返しの親スケジュールID
 });
 
 export const insertScheduleSchema = createInsertSchema(schedules).omit({ id: true });
@@ -116,12 +156,27 @@ export const insertScheduleFileSchema = createInsertSchema(scheduleFiles).omit({
 export type InsertScheduleFile = z.infer<typeof insertScheduleFileSchema>;
 export type ScheduleFile = typeof scheduleFiles.$inferSelect;
 
+export const folders = pgTable("folders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  teamId: varchar("team_id").notNull(),
+  name: text("name").notNull(),
+  parentFolderId: varchar("parent_folder_id"), // null for root folders
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertFolderSchema = createInsertSchema(folders).omit({ id: true, createdAt: true });
+export type InsertFolder = z.infer<typeof insertFolderSchema>;
+export type Folder = typeof folders.$inferSelect;
+
 export const sharedDocuments = pgTable("shared_documents", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   teamId: varchar("team_id").notNull(),
+  folderId: varchar("folder_id"), // null for root documents
   title: text("title").notNull(),
-  content: text("content").notNull(),
+  content: text("content"),
   fileUrl: text("file_url"),
+  fileName: text("file_name"),
+  fileSize: text("file_size"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -129,3 +184,21 @@ export const sharedDocuments = pgTable("shared_documents", {
 export const insertSharedDocumentSchema = createInsertSchema(sharedDocuments).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertSharedDocument = z.infer<typeof insertSharedDocumentSchema>;
 export type SharedDocument = typeof sharedDocuments.$inferSelect;
+
+export const tuitionPayments = pgTable("tuition_payments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  studentId: varchar("student_id").notNull(),
+  teamId: varchar("team_id").notNull(),
+  year: integer("year").notNull(), // 2025
+  month: integer("month").notNull(), // 1-12
+  amount: integer("amount").notNull(),
+  isPaid: boolean("is_paid").notNull().default(false),
+  paidAt: timestamp("paid_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertTuitionPaymentSchema = createInsertSchema(tuitionPayments).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertTuitionPayment = z.infer<typeof insertTuitionPaymentSchema>;
+export type TuitionPayment = typeof tuitionPayments.$inferSelect;
