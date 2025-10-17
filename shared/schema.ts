@@ -19,6 +19,7 @@ export type User = typeof users.$inferSelect;
 
 export const categories = pgTable("categories", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  teamId: varchar("team_id").notNull(),
   name: text("name").notNull(),
   description: text("description"),
 });
