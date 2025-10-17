@@ -82,7 +82,7 @@ function PlayerPortalContent({ player, onLogout }: { player: PlayerData; onLogou
           <main className="flex-1 overflow-auto p-8">
             <Switch>
               <Route path="/player/attendance">
-                {() => <PlayerAttendancePage playerId={player.id} />}
+                {() => <PlayerAttendancePage playerId={player.id} teamId={player.teamId} />}
               </Route>
               <Route path="/player/calendar">
                 {() => <PlayerCalendarPage playerId={player.id} />}
@@ -94,10 +94,10 @@ function PlayerPortalContent({ player, onLogout }: { player: PlayerData; onLogou
                 {() => <PlayerContactPage teamId={player.teamId} playerName={player.name} playerEmail={player.email} />}
               </Route>
               <Route path="/player/profile">
-                {() => <PlayerProfilePage playerId={player.id} />}
+                {() => <PlayerProfilePage playerId={player.id} teamId={player.teamId} />}
               </Route>
               <Route path="/player">
-                {() => <PlayerAttendancePage playerId={player.id} />}
+                {() => <PlayerAttendancePage playerId={player.id} teamId={player.teamId} />}
               </Route>
             </Switch>
           </main>

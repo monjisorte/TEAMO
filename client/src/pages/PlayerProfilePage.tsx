@@ -15,6 +15,7 @@ import { Upload, User } from "lucide-react";
 
 interface PlayerProfilePageProps {
   playerId: string;
+  teamId: string;
 }
 
 interface PlayerProfile {
@@ -35,7 +36,7 @@ const profileSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
-export default function PlayerProfilePage({ playerId }: PlayerProfilePageProps) {
+export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePageProps) {
   const { toast } = useToast();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -260,6 +261,7 @@ export default function PlayerProfilePage({ playerId }: PlayerProfilePageProps) 
         <CardContent>
           <CategorySelection
             studentId={playerId}
+            teamId={teamId}
             onCategoriesUpdated={handleCategoriesUpdated}
           />
         </CardContent>

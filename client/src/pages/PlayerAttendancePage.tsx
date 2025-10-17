@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface PlayerAttendancePageProps {
   playerId: string;
+  teamId: string;
 }
 
-export default function PlayerAttendancePage({ playerId }: PlayerAttendancePageProps) {
+export default function PlayerAttendancePage({ playerId, teamId }: PlayerAttendancePageProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [hasCategoriesSelected, setHasCategoriesSelected] = useState(false);
 
@@ -40,6 +41,7 @@ export default function PlayerAttendancePage({ playerId }: PlayerAttendancePageP
           </p>
           <CategorySelection
             studentId={playerId}
+            teamId={teamId}
             onCategoriesUpdated={handleCategoriesUpdated}
           />
         </CardContent>

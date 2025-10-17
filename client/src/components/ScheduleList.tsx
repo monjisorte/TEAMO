@@ -111,13 +111,20 @@ export function ScheduleList() {
     recurrenceEndDate: "",
   });
 
+  // Get the first team (coach's team)
+  const { data: teams = [] } = useQuery<Array<{ id: string; name: string }>>({
+    queryKey: ["/api/teams"],
+  });
+  const team = teams[0];
+
   // データ取得
   const { data: schedules = [] } = useQuery<Schedule[]>({
     queryKey: ["/api/schedules"],
   });
 
   const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
+    queryKey: ["/api/categories", team?.id],
+    enabled: !!team?.id,
   });
 
   const { data: students = [] } = useQuery<Student[]>({

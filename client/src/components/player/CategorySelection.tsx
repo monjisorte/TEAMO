@@ -9,16 +9,18 @@ import type { Category } from "@shared/schema";
 
 interface CategorySelectionProps {
   studentId: string;
+  teamId: string;
   onCategoriesUpdated?: (categoryIds: string[]) => void;
 }
 
-export default function CategorySelection({ studentId, onCategoriesUpdated }: CategorySelectionProps) {
+export default function CategorySelection({ studentId, teamId, onCategoriesUpdated }: CategorySelectionProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+  const { toast} = useToast();
 
   const { data: allCategories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
+    queryKey: ["/api/categories", teamId],
+    enabled: !!teamId,
   });
 
   const { data: studentCategories = [] } = useQuery<Category[]>({
