@@ -27,13 +27,29 @@ export const insertCategorySchema = createInsertSchema(categories).omit({ id: tr
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Category = typeof categories.$inferSelect;
 
+export const teams = pgTable("teams", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  teamCode: text("team_code").notNull().unique(),
+  contactEmail: text("contact_email").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertTeamSchema = createInsertSchema(teams).omit({ id: true, createdAt: true });
+export type InsertTeam = z.infer<typeof insertTeamSchema>;
+export type Team = typeof teams.$inferSelect;
+
 export const students = pgTable("students", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
-  categoryId: varchar("category_id").notNull(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  teamId: varchar("team_id").notNull(),
+  categoryId: varchar("category_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const insertStudentSchema = createInsertSchema(students).omit({ id: true });
+export const insertStudentSchema = createInsertSchema(students).omit({ id: true, createdAt: true });
 export type InsertStudent = z.infer<typeof insertStudentSchema>;
 export type Student = typeof students.$inferSelect;
 
@@ -54,14 +70,26 @@ export const insertScheduleSchema = createInsertSchema(schedules).omit({ id: tru
 export type InsertSchedule = z.infer<typeof insertScheduleSchema>;
 export type Schedule = typeof schedules.$inferSelect;
 
+export const studentCategories = pgTable("student_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  studentId: varchar("student_id").notNull(),
+  categoryId: varchar("category_id").notNull(),
+});
+
+export const insertStudentCategorySchema = createInsertSchema(studentCategories).omit({ id: true });
+export type InsertStudentCategory = z.infer<typeof insertStudentCategorySchema>;
+export type StudentCategory = typeof studentCategories.$inferSelect;
+
 export const attendances = pgTable("attendances", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   scheduleId: varchar("schedule_id").notNull(),
   studentId: varchar("student_id").notNull(),
   status: text("status").notNull(), // "○", "△", "×"
+  comment: text("comment"),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-export const insertAttendanceSchema = createInsertSchema(attendances).omit({ id: true });
+export const insertAttendanceSchema = createInsertSchema(attendances).omit({ id: true, updatedAt: true });
 export type InsertAttendance = z.infer<typeof insertAttendanceSchema>;
 export type Attendance = typeof attendances.$inferSelect;
 
@@ -87,3 +115,17 @@ export const scheduleFiles = pgTable("schedule_files", {
 export const insertScheduleFileSchema = createInsertSchema(scheduleFiles).omit({ id: true, uploadedAt: true });
 export type InsertScheduleFile = z.infer<typeof insertScheduleFileSchema>;
 export type ScheduleFile = typeof scheduleFiles.$inferSelect;
+
+export const sharedDocuments = pgTable("shared_documents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  teamId: varchar("team_id").notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  fileUrl: text("file_url"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertSharedDocumentSchema = createInsertSchema(sharedDocuments).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertSharedDocument = z.infer<typeof insertSharedDocumentSchema>;
+export type SharedDocument = typeof sharedDocuments.$inferSelect;
