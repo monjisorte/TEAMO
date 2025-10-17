@@ -3,18 +3,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogOut, Calendar as CalendarIcon, CheckSquare, FileText, Mail } from "lucide-react";
-import CategorySelection from "@/components/student/CategorySelection";
-import AttendanceView from "@/components/student/AttendanceView";
-import StudentCalendar from "@/components/student/StudentCalendar";
-import SharedDocuments from "@/components/student/SharedDocuments";
-import ContactForm from "@/components/student/ContactForm";
+import CategorySelection from "@/components/player/CategorySelection";
+import AttendanceView from "@/components/player/AttendanceView";
+import PlayerCalendar from "@/components/player/PlayerCalendar";
+import SharedDocuments from "@/components/player/SharedDocuments";
+import ContactForm from "@/components/player/ContactForm";
 
-interface StudentDashboardProps {
-  student: { id: string; name: string; email: string; teamId: string };
+interface PlayerDashboardProps {
+  player: { id: string; name: string; email: string; teamId: string };
   onLogout: () => void;
 }
 
-export default function StudentDashboard({ student, onLogout }: StudentDashboardProps) {
+export default function PlayerDashboard({ player, onLogout }: PlayerDashboardProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [hasCategoriesSelected, setHasCategoriesSelected] = useState(false);
 
@@ -28,10 +28,10 @@ export default function StudentDashboard({ student, onLogout }: StudentDashboard
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold" data-testid="text-student-name">
-              {student.name}さん
+            <h1 className="text-2xl font-bold" data-testid="text-player-name">
+              {player.name}さん
             </h1>
-            <p className="text-sm text-muted-foreground">{student.email}</p>
+            <p className="text-sm text-muted-foreground">{player.email}</p>
           </div>
           <Button 
             variant="outline" 
@@ -55,7 +55,7 @@ export default function StudentDashboard({ student, onLogout }: StudentDashboard
                 まず、閲覧したいカテゴリを選択してください。
               </p>
               <CategorySelection
-                studentId={student.id}
+                studentId={player.id}
                 onCategoriesUpdated={handleCategoriesUpdated}
               />
             </CardContent>
@@ -86,27 +86,27 @@ export default function StudentDashboard({ student, onLogout }: StudentDashboard
 
             <TabsContent value="attendance">
               <AttendanceView 
-                studentId={student.id} 
+                studentId={player.id} 
                 selectedCategories={selectedCategories}
               />
             </TabsContent>
 
             <TabsContent value="calendar">
-              <StudentCalendar 
-                studentId={student.id}
+              <PlayerCalendar 
+                studentId={player.id}
                 selectedCategories={selectedCategories}
               />
             </TabsContent>
 
             <TabsContent value="documents">
-              <SharedDocuments teamId={student.teamId} />
+              <SharedDocuments teamId={player.teamId} />
             </TabsContent>
 
             <TabsContent value="contact">
               <ContactForm 
-                teamId={student.teamId}
-                studentName={student.name}
-                studentEmail={student.email}
+                teamId={player.teamId}
+                studentName={player.name}
+                studentEmail={player.email}
               />
             </TabsContent>
 
@@ -117,7 +117,7 @@ export default function StudentDashboard({ student, onLogout }: StudentDashboard
                 </CardHeader>
                 <CardContent>
                   <CategorySelection
-                    studentId={student.id}
+                    studentId={player.id}
                     onCategoriesUpdated={handleCategoriesUpdated}
                   />
                 </CardContent>

@@ -20,42 +20,42 @@ import DocumentsPage from "@/pages/DocumentsPage";
 import TuitionPage from "@/pages/TuitionPage";
 import InvitePage from "@/pages/InvitePage";
 import LineNotificationsPage from "@/pages/LineNotificationsPage";
-import StudentLogin from "@/pages/StudentLogin";
-import StudentDashboard from "@/pages/StudentDashboard";
+import PlayerLogin from "@/pages/PlayerLogin";
+import PlayerDashboard from "@/pages/PlayerDashboard";
 
-interface StudentData {
+interface PlayerData {
   id: string;
   name: string;
   email: string;
   teamId: string;
 }
 
-function StudentPortal() {
-  const [student, setStudent] = useState<StudentData | null>(null);
+function PlayerPortal() {
+  const [player, setPlayer] = useState<PlayerData | null>(null);
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    const savedStudent = localStorage.getItem("studentData");
-    if (savedStudent) {
-      setStudent(JSON.parse(savedStudent));
+    const savedPlayer = localStorage.getItem("playerData");
+    if (savedPlayer) {
+      setPlayer(JSON.parse(savedPlayer));
     }
   }, []);
 
-  const handleLoginSuccess = (studentData: StudentData) => {
-    setStudent(studentData);
+  const handleLoginSuccess = (playerData: PlayerData) => {
+    setPlayer(playerData);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("studentData");
-    setStudent(null);
-    setLocation("/student");
+    localStorage.removeItem("playerData");
+    setPlayer(null);
+    setLocation("/player");
   };
 
-  if (!student) {
-    return <StudentLogin onLoginSuccess={handleLoginSuccess} />;
+  if (!player) {
+    return <PlayerLogin onLoginSuccess={handleLoginSuccess} />;
   }
 
-  return <StudentDashboard student={student} onLogout={handleLogout} />;
+  return <PlayerDashboard player={player} onLogout={handleLogout} />;
 }
 
 function Router() {
@@ -73,7 +73,7 @@ function Router() {
       <Route path="/tuition" component={TuitionPage} />
       <Route path="/invite" component={InvitePage} />
       <Route path="/line-notifications" component={LineNotificationsPage} />
-      <Route path="/student" component={StudentPortal} />
+      <Route path="/player" component={PlayerPortal} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -81,7 +81,7 @@ function Router() {
 
 function App() {
   const [location] = useLocation();
-  const isStudentPortal = location.startsWith("/student");
+  const isPlayerPortal = location.startsWith("/player");
   
   const style = {
     "--sidebar-width": "16rem",
@@ -90,7 +90,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        {isStudentPortal ? (
+        {isPlayerPortal ? (
           <>
             <Router />
             <Toaster />

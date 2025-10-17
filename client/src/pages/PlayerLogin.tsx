@@ -25,11 +25,11 @@ const registerSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
-interface StudentLoginProps {
-  onLoginSuccess: (student: { id: string; name: string; email: string; teamId: string }) => void;
+interface PlayerLoginProps {
+  onLoginSuccess: (player: { id: string; name: string; email: string; teamId: string }) => void;
 }
 
-export default function StudentLogin({ onLoginSuccess }: StudentLoginProps) {
+export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -58,7 +58,7 @@ export default function StudentLogin({ onLoginSuccess }: StudentLoginProps) {
       const result = await response.json();
       
       if (response.ok) {
-        localStorage.setItem("studentData", JSON.stringify(result.student));
+        localStorage.setItem("playerData", JSON.stringify(result.student));
         onLoginSuccess(result.student);
         toast({
           title: "ログイン成功",
@@ -116,7 +116,7 @@ export default function StudentLogin({ onLoginSuccess }: StudentLoginProps) {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">生徒ポータル</CardTitle>
+          <CardTitle className="text-2xl text-center">選手ポータル</CardTitle>
           <CardDescription className="text-center">
             チームのスケジュールと出欠管理
           </CardDescription>
