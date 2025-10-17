@@ -1,4 +1,4 @@
-import { CheckSquare, Calendar as CalendarIcon, FileText, Mail, Settings as SettingsIcon } from "lucide-react";
+import { CheckSquare, Calendar as CalendarIcon, FileText, Mail, User } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -29,18 +29,22 @@ const menuItems = [
     icon: FileText,
   },
   {
+    title: "プロフィール管理",
+    url: "/player/profile",
+    icon: User,
+  },
+  {
     title: "問い合わせ",
     url: "/player/contact",
     icon: Mail,
   },
-  {
-    title: "設定",
-    url: "/player/settings",
-    icon: SettingsIcon,
-  },
 ];
 
-export function PlayerSidebar() {
+interface PlayerSidebarProps {
+  teamName: string;
+}
+
+export function PlayerSidebar({ teamName }: PlayerSidebarProps) {
   const [location] = useLocation();
 
   return (
@@ -51,8 +55,8 @@ export function PlayerSidebar() {
             <CalendarIcon className="h-5 w-5 text-primary-foreground" />
           </div>
           <div>
-            <h2 className="font-semibold">選手ポータル</h2>
-            <p className="text-xs text-muted-foreground">スケジュール管理</p>
+            <h2 className="font-semibold">{teamName}</h2>
+            <p className="text-xs text-muted-foreground">選手ポータル</p>
           </div>
         </div>
       </SidebarHeader>

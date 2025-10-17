@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -64,6 +64,15 @@ function PlayerPortal() {
     return <PlayerLogin onLoginSuccess={handleLoginSuccess} />;
   }
 
+  // Fetch team info
+  const { data: teams } = useQuery({
+    queryKey: ["/api/teams"],
+    enabled: !!player?.teamId,
+  });
+
+  const team = teams?.find((t: any) => t.id === player.teamId);
+  const teamName = team?.name || "チーム";
+
   const style = {
     "--sidebar-width": "16rem",
   };
@@ -71,7 +80,7 @@ function PlayerPortal() {
   return (
     <SidebarProvider style={style as React.CSSProperties}>
       <div className="flex h-screen w-full">
-        <PlayerSidebar />
+        <PlayerSidebar teamName={teamName} />
         <div className="flex flex-col flex-1 min-w-0">
           <header className="flex items-center justify-between px-8 py-4 border-b bg-card/50 backdrop-blur-sm">
             <div className="flex items-center gap-4">
@@ -110,7 +119,7 @@ function PlayerPortal() {
               <Route path="/player/contact">
                 {() => <PlayerContactPage teamId={player.teamId} playerName={player.name} playerEmail={player.email} />}
               </Route>
-              <Route path="/player/settings">
+              <Route path="/player/profile">
                 {() => <PlayerSettingsPage playerId={player.id} />}
               </Route>
               <Route path="/player">
