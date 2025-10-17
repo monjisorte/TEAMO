@@ -2,8 +2,11 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Plus, Clock, Edit, Trash2, CalendarDays, List, Users } from "lucide-react";
+import { Calendar, MapPin, Plus, Clock, Edit, Trash2, CalendarDays, List, Users, Paperclip, FileText, X as XIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import type { UploadResult } from "@uppy/core";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Dialog,
   DialogContent,
@@ -137,6 +140,33 @@ export function ScheduleList() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>(["U-12", "U-15", "U-18", "全学年"]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [studentRegisterDisabled, setStudentRegisterDisabled] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{ name: string; url: string; size: number }>>([]);
+
+  const handleGetUploadParameters = async () => {
+    const response = await apiRequest("/api/objects/upload", {
+      method: "POST",
+    });
+    const data = await response.json();
+    return {
+      method: "PUT" as const,
+      url: data.uploadURL,
+    };
+  };
+
+  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    if (result.successful && result.successful.length > 0) {
+      const newFiles = result.successful.map((file) => ({
+        name: file.name,
+        url: file.uploadURL || "",
+        size: file.size || 0,
+      }));
+      setUploadedFiles((prev) => [...prev, ...newFiles]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
   // 出席状況を集計
   const getAttendanceCount = (scheduleId: string) => {
@@ -584,6 +614,60 @@ export function ScheduleList() {
                   rows={3}
                   data-testid="input-schedule-notes"
                 />
+              </div>
+
+              <div className="space-y-3 col-span-2">
+                <Label>添付ファイル（最大10ファイル）</Label>
+                <div className="flex flex-col gap-3">
+                  <ObjectUploader
+                    maxNumberOfFiles={10}
+                    maxFileSize={10485760}
+                    onGetUploadParameters={handleGetUploadParameters}
+                    onComplete={handleUploadComplete}
+                    buttonClassName="w-full"
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <Paperclip className="h-4 w-4" />
+                      <span>ファイルを添付</span>
+                    </div>
+                  </ObjectUploader>
+                  
+                  {uploadedFiles.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-muted-foreground">
+                        アップロード済みファイル ({uploadedFiles.length}/10)
+                      </div>
+                      <div className="space-y-2">
+                        {uploadedFiles.map((file, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/50"
+                            data-testid={`uploaded-file-${index}`}
+                          >
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <FileText className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium truncate">{file.name}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {(file.size / 1024 / 1024).toFixed(2)} MB
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeFile(index)}
+                              data-testid={`button-remove-file-${index}`}
+                              type="button"
+                            >
+                              <XIcon className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center space-x-3 col-span-2 p-4 rounded-xl bg-muted/50">
