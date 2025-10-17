@@ -118,11 +118,25 @@ const MOCK_SCHEDULES = [
   },
 ];
 
+// 5分刻みの時間オプションを生成
+const generateTimeOptions = () => {
+  const times: string[] = [];
+  for (let hour = 0; hour < 24; hour++) {
+    for (let minute = 0; minute < 60; minute += 5) {
+      const h = hour.toString().padStart(2, '0');
+      const m = minute.toString().padStart(2, '0');
+      times.push(`${h}:${m}`);
+    }
+  }
+  return times;
+};
+
 export function ScheduleList() {
   const [view, setView] = useState<"list" | "calendar">("list");
   const [selectedSchedule, setSelectedSchedule] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(["U-12", "U-15", "U-18", "全学年"]);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [studentRegisterDisabled, setStudentRegisterDisabled] = useState(false);
 
   // 出席状況を集計
   const getAttendanceCount = (scheduleId: string) => {
@@ -244,7 +258,19 @@ export function ScheduleList() {
                           </div>
                           <div className="flex items-center gap-3 text-muted-foreground">
                             <MapPin className="h-4 w-4" />
-                            <span className="truncate">{schedule.venue}</span>
+                            {schedule.venue !== "未定" && schedule.venue !== "その他" ? (
+                              <a
+                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(schedule.venue)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="truncate hover:text-primary hover:underline"
+                                data-testid={`link-venue-${schedule.id}`}
+                              >
+                                {schedule.venue}
+                              </a>
+                            ) : (
+                              <span className="truncate">{schedule.venue}</span>
+                            )}
                           </div>
                         </div>
 
@@ -494,41 +520,60 @@ export function ScheduleList() {
 
               <div className="space-y-2">
                 <Label htmlFor="startTime">開始時刻</Label>
-                <Input
-                  id="startTime"
-                  type="time"
-                  placeholder="10:00"
-                  data-testid="input-schedule-start-time"
-                />
+                <Select>
+                  <SelectTrigger data-testid="select-schedule-start-time">
+                    <SelectValue placeholder="選択してください" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    {generateTimeOptions().map(time => (
+                      <SelectItem key={time} value={time}>{time}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="endTime">終了時刻</Label>
-                <Input
-                  id="endTime"
-                  type="time"
-                  placeholder="12:00"
-                  data-testid="input-schedule-end-time"
-                />
+                <Select>
+                  <SelectTrigger data-testid="select-schedule-end-time">
+                    <SelectValue placeholder="選択してください" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    {generateTimeOptions().map(time => (
+                      <SelectItem key={time} value={time}>{time}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="gatherTime">集合時刻 *</Label>
-                <Input
-                  id="gatherTime"
-                  type="time"
-                  placeholder="09:45"
-                  data-testid="input-schedule-gather-time"
-                />
+                <Select>
+                  <SelectTrigger data-testid="select-schedule-gather-time">
+                    <SelectValue placeholder="選択してください" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    {generateTimeOptions().map(time => (
+                      <SelectItem key={time} value={time}>{time}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="venue">活動場所 *</Label>
-                <Input
-                  id="venue"
-                  placeholder="例: 中央グラウンド"
-                  data-testid="input-schedule-venue"
-                />
+                <Select>
+                  <SelectTrigger data-testid="select-schedule-venue">
+                    <SelectValue placeholder="選択してください" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="未定">未定</SelectItem>
+                    <SelectItem value="中央グラウンド">中央グラウンド</SelectItem>
+                    <SelectItem value="市民体育館">市民体育館</SelectItem>
+                    <SelectItem value="県立スタジアム">県立スタジアム</SelectItem>
+                    <SelectItem value="その他">その他</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2 col-span-2">
@@ -543,15 +588,16 @@ export function ScheduleList() {
 
               <div className="flex items-center space-x-3 col-span-2 p-4 rounded-xl bg-muted/50">
                 <Checkbox 
-                  id="studentCanRegister" 
-                  defaultChecked
-                  data-testid="checkbox-student-register"
+                  id="studentRegisterDisabled" 
+                  checked={studentRegisterDisabled}
+                  onCheckedChange={(checked) => setStudentRegisterDisabled(checked as boolean)}
+                  data-testid="checkbox-student-register-disabled"
                 />
                 <Label 
-                  htmlFor="studentCanRegister" 
+                  htmlFor="studentRegisterDisabled" 
                   className="cursor-pointer font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
-                  生徒側から登録可能にする
+                  生徒側から参加登録を不可能にする
                 </Label>
               </div>
             </div>
