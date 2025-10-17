@@ -84,6 +84,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Category Endpoints
+  app.get("/api/categories", async (req, res) => {
+    try {
+      const allCategories = await db.select().from(categories);
+      res.json(allCategories);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Team Management Endpoints
   app.get("/api/teams", async (req, res) => {
     try {
