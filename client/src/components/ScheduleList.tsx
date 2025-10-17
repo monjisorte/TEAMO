@@ -8,6 +8,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -26,6 +27,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 // TODO: remove mock data
 const MOCK_STUDENTS = [
@@ -112,6 +117,8 @@ const MOCK_SCHEDULES = [
 export function ScheduleList() {
   const [view, setView] = useState<"list" | "calendar">("list");
   const [selectedSchedule, setSelectedSchedule] = useState<string | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(["U-12", "U-15", "U-18", "全学年"]);
+  const [showAddDialog, setShowAddDialog] = useState(false);
 
   // 出席状況を集計
   const getAttendanceCount = (scheduleId: string) => {
@@ -123,6 +130,20 @@ export function ScheduleList() {
     };
   };
 
+  // カテゴリフィルター切り替え
+  const toggleCategory = (category: string) => {
+    setSelectedCategories(prev =>
+      prev.includes(category)
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  // フィルタリングされたスケジュール
+  const filteredSchedules = MOCK_SCHEDULES.filter(schedule =>
+    selectedCategories.includes(schedule.category)
+  );
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between gap-4">
@@ -130,11 +151,36 @@ export function ScheduleList() {
           <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">スケジュール管理</h1>
           <p className="text-muted-foreground mt-2 text-lg">日々の活動を登録・管理</p>
         </div>
-        <Button className="h-12 px-6 rounded-xl text-base" data-testid="button-add-schedule">
+        <Button 
+          className="h-12 px-6 rounded-xl text-base" 
+          onClick={() => setShowAddDialog(true)}
+          data-testid="button-add-schedule"
+        >
           <Plus className="h-5 w-5 mr-2" />
           新規追加
         </Button>
       </div>
+
+      {/* カテゴリフィルター */}
+      <Card className="border-0 shadow-lg">
+        <CardContent className="pt-6">
+          <div className="flex flex-wrap gap-4">
+            {["U-12", "U-15", "U-18", "全学年"].map((category) => (
+              <div key={category} className="flex items-center gap-2">
+                <Checkbox
+                  id={`category-${category}`}
+                  checked={selectedCategories.includes(category)}
+                  onCheckedChange={() => toggleCategory(category)}
+                  data-testid={`checkbox-category-${category}`}
+                />
+                <Label htmlFor={`category-${category}`} className="cursor-pointer font-medium">
+                  {category}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       <Tabs value={view} onValueChange={(v) => setView(v as "list" | "calendar")} className="w-full">
         <TabsList>
@@ -149,76 +195,88 @@ export function ScheduleList() {
         </TabsList>
 
         <TabsContent value="list" className="space-y-4 mt-8">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {MOCK_SCHEDULES.map((schedule) => {
+          <div className="space-y-6">
+            {filteredSchedules.map((schedule) => {
               const attendance = getAttendanceCount(schedule.id);
               return (
                 <Card key={schedule.id} className="border-0 shadow-lg hover-elevate transition-all" data-testid={`schedule-card-${schedule.id}`}>
-                  <CardHeader className="space-y-0 pb-6">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-xl truncate">{schedule.title}</CardTitle>
-                        <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          <span>{new Date(schedule.date).toLocaleDateString('ja-JP')}</span>
+                  <CardContent className="p-6">
+                    <div className="flex gap-6">
+                      {/* 左側: 日付表示 */}
+                      <div className="flex flex-col items-center justify-center min-w-[100px] h-24 rounded-2xl bg-gradient-to-br from-primary to-purple-600 text-white">
+                        <div className="text-3xl font-bold">
+                          {new Date(schedule.date).getDate()}
+                        </div>
+                        <div className="text-sm opacity-90">
+                          {new Date(schedule.date).toLocaleDateString('ja-JP', { month: 'short', year: 'numeric' })}
                         </div>
                       </div>
-                      <Badge variant="outline" className="rounded-full">{schedule.category}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-3 text-sm">
-                      <div className="flex items-center gap-3 text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        <span>
-                          {schedule.startTime}
-                          {schedule.endTime && ` - ${schedule.endTime}`}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-muted-foreground">
-                        <MapPin className="h-4 w-4" />
-                        <span className="truncate">{schedule.venue}</span>
-                      </div>
-                      <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
-                        <span className="text-xs text-muted-foreground">集合:</span>
-                        <span className="text-sm font-semibold">{schedule.gatherTime}</span>
-                      </div>
-                    </div>
-                    {schedule.notes && (
-                      <p className="text-sm text-muted-foreground p-3 rounded-xl bg-muted/30">{schedule.notes}</p>
-                    )}
-                    
-                    {/* 出席人数 */}
-                    <div 
-                      className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-primary/10 to-purple-600/10 cursor-pointer hover-elevate"
-                      onClick={() => setSelectedSchedule(schedule.id)}
-                      data-testid={`attendance-summary-${schedule.id}`}
-                    >
-                      <Users className="h-5 w-5 text-primary" />
-                      <div className="flex gap-4 text-sm font-medium">
-                        <span className="flex items-center gap-1">
-                          <span className="text-green-600 dark:text-green-400">○</span>
-                          <span data-testid={`count-present-${schedule.id}`}>{attendance.present}</span>
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span className="text-yellow-600 dark:text-yellow-400">△</span>
-                          <span data-testid={`count-maybe-${schedule.id}`}>{attendance.maybe}</span>
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span className="text-red-600 dark:text-red-400">×</span>
-                          <span data-testid={`count-absent-${schedule.id}`}>{attendance.absent}</span>
-                        </span>
-                      </div>
-                    </div>
 
-                    <div className="flex gap-3 pt-3">
-                      <Button variant="outline" size="sm" className="flex-1 rounded-xl" data-testid={`button-edit-${schedule.id}`}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        編集
-                      </Button>
-                      <Button variant="outline" size="sm" className="rounded-xl" data-testid={`button-delete-${schedule.id}`}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {/* 右側: 詳細情報 */}
+                      <div className="flex-1 space-y-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <h3 className="text-2xl font-bold mb-2">{schedule.title}</h3>
+                            <Badge variant="outline" className="rounded-full">{schedule.category}</Badge>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div className="flex items-center gap-3 text-muted-foreground">
+                            <Clock className="h-4 w-4" />
+                            <span>
+                              {schedule.startTime}
+                              {schedule.endTime && ` - ${schedule.endTime}`}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 text-muted-foreground">
+                            <MapPin className="h-4 w-4" />
+                            <span className="truncate">{schedule.venue}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+                          <span className="text-xs text-muted-foreground">集合:</span>
+                          <span className="text-sm font-semibold">{schedule.gatherTime}</span>
+                        </div>
+
+                        {schedule.notes && (
+                          <p className="text-sm text-muted-foreground p-3 rounded-xl bg-muted/30">{schedule.notes}</p>
+                        )}
+                        
+                        {/* 出席人数 */}
+                        <div 
+                          className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-primary/10 to-purple-600/10 cursor-pointer hover-elevate"
+                          onClick={() => setSelectedSchedule(schedule.id)}
+                          data-testid={`attendance-summary-${schedule.id}`}
+                        >
+                          <Users className="h-5 w-5 text-primary" />
+                          <div className="flex gap-4 text-sm font-medium">
+                            <span className="flex items-center gap-1">
+                              <span className="text-green-600 dark:text-green-400">○</span>
+                              <span data-testid={`count-present-${schedule.id}`}>{attendance.present}</span>
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <span className="text-yellow-600 dark:text-yellow-400">△</span>
+                              <span data-testid={`count-maybe-${schedule.id}`}>{attendance.maybe}</span>
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <span className="text-red-600 dark:text-red-400">×</span>
+                              <span data-testid={`count-absent-${schedule.id}`}>{attendance.absent}</span>
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                          <Button variant="outline" size="sm" className="flex-1 rounded-xl" data-testid={`button-edit-${schedule.id}`}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            編集
+                          </Button>
+                          <Button variant="outline" size="sm" className="rounded-xl" data-testid={`button-delete-${schedule.id}`}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -229,14 +287,51 @@ export function ScheduleList() {
 
         <TabsContent value="calendar" className="mt-8">
           <Card className="border-0 shadow-xl">
-            <CardContent className="p-12">
-              <div className="flex items-center justify-center h-96 text-muted-foreground">
-                <div className="text-center">
-                  <div className="rounded-2xl bg-primary/10 p-6 inline-block mb-6">
-                    <CalendarDays className="h-16 w-16 text-primary" />
+            <CardContent className="p-8">
+              <div className="grid grid-cols-7 gap-4">
+                {/* 曜日ヘッダー */}
+                {["日", "月", "火", "水", "木", "金", "土"].map((day) => (
+                  <div key={day} className="text-center font-semibold text-sm text-muted-foreground p-2">
+                    {day}
                   </div>
-                  <p className="text-lg">カレンダービューは準備中です</p>
-                </div>
+                ))}
+                
+                {/* カレンダーの日付 */}
+                {Array.from({ length: 35 }, (_, i) => {
+                  const date = new Date(2024, 9, i - 5); // 2024年10月を基準
+                  const daySchedules = filteredSchedules.filter(
+                    s => new Date(s.date).toDateString() === date.toDateString()
+                  );
+                  const isCurrentMonth = date.getMonth() === 9; // 10月
+                  
+                  return (
+                    <div
+                      key={i}
+                      className={`min-h-[100px] p-2 rounded-xl border ${
+                        isCurrentMonth ? 'border-border bg-card' : 'border-transparent bg-muted/30'
+                      }`}
+                      data-testid={`calendar-day-${i}`}
+                    >
+                      <div className={`text-sm font-medium mb-1 ${
+                        isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'
+                      }`}>
+                        {date.getDate()}
+                      </div>
+                      <div className="space-y-1">
+                        {daySchedules.map((schedule) => (
+                          <div
+                            key={schedule.id}
+                            className="text-xs p-1 rounded bg-primary/10 text-primary truncate cursor-pointer hover-elevate"
+                            onClick={() => setSelectedSchedule(schedule.id)}
+                            data-testid={`calendar-schedule-${schedule.id}`}
+                          >
+                            {schedule.startTime} {schedule.title}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -325,6 +420,121 @@ export function ScheduleList() {
               </div>
             );
           })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* 新規追加ダイアログ */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">スケジュール新規追加</DialogTitle>
+            <DialogDescription>
+              活動の詳細情報を入力してください
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="title">タイトル *</Label>
+                <Input
+                  id="title"
+                  placeholder="例: 週末練習"
+                  data-testid="input-schedule-title"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="date">日付 *</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  data-testid="input-schedule-date"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="category">カテゴリ *</Label>
+                <Select>
+                  <SelectTrigger data-testid="select-schedule-category">
+                    <SelectValue placeholder="選択してください" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="U-12">U-12</SelectItem>
+                    <SelectItem value="U-15">U-15</SelectItem>
+                    <SelectItem value="U-18">U-18</SelectItem>
+                    <SelectItem value="全学年">全学年</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="startTime">開始時刻</Label>
+                <Input
+                  id="startTime"
+                  type="time"
+                  placeholder="10:00"
+                  data-testid="input-schedule-start-time"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="endTime">終了時刻</Label>
+                <Input
+                  id="endTime"
+                  type="time"
+                  placeholder="12:00"
+                  data-testid="input-schedule-end-time"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="gatherTime">集合時刻 *</Label>
+                <Input
+                  id="gatherTime"
+                  type="time"
+                  placeholder="09:45"
+                  data-testid="input-schedule-gather-time"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="venue">活動場所 *</Label>
+                <Input
+                  id="venue"
+                  placeholder="例: 中央グラウンド"
+                  data-testid="input-schedule-venue"
+                />
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="notes">備考</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="持ち物や注意事項など"
+                  rows={3}
+                  data-testid="input-schedule-notes"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowAddDialog(false)}
+              data-testid="button-cancel-add"
+            >
+              キャンセル
+            </Button>
+            <Button
+              onClick={() => {
+                console.log('スケジュールを追加');
+                setShowAddDialog(false);
+              }}
+              data-testid="button-save-schedule"
+            >
+              追加
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
