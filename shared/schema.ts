@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, date, time } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, date, time, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -47,6 +47,7 @@ export const schedules = pgTable("schedules", {
   venue: text("venue").notNull(),
   gatherTime: text("gather_time").notNull(),
   notes: text("notes"),
+  studentCanRegister: boolean("student_can_register").notNull().default(true),
 });
 
 export const insertScheduleSchema = createInsertSchema(schedules).omit({ id: true });

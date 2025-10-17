@@ -515,6 +515,20 @@ export function ScheduleList() {
                   data-testid="input-schedule-notes"
                 />
               </div>
+
+              <div className="flex items-center space-x-3 col-span-2 p-4 rounded-xl bg-muted/50">
+                <Checkbox 
+                  id="studentCanRegister" 
+                  defaultChecked
+                  data-testid="checkbox-student-register"
+                />
+                <Label 
+                  htmlFor="studentCanRegister" 
+                  className="cursor-pointer font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  生徒側から登録可能にする
+                </Label>
+              </div>
             </div>
           </div>
           <DialogFooter>
