@@ -1,4 +1,4 @@
-import { Home, Calendar, MapPin, Tag, Users, Shield } from "lucide-react";
+import { Home, Calendar, MapPin, Tag, Users, Shield, FileText, DollarSign, Settings as SettingsIcon, Bell, UserPlus } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -42,6 +42,31 @@ const menuItems = [
     title: "チーム管理",
     url: "/teams",
     icon: Shield,
+  },
+  {
+    title: "共有資料",
+    url: "/documents",
+    icon: FileText,
+  },
+  {
+    title: "月謝管理",
+    url: "/tuition",
+    icon: DollarSign,
+  },
+  {
+    title: "チーム情報",
+    url: "/team-info",
+    icon: SettingsIcon,
+  },
+  {
+    title: "LINE通知",
+    url: "/line-notifications",
+    icon: Bell,
+  },
+  {
+    title: "メンバー招待",
+    url: "/invite",
+    icon: UserPlus,
   },
 ];
 

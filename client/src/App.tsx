@@ -15,6 +15,11 @@ import CategoriesPage from "@/pages/CategoriesPage";
 import CoachesPage from "@/pages/CoachesPage";
 import RegisterPage from "@/pages/RegisterPage";
 import TeamManagement from "@/pages/TeamManagement";
+import TeamInfoPage from "@/pages/TeamInfoPage";
+import DocumentsPage from "@/pages/DocumentsPage";
+import TuitionPage from "@/pages/TuitionPage";
+import InvitePage from "@/pages/InvitePage";
+import LineNotificationsPage from "@/pages/LineNotificationsPage";
 import StudentLogin from "@/pages/StudentLogin";
 import StudentDashboard from "@/pages/StudentDashboard";
 
@@ -63,6 +68,11 @@ function Router() {
       <Route path="/coaches" component={CoachesPage} />
       <Route path="/register" component={RegisterPage} />
       <Route path="/teams" component={TeamManagement} />
+      <Route path="/team-info" component={TeamInfoPage} />
+      <Route path="/documents" component={DocumentsPage} />
+      <Route path="/tuition" component={TuitionPage} />
+      <Route path="/invite" component={InvitePage} />
+      <Route path="/line-notifications" component={LineNotificationsPage} />
       <Route path="/student" component={StudentPortal} />
       <Route component={NotFound} />
     </Switch>

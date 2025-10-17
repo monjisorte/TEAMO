@@ -1,0 +1,245 @@
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Team } from "@shared/schema";
+
+const SPORT_TYPES = [
+  "サッカー",
+  "野球",
+  "バスケットボール",
+  "テニス",
+  "ダンス",
+  "バドミントン",
+  "ラグビー",
+  "水泳",
+  "その他",
+];
+
+export default function TeamInfoPage() {
+  const { toast } = useToast();
+  
+  const { data: teams = [], isLoading } = useQuery<Team[]>({
+    queryKey: ["/api/teams"],
+  });
+
+  const team = teams[0];
+
+  const [formData, setFormData] = useState({
+    ownerName: team?.ownerName || "",
+    ownerEmail: team?.ownerEmail || "",
+    representativeEmail: team?.representativeEmail || team?.contactEmail || "",
+    address: team?.address || "",
+    sportType: team?.sportType || "",
+    monthlyFeeMember: team?.monthlyFeeMember || 0,
+    monthlyFeeSchool: team?.monthlyFeeSchool || 0,
+    siblingDiscount: team?.siblingDiscount || 0,
+    annualFee: team?.annualFee || 0,
+  });
+
+  const updateTeamMutation = useMutation({
+    mutationFn: async (data: Partial<Team>) => {
+      if (!team) throw new Error("No team found");
+      return await apiRequest("PUT", `/api/teams/${team.id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+      toast({
+        title: "保存成功",
+        description: "チーム情報を更新しました",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "更新中にエラーが発生しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSave = () => {
+    updateTeamMutation.mutate(formData);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">読み込み中...</p>
+      </div>
+    );
+  }
+
+  if (!team) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center text-muted-foreground">
+          チームが見つかりません。先にチームを作成してください。
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          チーム情報
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          チームの基本情報と料金設定を管理します
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>基本情報</CardTitle>
+          <CardDescription>
+            チームの基本情報を入力してください
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="owner-name">オーナー名</Label>
+              <Input
+                id="owner-name"
+                value={formData.ownerName}
+                onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
+                placeholder="山田 太郎"
+                data-testid="input-owner-name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="owner-email">オーナーメールアドレス</Label>
+              <Input
+                id="owner-email"
+                type="email"
+                value={formData.ownerEmail}
+                onChange={(e) => setFormData({ ...formData, ownerEmail: e.target.value })}
+                placeholder="owner@example.com"
+                data-testid="input-owner-email"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="rep-email">代表メールアドレス</Label>
+            <Input
+              id="rep-email"
+              type="email"
+              value={formData.representativeEmail}
+              onChange={(e) => setFormData({ ...formData, representativeEmail: e.target.value })}
+              placeholder="contact@example.com"
+              data-testid="input-representative-email"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="address">住所</Label>
+            <Input
+              id="address"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              placeholder="東京都渋谷区..."
+              data-testid="input-address"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="sport-type">スポーツ名</Label>
+            <Select
+              value={formData.sportType}
+              onValueChange={(value) => setFormData({ ...formData, sportType: value })}
+            >
+              <SelectTrigger id="sport-type" data-testid="select-sport-type">
+                <SelectValue placeholder="スポーツを選択" />
+              </SelectTrigger>
+              <SelectContent>
+                {SPORT_TYPES.map((sport) => (
+                  <SelectItem key={sport} value={sport}>
+                    {sport}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>料金設定</CardTitle>
+          <CardDescription>
+            月謝や年会費の設定を行います
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="fee-member">部活生の月謝（円）</Label>
+              <Input
+                id="fee-member"
+                type="number"
+                value={formData.monthlyFeeMember}
+                onChange={(e) => setFormData({ ...formData, monthlyFeeMember: parseInt(e.target.value) || 0 })}
+                placeholder="5000"
+                data-testid="input-monthly-fee-member"
+              />
+            </div>
+            <div>
+              <Label htmlFor="fee-school">スクール生の月謝（円）</Label>
+              <Input
+                id="fee-school"
+                type="number"
+                value={formData.monthlyFeeSchool}
+                onChange={(e) => setFormData({ ...formData, monthlyFeeSchool: parseInt(e.target.value) || 0 })}
+                placeholder="8000"
+                data-testid="input-monthly-fee-school"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="sibling-discount">兄弟割引額（円）</Label>
+              <Input
+                id="sibling-discount"
+                type="number"
+                value={formData.siblingDiscount}
+                onChange={(e) => setFormData({ ...formData, siblingDiscount: parseInt(e.target.value) || 0 })}
+                placeholder="1000"
+                data-testid="input-sibling-discount"
+              />
+            </div>
+            <div>
+              <Label htmlFor="annual-fee">年会費（円）</Label>
+              <Input
+                id="annual-fee"
+                type="number"
+                value={formData.annualFee}
+                onChange={(e) => setFormData({ ...formData, annualFee: parseInt(e.target.value) || 0 })}
+                placeholder="10000"
+                data-testid="input-annual-fee"
+              />
+            </div>
+          </div>
+
+          <Button
+            onClick={handleSave}
+            disabled={updateTeamMutation.isPending}
+            data-testid="button-save-team-info"
+            className="w-full md:w-auto"
+          >
+            {updateTeamMutation.isPending ? "保存中..." : "保存する"}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

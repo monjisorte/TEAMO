@@ -8,8 +8,8 @@ import {
 } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { db } from "./db";
-import { teams, students, studentCategories, attendances, schedules, categories, sharedDocuments } from "@shared/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { teams, students, studentCategories, attendances, schedules, categories, sharedDocuments, folders, tuitionPayments } from "@shared/schema";
+import { eq, and, inArray, isNull } from "drizzle-orm";
 import { generateTeamCode, hashPassword, verifyPassword } from "./utils";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -353,6 +353,205 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(docs);
     } catch (error) {
       console.error("Error fetching shared documents:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Team Info Update
+  app.put("/api/teams/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+
+      await db.update(teams)
+        .set(updateData)
+        .where(eq(teams.id, id));
+
+      const updated = await db.select().from(teams).where(eq(teams.id, id)).limit(1);
+      res.json(updated[0]);
+    } catch (error) {
+      console.error("Error updating team:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Folders Management
+  app.get("/api/folders", async (req, res) => {
+    try {
+      const { parentFolderId } = req.query;
+      
+      let result;
+      if (parentFolderId) {
+        result = await db.select().from(folders).where(eq(folders.parentFolderId, parentFolderId as string));
+      } else {
+        result = await db.select().from(folders).where(isNull(folders.parentFolderId));
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching folders:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/folders", async (req, res) => {
+    try {
+      const { name, parentFolderId, teamId } = req.body;
+
+      if (!name || !teamId) {
+        return res.status(400).json({ error: "Name and teamId are required" });
+      }
+
+      const newFolder = await db.insert(folders).values({
+        name,
+        parentFolderId: parentFolderId || null,
+        teamId,
+      }).returning();
+
+      res.status(201).json(newFolder[0]);
+    } catch (error) {
+      console.error("Error creating folder:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/folders/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      await db.delete(folders).where(eq(folders.id, id));
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error deleting folder:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Documents Management
+  app.get("/api/documents", async (req, res) => {
+    try {
+      const { folderId, teamId } = req.query;
+      
+      let result;
+      if (folderId) {
+        result = await db.select().from(sharedDocuments).where(eq(sharedDocuments.folderId, folderId as string));
+      } else if (teamId) {
+        result = await db.select().from(sharedDocuments).where(and(
+          eq(sharedDocuments.teamId, teamId as string),
+          isNull(sharedDocuments.folderId)
+        ));
+      } else {
+        result = [];
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching documents:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/documents/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      await db.delete(sharedDocuments).where(eq(sharedDocuments.id, id));
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error deleting document:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Students Management
+  app.get("/api/students", async (req, res) => {
+    try {
+      const allStudents = await db.select().from(students);
+      res.json(allStudents);
+    } catch (error) {
+      console.error("Error fetching students:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Tuition Payments
+  app.get("/api/tuition-payments", async (req, res) => {
+    try {
+      const { year, month } = req.query;
+
+      let result;
+      if (year && month) {
+        result = await db.select().from(tuitionPayments).where(and(
+          eq(tuitionPayments.year, parseInt(year as string)),
+          eq(tuitionPayments.month, parseInt(month as string))
+        ));
+      } else {
+        result = await db.select().from(tuitionPayments);
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching tuition payments:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tuition-payments", async (req, res) => {
+    try {
+      const { studentId, amount, isPaid, year, month } = req.body;
+
+      if (!studentId || !year || !month) {
+        return res.status(400).json({ error: "studentId, year, and month are required" });
+      }
+
+      // Check if payment record already exists
+      const existing = await db.select()
+        .from(tuitionPayments)
+        .where(and(
+          eq(tuitionPayments.studentId, studentId),
+          eq(tuitionPayments.year, year),
+          eq(tuitionPayments.month, month)
+        ))
+        .limit(1);
+
+      // Get student's team
+      const student = await db.select().from(students).where(eq(students.id, studentId)).limit(1);
+      if (student.length === 0) {
+        return res.status(404).json({ error: "Student not found" });
+      }
+
+      if (existing.length > 0) {
+        // Update existing record
+        await db.update(tuitionPayments)
+          .set({ 
+            amount, 
+            isPaid, 
+            paidAt: isPaid ? new Date() : null,
+            updatedAt: new Date()
+          })
+          .where(eq(tuitionPayments.id, existing[0].id));
+
+        const updated = await db.select()
+          .from(tuitionPayments)
+          .where(eq(tuitionPayments.id, existing[0].id))
+          .limit(1);
+        res.json(updated[0]);
+      } else {
+        // Create new record
+        const newPayment = await db.insert(tuitionPayments).values({
+          studentId,
+          teamId: student[0].teamId,
+          year,
+          month,
+          amount,
+          isPaid,
+          paidAt: isPaid ? new Date() : null,
+        }).returning();
+
+        res.status(201).json(newPayment[0]);
+      }
+    } catch (error) {
+      console.error("Error updating tuition payment:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
