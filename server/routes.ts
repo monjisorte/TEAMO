@@ -84,6 +84,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Schedule Endpoints
+  app.get("/api/schedules", async (req, res) => {
+    try {
+      const allSchedules = await db.select().from(schedules);
+      res.json(allSchedules);
+    } catch (error) {
+      console.error("Error fetching schedules:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/schedules", async (req, res) => {
+    try {
+      const newSchedule = await db.insert(schedules).values(req.body).returning();
+      res.status(201).json(newSchedule[0]);
+    } catch (error) {
+      console.error("Error creating schedule:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/schedules/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await db.update(schedules).set(req.body).where(eq(schedules.id, id));
+      const updated = await db.select().from(schedules).where(eq(schedules.id, id)).limit(1);
+      res.json(updated[0]);
+    } catch (error) {
+      console.error("Error updating schedule:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/schedules/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await db.delete(schedules).where(eq(schedules.id, id));
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error deleting schedule:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Attendance Endpoints
+  app.get("/api/attendances", async (req, res) => {
+    try {
+      const allAttendances = await db.select().from(attendances);
+      res.json(allAttendances);
+    } catch (error) {
+      console.error("Error fetching attendances:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Category Endpoints
   app.get("/api/categories", async (req, res) => {
     try {

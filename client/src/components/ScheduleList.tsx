@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Plus, Clock, Edit, Trash2, CalendarDays, List, Users, Paperclip, FileText, X as XIcon } from "lucide-react";
+import { Calendar, MapPin, Plus, Clock, Edit, Trash2, CalendarDays, List, Users, Paperclip, FileText, X as XIcon, Repeat } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import type { UploadResult } from "@uppy/core";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -34,118 +36,156 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import type { Schedule, Category, Student, Attendance } from "@shared/schema";
 
-// TODO: remove mock data
-const MOCK_STUDENTS = [
-  { id: "1", name: "田中太郎", categoryId: "cat-1" },
-  { id: "2", name: "佐藤花子", categoryId: "cat-1" },
-  { id: "3", name: "鈴木一郎", categoryId: "cat-1" },
-  { id: "4", name: "高橋美咲", categoryId: "cat-2" },
-  { id: "5", name: "渡辺健太", categoryId: "cat-2" },
-  { id: "6", name: "伊藤さくら", categoryId: "cat-2" },
-  { id: "7", name: "山本大輔", categoryId: "cat-1" },
-  { id: "8", name: "中村愛", categoryId: "cat-2" },
-];
-
-const MOCK_ATTENDANCE = [
-  // スケジュール1の出席
-  { id: "a1", scheduleId: "1", studentId: "1", status: "present" },
-  { id: "a2", scheduleId: "1", studentId: "2", status: "present" },
-  { id: "a3", scheduleId: "1", studentId: "3", status: "maybe" },
-  { id: "a4", scheduleId: "1", studentId: "7", status: "absent" },
-  // スケジュール2の出席
-  { id: "a5", scheduleId: "2", studentId: "4", status: "present" },
-  { id: "a6", scheduleId: "2", studentId: "5", status: "present" },
-  { id: "a7", scheduleId: "2", studentId: "6", status: "present" },
-  { id: "a8", scheduleId: "2", studentId: "8", status: "maybe" },
-  // スケジュール3の出席
-  { id: "a9", scheduleId: "3", studentId: "1", status: "present" },
-  { id: "a10", scheduleId: "3", studentId: "2", status: "present" },
-  { id: "a11", scheduleId: "3", studentId: "3", status: "present" },
-  { id: "a12", scheduleId: "3", studentId: "7", status: "maybe" },
-] as const;
-
-const MOCK_CATEGORIES = [
-  { id: "cat-1", name: "U-12" },
-  { id: "cat-2", name: "U-15" },
-];
-
-const MOCK_SCHEDULES = [
-  {
-    id: "1",
-    title: "週末練習",
-    date: "2024-10-20",
-    startTime: "10:00",
-    endTime: "12:00",
-    gatherTime: "09:45",
-    venue: "中央グラウンド",
-    category: "U-12",
-    notes: "ボールと水筒を持参してください",
-    studentCanRegister: true,
-  },
-  {
-    id: "2",
-    title: "試合 vs 東チーム",
-    date: "2024-10-22",
-    startTime: "14:00",
-    endTime: "16:00",
-    gatherTime: "13:30",
-    venue: "市民体育館",
-    category: "U-15",
-    notes: "ユニフォーム着用",
-    studentCanRegister: false,
-  },
-  {
-    id: "3",
-    title: "技術練習",
-    date: "2024-10-25",
-    startTime: "16:00",
-    endTime: "18:00",
-    gatherTime: "15:45",
-    venue: "中央グラウンド",
-    category: "U-12",
-    notes: "",
-    studentCanRegister: true,
-  },
-  {
-    id: "4",
-    title: "合同練習",
-    date: "2024-10-27",
-    startTime: "10:00",
-    endTime: "13:00",
-    gatherTime: "09:30",
-    venue: "県立スタジアム",
-    category: "全学年",
-    notes: "お弁当持参",
-    studentCanRegister: true,
-  },
-];
-
-// 5分刻みの時間オプションを生成
-const generateTimeOptions = () => {
-  const times: string[] = [];
-  for (let hour = 0; hour < 24; hour++) {
-    for (let minute = 0; minute < 60; minute += 5) {
-      const h = hour.toString().padStart(2, '0');
-      const m = minute.toString().padStart(2, '0');
-      times.push(`${h}:${m}`);
-    }
-  }
-  return times;
+// 時間（0-23）のオプションを生成
+const generateHourOptions = () => {
+  return Array.from({ length: 24 }, (_, i) => ({
+    value: i.toString(),
+    label: `${i}時`,
+  }));
 };
 
+// 分（0,5,10...55）のオプションを生成
+const generateMinuteOptions = () => {
+  return Array.from({ length: 12 }, (_, i) => {
+    const minute = i * 5;
+    return {
+      value: minute.toString(),
+      label: `${minute}分`,
+    };
+  });
+};
+
+// 時間と分を結合して表示
+const formatTime = (hour: number | null, minute: number | null) => {
+  if (hour === null || minute === null) return "--:--";
+  return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+};
+
+interface ScheduleFormData {
+  title: string;
+  date: string;
+  startHour: string;
+  startMinute: string;
+  endHour: string;
+  endMinute: string;
+  gatherHour: string;
+  gatherMinute: string;
+  categoryId: string;
+  venue: string;
+  notes: string;
+  studentCanRegister: boolean;
+  recurrenceRule: string;
+  recurrenceInterval: string;
+  recurrenceDays: string[];
+  recurrenceEndDate: string;
+}
+
 export function ScheduleList() {
+  const { toast } = useToast();
   const [view, setView] = useState<"list" | "calendar">("list");
   const [selectedSchedule, setSelectedSchedule] = useState<string | null>(null);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(["U-12", "U-15", "U-18", "全学年"]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [studentRegisterDisabled, setStudentRegisterDisabled] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<Array<{ name: string; url: string; size: number }>>([]);
 
+  const [formData, setFormData] = useState<ScheduleFormData>({
+    title: "",
+    date: "",
+    startHour: "10",
+    startMinute: "0",
+    endHour: "12",
+    endMinute: "0",
+    gatherHour: "9",
+    gatherMinute: "45",
+    categoryId: "",
+    venue: "",
+    notes: "",
+    studentCanRegister: true,
+    recurrenceRule: "none",
+    recurrenceInterval: "1",
+    recurrenceDays: [],
+    recurrenceEndDate: "",
+  });
+
+  // データ取得
+  const { data: schedules = [] } = useQuery<Schedule[]>({
+    queryKey: ["/api/schedules"],
+  });
+
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
+  });
+
+  const { data: students = [] } = useQuery<Student[]>({
+    queryKey: ["/api/students"],
+  });
+
+  const { data: attendances = [] } = useQuery<Attendance[]>({
+    queryKey: ["/api/attendances"],
+  });
+
+  // 初回ロード時に全カテゴリを選択
+  useState(() => {
+    if (categories.length > 0 && selectedCategories.length === 0) {
+      setSelectedCategories(categories.map(c => c.id));
+    }
+  });
+
+  // スケジュール作成
+  const createScheduleMutation = useMutation({
+    mutationFn: async (data: Partial<Schedule>) => {
+      const response = await apiRequest("POST", "/api/schedules", data);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/schedules"] });
+      toast({ title: "スケジュールを追加しました" });
+      setShowAddDialog(false);
+      resetForm();
+    },
+    onError: () => {
+      toast({ title: "エラーが発生しました", variant: "destructive" });
+    },
+  });
+
+  // スケジュール更新
+  const updateScheduleMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Schedule> }) => {
+      const response = await apiRequest("PUT", `/api/schedules/${id}`, data);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/schedules"] });
+      toast({ title: "スケジュールを更新しました" });
+      setShowEditDialog(false);
+      setEditingSchedule(null);
+      resetForm();
+    },
+    onError: () => {
+      toast({ title: "エラーが発生しました", variant: "destructive" });
+    },
+  });
+
+  // スケジュール削除
+  const deleteScheduleMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/schedules/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/schedules"] });
+      toast({ title: "スケジュールを削除しました" });
+    },
+    onError: () => {
+      toast({ title: "エラーが発生しました", variant: "destructive" });
+    },
+  });
+
   const handleGetUploadParameters = async () => {
-    const response = await apiRequest("/api/objects/upload", {
-      method: "POST",
-    });
+    const response = await apiRequest("POST", "/api/objects/upload");
     const data = await response.json();
     return {
       method: "PUT" as const,
@@ -168,28 +208,115 @@ export function ScheduleList() {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      date: "",
+      startHour: "10",
+      startMinute: "0",
+      endHour: "12",
+      endMinute: "0",
+      gatherHour: "9",
+      gatherMinute: "45",
+      categoryId: "",
+      venue: "",
+      notes: "",
+      studentCanRegister: true,
+      recurrenceRule: "none",
+      recurrenceInterval: "1",
+      recurrenceDays: [],
+      recurrenceEndDate: "",
+    });
+    setUploadedFiles([]);
+  };
+
+  const handleSaveSchedule = () => {
+    if (!formData.title || !formData.date || !formData.categoryId || !formData.venue) {
+      toast({ title: "必須項目を入力してください", variant: "destructive" });
+      return;
+    }
+
+    const scheduleData: Partial<Schedule> = {
+      title: formData.title,
+      date: formData.date,
+      startHour: parseInt(formData.startHour),
+      startMinute: parseInt(formData.startMinute),
+      endHour: parseInt(formData.endHour),
+      endMinute: parseInt(formData.endMinute),
+      gatherHour: parseInt(formData.gatherHour),
+      gatherMinute: parseInt(formData.gatherMinute),
+      categoryId: formData.categoryId,
+      venue: formData.venue,
+      notes: formData.notes,
+      studentCanRegister: formData.studentCanRegister,
+      recurrenceRule: formData.recurrenceRule === "none" ? null : formData.recurrenceRule,
+      recurrenceInterval: formData.recurrenceRule !== "none" ? parseInt(formData.recurrenceInterval) : null,
+      recurrenceDays: formData.recurrenceRule === "weekly" && formData.recurrenceDays.length > 0 
+        ? JSON.stringify(formData.recurrenceDays) 
+        : null,
+      recurrenceEndDate: formData.recurrenceRule !== "none" && formData.recurrenceEndDate 
+        ? formData.recurrenceEndDate 
+        : null,
+    };
+
+    if (editingSchedule) {
+      updateScheduleMutation.mutate({ id: editingSchedule.id, data: scheduleData });
+    } else {
+      createScheduleMutation.mutate(scheduleData);
+    }
+  };
+
+  const handleEditSchedule = (schedule: Schedule) => {
+    setEditingSchedule(schedule);
+    setFormData({
+      title: schedule.title,
+      date: schedule.date,
+      startHour: (schedule.startHour ?? 10).toString(),
+      startMinute: (schedule.startMinute ?? 0).toString(),
+      endHour: (schedule.endHour ?? 12).toString(),
+      endMinute: (schedule.endMinute ?? 0).toString(),
+      gatherHour: (schedule.gatherHour ?? 9).toString(),
+      gatherMinute: (schedule.gatherMinute ?? 45).toString(),
+      categoryId: schedule.categoryId,
+      venue: schedule.venue,
+      notes: schedule.notes || "",
+      studentCanRegister: schedule.studentCanRegister,
+      recurrenceRule: schedule.recurrenceRule || "none",
+      recurrenceInterval: (schedule.recurrenceInterval ?? 1).toString(),
+      recurrenceDays: schedule.recurrenceDays ? JSON.parse(schedule.recurrenceDays) : [],
+      recurrenceEndDate: schedule.recurrenceEndDate || "",
+    });
+    setShowEditDialog(true);
+  };
+
+  const handleDeleteSchedule = (id: string) => {
+    if (confirm("このスケジュールを削除しますか？")) {
+      deleteScheduleMutation.mutate(id);
+    }
+  };
+
   // 出席状況を集計
   const getAttendanceCount = (scheduleId: string) => {
-    const attendances = MOCK_ATTENDANCE.filter(a => a.scheduleId === scheduleId);
+    const scheduleAttendances = attendances.filter(a => a.scheduleId === scheduleId);
     return {
-      present: attendances.filter(a => a.status === "present").length,
-      maybe: attendances.filter(a => a.status === "maybe").length,
-      absent: attendances.filter(a => a.status === "absent").length,
+      present: scheduleAttendances.filter(a => a.status === "present").length,
+      maybe: scheduleAttendances.filter(a => a.status === "maybe").length,
+      absent: scheduleAttendances.filter(a => a.status === "absent").length,
     };
   };
 
   // カテゴリフィルター切り替え
-  const toggleCategory = (category: string) => {
+  const toggleCategory = (categoryId: string) => {
     setSelectedCategories(prev =>
-      prev.includes(category)
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
+      prev.includes(categoryId)
+        ? prev.filter(c => c !== categoryId)
+        : [...prev, categoryId]
     );
   };
 
   // フィルタリングされたスケジュール
-  const filteredSchedules = MOCK_SCHEDULES.filter(schedule =>
-    selectedCategories.includes(schedule.category)
+  const filteredSchedules = schedules.filter(schedule =>
+    selectedCategories.includes(schedule.categoryId)
   );
 
   return (
@@ -210,25 +337,27 @@ export function ScheduleList() {
       </div>
 
       {/* カテゴリフィルター */}
-      <Card className="border-0 shadow-lg">
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-4">
-            {["U-12", "U-15", "U-18", "全学年"].map((category) => (
-              <div key={category} className="flex items-center gap-2">
-                <Checkbox
-                  id={`category-${category}`}
-                  checked={selectedCategories.includes(category)}
-                  onCheckedChange={() => toggleCategory(category)}
-                  data-testid={`checkbox-category-${category}`}
-                />
-                <Label htmlFor={`category-${category}`} className="cursor-pointer font-medium">
-                  {category}
-                </Label>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {categories.length > 0 && (
+        <Card className="border-0 shadow-lg">
+          <CardContent className="pt-6">
+            <div className="flex flex-wrap gap-4">
+              {categories.map((category) => (
+                <div key={category.id} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`category-${category.id}`}
+                    checked={selectedCategories.includes(category.id)}
+                    onCheckedChange={() => toggleCategory(category.id)}
+                    data-testid={`checkbox-category-${category.id}`}
+                  />
+                  <Label htmlFor={`category-${category.id}`} className="cursor-pointer font-medium">
+                    {category.name}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs value={view} onValueChange={(v) => setView(v as "list" | "calendar")} className="w-full">
         <TabsList>
@@ -244,163 +373,155 @@ export function ScheduleList() {
 
         <TabsContent value="list" className="space-y-4 mt-8">
           <div className="space-y-6">
-            {filteredSchedules.map((schedule) => {
-              const attendance = getAttendanceCount(schedule.id);
-              return (
-                <Card key={schedule.id} className="border-0 shadow-lg hover-elevate transition-all" data-testid={`schedule-card-${schedule.id}`}>
-                  <CardContent className="p-6">
-                    <div className="flex gap-6">
-                      {/* 左側: 日付表示 */}
-                      <div className="flex flex-col items-center justify-center min-w-[100px] h-24 rounded-2xl bg-gradient-to-br from-primary to-purple-600 text-white">
-                        <div className="text-3xl font-bold">
-                          {new Date(schedule.date).getDate()}
+            {filteredSchedules.length === 0 ? (
+              <Card className="border-0 shadow-lg">
+                <CardContent className="p-12 text-center text-muted-foreground">
+                  スケジュールがありません
+                </CardContent>
+              </Card>
+            ) : (
+              filteredSchedules.map((schedule) => {
+                const attendance = getAttendanceCount(schedule.id);
+                const category = categories.find(c => c.id === schedule.categoryId);
+                return (
+                  <Card key={schedule.id} className="border-0 shadow-lg hover-elevate transition-all" data-testid={`schedule-card-${schedule.id}`}>
+                    <CardContent className="p-6">
+                      <div className="flex gap-6">
+                        {/* 左側: 日付表示 */}
+                        <div className="flex flex-col items-center justify-center min-w-[100px] h-24 rounded-2xl bg-gradient-to-br from-primary to-purple-600 text-white">
+                          <div className="text-3xl font-bold">
+                            {new Date(schedule.date).getDate()}
+                          </div>
+                          <div className="text-sm opacity-90">
+                            {new Date(schedule.date).toLocaleDateString('ja-JP', { month: 'short', year: 'numeric' })}
+                          </div>
                         </div>
-                        <div className="text-sm opacity-90">
-                          {new Date(schedule.date).toLocaleDateString('ja-JP', { month: 'short', year: 'numeric' })}
-                        </div>
-                      </div>
 
-                      {/* 右側: 詳細情報 */}
-                      <div className="flex-1 space-y-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1">
-                            <h3 className="text-2xl font-bold mb-2">{schedule.title}</h3>
-                            <div className="flex gap-2">
-                              <Badge variant="outline" className="rounded-full">{schedule.category}</Badge>
-                              <Badge 
-                                variant={schedule.studentCanRegister ? "default" : "secondary"} 
-                                className="rounded-full"
-                                data-testid={`badge-register-${schedule.id}`}
-                              >
-                                {schedule.studentCanRegister ? "生徒登録可" : "コーチ指定"}
-                              </Badge>
+                        {/* 右側: 詳細情報 */}
+                        <div className="flex-1 space-y-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <h3 className="text-2xl font-bold mb-2">{schedule.title}</h3>
+                              <div className="flex gap-2 flex-wrap">
+                                <Badge variant="outline" className="rounded-full">{category?.name}</Badge>
+                                <Badge 
+                                  variant={schedule.studentCanRegister ? "default" : "secondary"} 
+                                  className="rounded-full"
+                                  data-testid={`badge-register-${schedule.id}`}
+                                >
+                                  {schedule.studentCanRegister ? "生徒登録可" : "コーチ指定"}
+                                </Badge>
+                                {schedule.recurrenceRule && schedule.recurrenceRule !== "none" && (
+                                  <Badge variant="outline" className="rounded-full gap-1">
+                                    <Repeat className="h-3 w-3" />
+                                    {schedule.recurrenceRule === "daily" && "毎日"}
+                                    {schedule.recurrenceRule === "weekly" && "毎週"}
+                                    {schedule.recurrenceRule === "monthly" && "毎月"}
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                          <div className="flex items-center gap-3 text-muted-foreground">
-                            <Clock className="h-4 w-4" />
-                            <span>
-                              {schedule.startTime}
-                              {schedule.endTime && ` - ${schedule.endTime}`}
-                            </span>
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div className="flex items-center gap-3 text-muted-foreground">
+                              <Clock className="h-4 w-4" />
+                              <span>
+                                {formatTime(schedule.startHour, schedule.startMinute)}
+                                {schedule.endHour !== null && schedule.endMinute !== null && 
+                                  ` - ${formatTime(schedule.endHour, schedule.endMinute)}`}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3 text-muted-foreground">
+                              <MapPin className="h-4 w-4" />
+                              {schedule.venue !== "未定" && schedule.venue !== "その他" ? (
+                                <a
+                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(schedule.venue)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="truncate hover:text-primary hover:underline"
+                                  data-testid={`link-venue-${schedule.id}`}
+                                >
+                                  {schedule.venue}
+                                </a>
+                              ) : (
+                                <span className="truncate">{schedule.venue}</span>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-3 text-muted-foreground">
-                            <MapPin className="h-4 w-4" />
-                            {schedule.venue !== "未定" && schedule.venue !== "その他" ? (
-                              <a
-                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(schedule.venue)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="truncate hover:text-primary hover:underline"
-                                data-testid={`link-venue-${schedule.id}`}
-                              >
-                                {schedule.venue}
-                              </a>
-                            ) : (
-                              <span className="truncate">{schedule.venue}</span>
-                            )}
+
+                          {(schedule.gatherHour !== null && schedule.gatherMinute !== null) && (
+                            <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+                              <span className="text-xs text-muted-foreground">集合:</span>
+                              <span className="text-sm font-semibold">
+                                {formatTime(schedule.gatherHour, schedule.gatherMinute)}
+                              </span>
+                            </div>
+                          )}
+
+                          {schedule.notes && (
+                            <p className="text-sm text-muted-foreground p-3 rounded-xl bg-muted/30">{schedule.notes}</p>
+                          )}
+                          
+                          {/* 出席人数 */}
+                          <div 
+                            className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-primary/10 to-purple-600/10 cursor-pointer hover-elevate"
+                            onClick={() => setSelectedSchedule(schedule.id)}
+                            data-testid={`attendance-summary-${schedule.id}`}
+                          >
+                            <Users className="h-5 w-5 text-primary" />
+                            <div className="flex gap-4 text-sm font-medium">
+                              <span className="flex items-center gap-1">
+                                <span className="text-green-600 dark:text-green-400">○</span>
+                                <span data-testid={`count-present-${schedule.id}`}>{attendance.present}</span>
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="text-yellow-600 dark:text-yellow-400">△</span>
+                                <span data-testid={`count-maybe-${schedule.id}`}>{attendance.maybe}</span>
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="text-red-600 dark:text-red-400">×</span>
+                                <span data-testid={`count-absent-${schedule.id}`}>{attendance.absent}</span>
+                              </span>
+                            </div>
                           </div>
-                        </div>
 
-                        <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
-                          <span className="text-xs text-muted-foreground">集合:</span>
-                          <span className="text-sm font-semibold">{schedule.gatherTime}</span>
-                        </div>
-
-                        {schedule.notes && (
-                          <p className="text-sm text-muted-foreground p-3 rounded-xl bg-muted/30">{schedule.notes}</p>
-                        )}
-                        
-                        {/* 出席人数 */}
-                        <div 
-                          className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-primary/10 to-purple-600/10 cursor-pointer hover-elevate"
-                          onClick={() => setSelectedSchedule(schedule.id)}
-                          data-testid={`attendance-summary-${schedule.id}`}
-                        >
-                          <Users className="h-5 w-5 text-primary" />
-                          <div className="flex gap-4 text-sm font-medium">
-                            <span className="flex items-center gap-1">
-                              <span className="text-green-600 dark:text-green-400">○</span>
-                              <span data-testid={`count-present-${schedule.id}`}>{attendance.present}</span>
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <span className="text-yellow-600 dark:text-yellow-400">△</span>
-                              <span data-testid={`count-maybe-${schedule.id}`}>{attendance.maybe}</span>
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <span className="text-red-600 dark:text-red-400">×</span>
-                              <span data-testid={`count-absent-${schedule.id}`}>{attendance.absent}</span>
-                            </span>
+                          <div className="flex gap-3">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex-1 rounded-xl" 
+                              onClick={() => handleEditSchedule(schedule)}
+                              data-testid={`button-edit-${schedule.id}`}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              編集
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="rounded-xl" 
+                              onClick={() => handleDeleteSchedule(schedule.id)}
+                              data-testid={`button-delete-${schedule.id}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
-                        </div>
-
-                        <div className="flex gap-3">
-                          <Button variant="outline" size="sm" className="flex-1 rounded-xl" data-testid={`button-edit-${schedule.id}`}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            編集
-                          </Button>
-                          <Button variant="outline" size="sm" className="rounded-xl" data-testid={`button-delete-${schedule.id}`}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="calendar" className="mt-8">
           <Card className="border-0 shadow-xl">
             <CardContent className="p-8">
-              <div className="grid grid-cols-7 gap-4">
-                {/* 曜日ヘッダー */}
-                {["日", "月", "火", "水", "木", "金", "土"].map((day) => (
-                  <div key={day} className="text-center font-semibold text-sm text-muted-foreground p-2">
-                    {day}
-                  </div>
-                ))}
-                
-                {/* カレンダーの日付 */}
-                {Array.from({ length: 35 }, (_, i) => {
-                  const date = new Date(2024, 9, i - 5); // 2024年10月を基準
-                  const daySchedules = filteredSchedules.filter(
-                    s => new Date(s.date).toDateString() === date.toDateString()
-                  );
-                  const isCurrentMonth = date.getMonth() === 9; // 10月
-                  
-                  return (
-                    <div
-                      key={i}
-                      className={`min-h-[100px] p-2 rounded-xl border ${
-                        isCurrentMonth ? 'border-border bg-card' : 'border-transparent bg-muted/30'
-                      }`}
-                      data-testid={`calendar-day-${i}`}
-                    >
-                      <div className={`text-sm font-medium mb-1 ${
-                        isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'
-                      }`}>
-                        {date.getDate()}
-                      </div>
-                      <div className="space-y-1">
-                        {daySchedules.map((schedule) => (
-                          <div
-                            key={schedule.id}
-                            className="text-xs p-1 rounded bg-primary/10 text-primary truncate cursor-pointer hover-elevate"
-                            onClick={() => setSelectedSchedule(schedule.id)}
-                            data-testid={`calendar-schedule-${schedule.id}`}
-                          >
-                            {schedule.startTime} {schedule.title}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="text-center text-muted-foreground py-12">
+                カレンダービューは今後実装予定です
               </div>
             </CardContent>
           </Card>
@@ -414,20 +535,21 @@ export function ScheduleList() {
             <DialogTitle className="text-2xl">参加者詳細</DialogTitle>
           </DialogHeader>
           {selectedSchedule && (() => {
-            const schedule = MOCK_SCHEDULES.find(s => s.id === selectedSchedule);
-            const participants = MOCK_ATTENDANCE
+            const schedule = schedules.find(s => s.id === selectedSchedule);
+            const participants = attendances
               .filter(a => a.scheduleId === selectedSchedule)
               .map(a => ({
                 ...a,
-                student: MOCK_STUDENTS.find(s => s.id === a.studentId)!
-              }));
+                student: students.find(s => s.id === a.studentId)
+              }))
+              .filter(p => p.student);
 
             return (
               <div className="space-y-6">
                 <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-purple-600/10">
                   <h3 className="font-semibold text-lg mb-2">{schedule?.title}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {schedule?.date && new Date(schedule.date).toLocaleDateString('ja-JP')} {schedule?.startTime}
+                    {schedule?.date && new Date(schedule.date).toLocaleDateString('ja-JP')} {formatTime(schedule?.startHour ?? null, schedule?.startMinute ?? null)}
                   </p>
                 </div>
 
@@ -437,66 +559,30 @@ export function ScheduleList() {
                     <span>参加者 {participants.length}名</span>
                   </div>
 
-                  <div className="space-y-2">
-                    {participants.map(({ student, status, studentId }) => (
-                      <div 
-                        key={student.id} 
-                        className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover-elevate"
-                        data-testid={`participant-${student.id}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-lg">
-                            {status === 'present' && <span className="text-green-600 dark:text-green-400">○</span>}
-                            {status === 'maybe' && <span className="text-yellow-600 dark:text-yellow-400">△</span>}
-                            {status === 'absent' && <span className="text-red-600 dark:text-red-400">×</span>}
-                          </span>
-                          <span className="font-medium">{student.name}</span>
-                          <Badge variant="outline" className="rounded-full text-xs">
-                            {MOCK_CATEGORIES.find(c => c.id === student.categoryId)?.name}
-                          </Badge>
+                  {participants.length === 0 ? (
+                    <div className="text-center text-muted-foreground py-8">
+                      参加者がいません
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {participants.map(({ student, status }) => (
+                        <div 
+                          key={student!.id} 
+                          className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover-elevate"
+                          data-testid={`participant-${student!.id}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-lg">
+                              {status === 'present' && <span className="text-green-600 dark:text-green-400">○</span>}
+                              {status === 'maybe' && <span className="text-yellow-600 dark:text-yellow-400">△</span>}
+                              {status === 'absent' && <span className="text-red-600 dark:text-red-400">×</span>}
+                            </span>
+                            <span className="font-medium">{student!.name}</span>
+                          </div>
                         </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="rounded-xl" data-testid={`button-move-${student.id}`}>
-                              移動
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-56">
-                            <DropdownMenuLabel>移動先を選択（同日のみ）</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            {MOCK_SCHEDULES.filter(s => 
-                              s.id !== selectedSchedule && 
-                              s.date === schedule?.date
-                            ).length > 0 ? (
-                              MOCK_SCHEDULES.filter(s => 
-                                s.id !== selectedSchedule && 
-                                s.date === schedule?.date
-                              ).map(s => (
-                                <DropdownMenuItem 
-                                  key={s.id}
-                                  onClick={() => {
-                                    console.log(`Moving student ${studentId} to schedule ${s.id}`);
-                                  }}
-                                  data-testid={`move-to-${s.id}`}
-                                >
-                                  <div className="flex flex-col">
-                                    <span className="font-medium">{s.title}</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      {s.startTime}
-                                    </span>
-                                  </div>
-                                </DropdownMenuItem>
-                              ))
-                            ) : (
-                              <div className="p-2 text-sm text-muted-foreground text-center">
-                                同じ日のイベントがありません
-                              </div>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -504,22 +590,33 @@ export function ScheduleList() {
         </DialogContent>
       </Dialog>
 
-      {/* 新規追加ダイアログ */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      {/* スケジュールフォームダイアログ */}
+      <Dialog open={showAddDialog || showEditDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowAddDialog(false);
+          setShowEditDialog(false);
+          setEditingSchedule(null);
+          resetForm();
+        }
+      }}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl">スケジュール新規追加</DialogTitle>
+            <DialogTitle className="text-2xl">
+              {editingSchedule ? "スケジュール編集" : "スケジュール新規追加"}
+            </DialogTitle>
             <DialogDescription>
               活動の詳細情報を入力してください
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-6 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2 col-span-2">
                 <Label htmlFor="title">タイトル *</Label>
                 <Input
                   id="title"
                   placeholder="例: 週末練習"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   data-testid="input-schedule-title"
                 />
               </div>
@@ -529,82 +626,201 @@ export function ScheduleList() {
                 <Input
                   id="date"
                   type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                   data-testid="input-schedule-date"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="category">カテゴリ *</Label>
-                <Select>
+                <Select value={formData.categoryId} onValueChange={(value) => setFormData({ ...formData, categoryId: value })}>
                   <SelectTrigger data-testid="select-schedule-category">
                     <SelectValue placeholder="選択してください" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="U-12">U-12</SelectItem>
-                    <SelectItem value="U-15">U-15</SelectItem>
-                    <SelectItem value="U-18">U-18</SelectItem>
-                    <SelectItem value="全学年">全学年</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="startTime">開始時刻</Label>
-                <Select>
-                  <SelectTrigger data-testid="select-schedule-start-time">
-                    <SelectValue placeholder="選択してください" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[200px]">
-                    {generateTimeOptions().map(time => (
-                      <SelectItem key={time} value={time}>{time}</SelectItem>
+                    {categories.map(category => (
+                      <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
+              {/* 開始時刻 */}
               <div className="space-y-2">
-                <Label htmlFor="endTime">終了時刻</Label>
-                <Select>
-                  <SelectTrigger data-testid="select-schedule-end-time">
-                    <SelectValue placeholder="選択してください" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[200px]">
-                    {generateTimeOptions().map(time => (
-                      <SelectItem key={time} value={time}>{time}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>開始時刻</Label>
+                <div className="flex gap-2">
+                  <Select value={formData.startHour} onValueChange={(value) => setFormData({ ...formData, startHour: value })}>
+                    <SelectTrigger className="flex-1" data-testid="select-start-hour">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[200px]">
+                      {generateHourOptions().map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={formData.startMinute} onValueChange={(value) => setFormData({ ...formData, startMinute: value })}>
+                    <SelectTrigger className="flex-1" data-testid="select-start-minute">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {generateMinuteOptions().map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
+              {/* 終了時刻 */}
               <div className="space-y-2">
-                <Label htmlFor="gatherTime">集合時刻 *</Label>
-                <Select>
-                  <SelectTrigger data-testid="select-schedule-gather-time">
-                    <SelectValue placeholder="選択してください" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[200px]">
-                    {generateTimeOptions().map(time => (
-                      <SelectItem key={time} value={time}>{time}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>終了時刻</Label>
+                <div className="flex gap-2">
+                  <Select value={formData.endHour} onValueChange={(value) => setFormData({ ...formData, endHour: value })}>
+                    <SelectTrigger className="flex-1" data-testid="select-end-hour">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[200px]">
+                      {generateHourOptions().map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={formData.endMinute} onValueChange={(value) => setFormData({ ...formData, endMinute: value })}>
+                    <SelectTrigger className="flex-1" data-testid="select-end-minute">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {generateMinuteOptions().map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* 集合時刻 */}
+              <div className="space-y-2">
+                <Label>集合時刻 *</Label>
+                <div className="flex gap-2">
+                  <Select value={formData.gatherHour} onValueChange={(value) => setFormData({ ...formData, gatherHour: value })}>
+                    <SelectTrigger className="flex-1" data-testid="select-gather-hour">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[200px]">
+                      {generateHourOptions().map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={formData.gatherMinute} onValueChange={(value) => setFormData({ ...formData, gatherMinute: value })}>
+                    <SelectTrigger className="flex-1" data-testid="select-gather-minute">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {generateMinuteOptions().map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="venue">活動場所 *</Label>
-                <Select>
-                  <SelectTrigger data-testid="select-schedule-venue">
-                    <SelectValue placeholder="選択してください" />
+                <Input
+                  id="venue"
+                  placeholder="例: 中央グラウンド"
+                  value={formData.venue}
+                  onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
+                  data-testid="input-schedule-venue"
+                />
+              </div>
+
+              {/* 繰り返し設定 */}
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="recurrence">繰り返し設定</Label>
+                <Select value={formData.recurrenceRule} onValueChange={(value) => setFormData({ ...formData, recurrenceRule: value })}>
+                  <SelectTrigger data-testid="select-recurrence-rule">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="未定">未定</SelectItem>
-                    <SelectItem value="中央グラウンド">中央グラウンド</SelectItem>
-                    <SelectItem value="市民体育館">市民体育館</SelectItem>
-                    <SelectItem value="県立スタジアム">県立スタジアム</SelectItem>
-                    <SelectItem value="その他">その他</SelectItem>
+                    <SelectItem value="none">繰り返しなし</SelectItem>
+                    <SelectItem value="daily">毎日</SelectItem>
+                    <SelectItem value="weekly">毎週</SelectItem>
+                    <SelectItem value="monthly">毎月</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {formData.recurrenceRule !== "none" && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="recurrenceInterval">繰り返し間隔</Label>
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        id="recurrenceInterval"
+                        type="number"
+                        min="1"
+                        value={formData.recurrenceInterval}
+                        onChange={(e) => setFormData({ ...formData, recurrenceInterval: e.target.value })}
+                        data-testid="input-recurrence-interval"
+                        className="w-20"
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {formData.recurrenceRule === "daily" && "日ごと"}
+                        {formData.recurrenceRule === "weekly" && "週間ごと"}
+                        {formData.recurrenceRule === "monthly" && "ヶ月ごと"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="recurrenceEndDate">繰り返し終了日</Label>
+                    <Input
+                      id="recurrenceEndDate"
+                      type="date"
+                      value={formData.recurrenceEndDate}
+                      onChange={(e) => setFormData({ ...formData, recurrenceEndDate: e.target.value })}
+                      data-testid="input-recurrence-end-date"
+                    />
+                  </div>
+
+                  {formData.recurrenceRule === "weekly" && (
+                    <div className="space-y-2 col-span-2">
+                      <Label>曜日を選択</Label>
+                      <div className="flex gap-2 flex-wrap">
+                        {["日", "月", "火", "水", "木", "金", "土"].map((day, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Checkbox
+                              id={`day-${index}`}
+                              checked={formData.recurrenceDays.includes(index.toString())}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setFormData({ 
+                                    ...formData, 
+                                    recurrenceDays: [...formData.recurrenceDays, index.toString()] 
+                                  });
+                                } else {
+                                  setFormData({ 
+                                    ...formData, 
+                                    recurrenceDays: formData.recurrenceDays.filter(d => d !== index.toString()) 
+                                  });
+                                }
+                              }}
+                              data-testid={`checkbox-day-${index}`}
+                            />
+                            <Label htmlFor={`day-${index}`} className="cursor-pointer">
+                              {day}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
 
               <div className="space-y-2 col-span-2">
                 <Label htmlFor="notes">備考</Label>
@@ -612,69 +828,17 @@ export function ScheduleList() {
                   id="notes"
                   placeholder="持ち物や注意事項など"
                   rows={3}
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   data-testid="input-schedule-notes"
                 />
-              </div>
-
-              <div className="space-y-3 col-span-2">
-                <Label>添付ファイル（最大10ファイル）</Label>
-                <div className="flex flex-col gap-3">
-                  <ObjectUploader
-                    maxNumberOfFiles={10}
-                    maxFileSize={10485760}
-                    onGetUploadParameters={handleGetUploadParameters}
-                    onComplete={handleUploadComplete}
-                    buttonClassName="w-full"
-                  >
-                    <div className="flex items-center justify-center gap-2">
-                      <Paperclip className="h-4 w-4" />
-                      <span>ファイルを添付</span>
-                    </div>
-                  </ObjectUploader>
-                  
-                  {uploadedFiles.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium text-muted-foreground">
-                        アップロード済みファイル ({uploadedFiles.length}/10)
-                      </div>
-                      <div className="space-y-2">
-                        {uploadedFiles.map((file, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/50"
-                            data-testid={`uploaded-file-${index}`}
-                          >
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <FileText className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                              <div className="flex-1 min-w-0">
-                                <div className="text-sm font-medium truncate">{file.name}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {(file.size / 1024 / 1024).toFixed(2)} MB
-                                </div>
-                              </div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeFile(index)}
-                              data-testid={`button-remove-file-${index}`}
-                              type="button"
-                            >
-                              <XIcon className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
               </div>
 
               <div className="flex items-center space-x-3 col-span-2 p-4 rounded-xl bg-muted/50">
                 <Checkbox 
                   id="studentRegisterDisabled" 
-                  checked={studentRegisterDisabled}
-                  onCheckedChange={(checked) => setStudentRegisterDisabled(checked as boolean)}
+                  checked={!formData.studentCanRegister}
+                  onCheckedChange={(checked) => setFormData({ ...formData, studentCanRegister: !checked })}
                   data-testid="checkbox-student-register-disabled"
                 />
                 <Label 
@@ -689,19 +853,22 @@ export function ScheduleList() {
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setShowAddDialog(false)}
-              data-testid="button-cancel-add"
+              onClick={() => {
+                setShowAddDialog(false);
+                setShowEditDialog(false);
+                setEditingSchedule(null);
+                resetForm();
+              }}
+              data-testid="button-cancel"
             >
               キャンセル
             </Button>
             <Button
-              onClick={() => {
-                console.log('スケジュールを追加');
-                setShowAddDialog(false);
-              }}
+              onClick={handleSaveSchedule}
+              disabled={createScheduleMutation.isPending || updateScheduleMutation.isPending}
               data-testid="button-save-schedule"
             >
-              追加
+              {editingSchedule ? "更新" : "追加"}
             </Button>
           </DialogFooter>
         </DialogContent>
