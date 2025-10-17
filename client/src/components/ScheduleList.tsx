@@ -18,6 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // TODO: remove mock data
 const MOCK_STUDENTS = [
@@ -31,22 +39,27 @@ const MOCK_STUDENTS = [
   { id: "8", name: "中村愛", categoryId: "cat-2" },
 ];
 
-const MOCK_ATTENDANCES = [
+const MOCK_ATTENDANCE = [
   // スケジュール1の出席
-  { id: "a1", scheduleId: "1", studentId: "1", status: "○" },
-  { id: "a2", scheduleId: "1", studentId: "2", status: "○" },
-  { id: "a3", scheduleId: "1", studentId: "3", status: "△" },
-  { id: "a4", scheduleId: "1", studentId: "7", status: "×" },
+  { id: "a1", scheduleId: "1", studentId: "1", status: "present" },
+  { id: "a2", scheduleId: "1", studentId: "2", status: "present" },
+  { id: "a3", scheduleId: "1", studentId: "3", status: "maybe" },
+  { id: "a4", scheduleId: "1", studentId: "7", status: "absent" },
   // スケジュール2の出席
-  { id: "a5", scheduleId: "2", studentId: "4", status: "○" },
-  { id: "a6", scheduleId: "2", studentId: "5", status: "○" },
-  { id: "a7", scheduleId: "2", studentId: "6", status: "○" },
-  { id: "a8", scheduleId: "2", studentId: "8", status: "△" },
+  { id: "a5", scheduleId: "2", studentId: "4", status: "present" },
+  { id: "a6", scheduleId: "2", studentId: "5", status: "present" },
+  { id: "a7", scheduleId: "2", studentId: "6", status: "present" },
+  { id: "a8", scheduleId: "2", studentId: "8", status: "maybe" },
   // スケジュール3の出席
-  { id: "a9", scheduleId: "3", studentId: "1", status: "○" },
-  { id: "a10", scheduleId: "3", studentId: "2", status: "○" },
-  { id: "a11", scheduleId: "3", studentId: "3", status: "○" },
-  { id: "a12", scheduleId: "3", studentId: "7", status: "△" },
+  { id: "a9", scheduleId: "3", studentId: "1", status: "present" },
+  { id: "a10", scheduleId: "3", studentId: "2", status: "present" },
+  { id: "a11", scheduleId: "3", studentId: "3", status: "present" },
+  { id: "a12", scheduleId: "3", studentId: "7", status: "maybe" },
+] as const;
+
+const MOCK_CATEGORIES = [
+  { id: "cat-1", name: "U-12" },
+  { id: "cat-2", name: "U-15" },
 ];
 
 const MOCK_SCHEDULES = [
@@ -99,39 +112,15 @@ const MOCK_SCHEDULES = [
 export function ScheduleList() {
   const [view, setView] = useState<"list" | "calendar">("list");
   const [selectedSchedule, setSelectedSchedule] = useState<string | null>(null);
-  const [moveStudentDialog, setMoveStudentDialog] = useState<{
-    open: boolean;
-    studentId: string;
-    studentName: string;
-    currentScheduleId: string;
-  }>({ open: false, studentId: "", studentName: "", currentScheduleId: "" });
 
   // 出席状況を集計
   const getAttendanceCount = (scheduleId: string) => {
-    const attendances = MOCK_ATTENDANCES.filter(a => a.scheduleId === scheduleId);
+    const attendances = MOCK_ATTENDANCE.filter(a => a.scheduleId === scheduleId);
     return {
-      present: attendances.filter(a => a.status === "○").length,
-      maybe: attendances.filter(a => a.status === "△").length,
-      absent: attendances.filter(a => a.status === "×").length,
+      present: attendances.filter(a => a.status === "present").length,
+      maybe: attendances.filter(a => a.status === "maybe").length,
+      absent: attendances.filter(a => a.status === "absent").length,
     };
-  };
-
-  // スケジュールの参加者リストを取得
-  const getScheduleAttendees = (scheduleId: string) => {
-    const attendances = MOCK_ATTENDANCES.filter(a => a.scheduleId === scheduleId);
-    return attendances.map(attendance => {
-      const student = MOCK_STUDENTS.find(s => s.id === attendance.studentId);
-      return {
-        ...attendance,
-        studentName: student?.name || "不明",
-      };
-    });
-  };
-
-  // 生徒を別のスケジュールに移動
-  const handleMoveStudent = (targetScheduleId: string) => {
-    console.log(`生徒 ${moveStudentDialog.studentName} をスケジュール ${targetScheduleId} に移動`);
-    setMoveStudentDialog({ open: false, studentId: "", studentName: "", currentScheduleId: "" });
   };
 
   return (
@@ -253,6 +242,91 @@ export function ScheduleList() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* 参加者詳細ポップアップ */}
+      <Dialog open={!!selectedSchedule} onOpenChange={(open) => !open && setSelectedSchedule(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">参加者詳細</DialogTitle>
+          </DialogHeader>
+          {selectedSchedule && (() => {
+            const schedule = MOCK_SCHEDULES.find(s => s.id === selectedSchedule);
+            const participants = MOCK_ATTENDANCE
+              .filter(a => a.scheduleId === selectedSchedule)
+              .map(a => ({
+                ...a,
+                student: MOCK_STUDENTS.find(s => s.id === a.studentId)!
+              }));
+
+            return (
+              <div className="space-y-6">
+                <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-purple-600/10">
+                  <h3 className="font-semibold text-lg mb-2">{schedule?.title}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {schedule?.date && new Date(schedule.date).toLocaleDateString('ja-JP')} {schedule?.startTime}
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Users className="h-4 w-4" />
+                    <span>参加者 {participants.length}名</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {participants.map(({ student, status, studentId }) => (
+                      <div 
+                        key={student.id} 
+                        className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover-elevate"
+                        data-testid={`participant-${student.id}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg">
+                            {status === 'present' && <span className="text-green-600 dark:text-green-400">○</span>}
+                            {status === 'maybe' && <span className="text-yellow-600 dark:text-yellow-400">△</span>}
+                            {status === 'absent' && <span className="text-red-600 dark:text-red-400">×</span>}
+                          </span>
+                          <span className="font-medium">{student.name}</span>
+                          <Badge variant="outline" className="rounded-full text-xs">
+                            {MOCK_CATEGORIES.find(c => c.id === student.categoryId)?.name}
+                          </Badge>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="rounded-xl" data-testid={`button-move-${student.id}`}>
+                              移動
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuLabel>移動先を選択</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {MOCK_SCHEDULES.filter(s => s.id !== selectedSchedule).map(s => (
+                              <DropdownMenuItem 
+                                key={s.id}
+                                onClick={() => {
+                                  console.log(`Moving student ${studentId} to schedule ${s.id}`);
+                                }}
+                                data-testid={`move-to-${s.id}`}
+                              >
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{s.title}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(s.date).toLocaleDateString('ja-JP')} {s.startTime}
+                                  </span>
+                                </div>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
