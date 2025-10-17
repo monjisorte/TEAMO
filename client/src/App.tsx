@@ -37,33 +37,7 @@ interface PlayerData {
   teamId: string;
 }
 
-function PlayerPortal() {
-  const [player, setPlayer] = useState<PlayerData | null>(null);
-  const [, setLocation] = useLocation();
-  const [currentLocation] = useLocation();
-
-  useEffect(() => {
-    const savedPlayer = localStorage.getItem("playerData");
-    if (savedPlayer) {
-      setPlayer(JSON.parse(savedPlayer));
-    }
-  }, []);
-
-  const handleLoginSuccess = (playerData: PlayerData) => {
-    setPlayer(playerData);
-    setLocation("/player/attendance");
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("playerData");
-    setPlayer(null);
-    setLocation("/player");
-  };
-
-  if (!player) {
-    return <PlayerLogin onLoginSuccess={handleLoginSuccess} />;
-  }
-
+function PlayerPortalContent({ player, onLogout }: { player: PlayerData; onLogout: () => void }) {
   // Fetch team info
   const { data: teams } = useQuery<Array<{ id: string; name: string }>>({
     queryKey: ["/api/teams"],
@@ -97,7 +71,7 @@ function PlayerPortal() {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={handleLogout}
+                onClick={onLogout}
                 data-testid="button-logout"
               >
                 <LogOut className="w-4 h-4 mr-2" />
@@ -131,6 +105,35 @@ function PlayerPortal() {
       </div>
     </SidebarProvider>
   );
+}
+
+function PlayerPortal() {
+  const [player, setPlayer] = useState<PlayerData | null>(null);
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    const savedPlayer = localStorage.getItem("playerData");
+    if (savedPlayer) {
+      setPlayer(JSON.parse(savedPlayer));
+    }
+  }, []);
+
+  const handleLoginSuccess = (playerData: PlayerData) => {
+    setPlayer(playerData);
+    setLocation("/player/attendance");
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("playerData");
+    setPlayer(null);
+    setLocation("/player");
+  };
+
+  if (!player) {
+    return <PlayerLogin onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  return <PlayerPortalContent player={player} onLogout={handleLogout} />;
 }
 
 function Router() {

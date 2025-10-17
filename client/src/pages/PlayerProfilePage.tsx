@@ -106,11 +106,17 @@ export default function PlayerProfilePage({ playerId }: PlayerProfilePageProps) 
         photoUrl = photoPreview;
       }
 
-      const response = await apiRequest("PATCH", `/api/student/${playerId}`, {
+      const requestData = {
         ...data,
         photoUrl,
-      });
-      return response.json();
+      };
+      
+      console.log("Sending profile update:", requestData);
+
+      const response = await apiRequest("PATCH", `/api/student/${playerId}`, requestData);
+      const result = await response.json();
+      console.log("Profile update response:", result);
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/student/${playerId}`] });
