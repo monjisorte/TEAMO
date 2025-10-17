@@ -21,7 +21,14 @@ import TuitionPage from "@/pages/TuitionPage";
 import InvitePage from "@/pages/InvitePage";
 import LineNotificationsPage from "@/pages/LineNotificationsPage";
 import PlayerLogin from "@/pages/PlayerLogin";
-import PlayerDashboard from "@/pages/PlayerDashboard";
+import PlayerAttendancePage from "@/pages/PlayerAttendancePage";
+import PlayerCalendarPage from "@/pages/PlayerCalendarPage";
+import PlayerDocumentsPage from "@/pages/PlayerDocumentsPage";
+import PlayerContactPage from "@/pages/PlayerContactPage";
+import PlayerSettingsPage from "@/pages/PlayerSettingsPage";
+import { PlayerSidebar } from "@/components/PlayerSidebar";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
 interface PlayerData {
   id: string;
@@ -33,6 +40,7 @@ interface PlayerData {
 function PlayerPortal() {
   const [player, setPlayer] = useState<PlayerData | null>(null);
   const [, setLocation] = useLocation();
+  const [currentLocation] = useLocation();
 
   useEffect(() => {
     const savedPlayer = localStorage.getItem("playerData");
@@ -43,6 +51,7 @@ function PlayerPortal() {
 
   const handleLoginSuccess = (playerData: PlayerData) => {
     setPlayer(playerData);
+    setLocation("/player/attendance");
   };
 
   const handleLogout = () => {
@@ -55,7 +64,64 @@ function PlayerPortal() {
     return <PlayerLogin onLoginSuccess={handleLoginSuccess} />;
   }
 
-  return <PlayerDashboard player={player} onLogout={handleLogout} />;
+  const style = {
+    "--sidebar-width": "16rem",
+  };
+
+  return (
+    <SidebarProvider style={style as React.CSSProperties}>
+      <div className="flex h-screen w-full">
+        <PlayerSidebar />
+        <div className="flex flex-col flex-1 min-w-0">
+          <header className="flex items-center justify-between px-8 py-4 border-b bg-card/50 backdrop-blur-sm">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger data-testid="button-player-sidebar-toggle" />
+              <div>
+                <h1 className="text-lg font-semibold" data-testid="text-player-name">
+                  {player.name}さん
+                </h1>
+                <p className="text-xs text-muted-foreground">{player.email}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleLogout}
+                data-testid="button-logout"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                ログアウト
+              </Button>
+            </div>
+          </header>
+          <main className="flex-1 overflow-auto p-8">
+            <Switch>
+              <Route path="/player/attendance">
+                {() => <PlayerAttendancePage playerId={player.id} />}
+              </Route>
+              <Route path="/player/calendar">
+                {() => <PlayerCalendarPage playerId={player.id} />}
+              </Route>
+              <Route path="/player/documents">
+                {() => <PlayerDocumentsPage teamId={player.teamId} />}
+              </Route>
+              <Route path="/player/contact">
+                {() => <PlayerContactPage teamId={player.teamId} playerName={player.name} playerEmail={player.email} />}
+              </Route>
+              <Route path="/player/settings">
+                {() => <PlayerSettingsPage playerId={player.id} />}
+              </Route>
+              <Route path="/player">
+                {() => <PlayerAttendancePage playerId={player.id} />}
+              </Route>
+            </Switch>
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
+  );
 }
 
 function Router() {
