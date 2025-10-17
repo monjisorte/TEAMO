@@ -1,14 +1,15 @@
-# Design Guidelines: Sports Team Schedule & Attendance Management App (Coach Interface)
+# Design Guidelines: Sports Team Schedule & Attendance Management App (Coach Interface) - Modern Edition
 
 ## Design Approach
 
-**Hybrid Reference + System Approach**: Drawing inspiration from leading team management platforms (TeamSnap, SportsEngine, Hudl) while anchoring in Material Design principles for consistency and usability. This balances professional functionality with an engaging, sports-appropriate aesthetic that coaches will enjoy using daily.
+**Modern Productivity Hybrid**: Drawing inspiration from Linear's refined aesthetics and Notion's spacious layouts, anchored in contemporary design principles emphasizing gradients, generous spacing, and borderless components. This approach transforms team management into a visually striking, premium experience while maintaining professional functionality.
 
 **Key Design Principles**:
-- Clarity over complexity: Every element serves the coach's workflow
-- Action-oriented: CTAs and important functions are immediately accessible
-- Data-first: Information hierarchy prioritizes schedules and team data
-- Mobile-friendly: Coaches manage teams on-the-go
+- Spacious elegance: Generous whitespace creates breathing room
+- Gradient-rich: Vibrant color transitions add depth and energy
+- Borderless clarity: Subtle shadows replace harsh borders
+- Fluid motion: Smooth animations enhance interactions
+- Data-first with style: Information hierarchy meets visual appeal
 
 ---
 
@@ -17,150 +18,166 @@
 ### A. Color Palette
 
 **Light Mode:**
-- Primary: 212 100% 45% (Sport Blue - energetic, trustworthy)
-- Secondary: 142 71% 45% (Field Green - athletic, fresh)
-- Accent: 24 95% 53% (Alert Orange - for notifications, deadlines)
-- Neutral Base: 220 13% 96% (backgrounds)
-- Text Primary: 220 13% 18%
-- Text Secondary: 220 9% 46%
+- Primary Gradient: 212 100% 45% → 260 100% 55% (Sport Blue to Purple)
+- Secondary Gradient: 142 71% 45% → 168 76% 42% (Field Green to Teal)
+- Accent: 330 85% 55% (Energetic Pink for CTAs)
+- Background: 0 0% 99% (near-white)
+- Surface: 0 0% 100% with subtle shadow (no borders)
+- Text Primary: 220 13% 15%
+- Text Secondary: 220 9% 50%
 
 **Dark Mode:**
-- Primary: 212 100% 55%
-- Secondary: 142 71% 55%
-- Accent: 24 95% 58%
-- Neutral Base: 220 13% 10% (backgrounds)
-- Surface: 220 13% 15% (cards, panels)
+- Primary Gradient: 212 100% 60% → 260 100% 65%
+- Secondary Gradient: 142 71% 55% → 168 76% 52%
+- Accent: 330 85% 65%
+- Background: 220 13% 8%
+- Surface: 220 13% 12% with glow effect
 - Text Primary: 220 13% 98%
-- Text Secondary: 220 9% 70%
+- Text Secondary: 220 9% 72%
 
 **Semantic Colors:**
-- Success: 142 71% 45% (attendance confirmed)
-- Warning: 45 93% 47% (pending responses)
-- Error: 0 84% 60% (absences, conflicts)
+- Success: 142 71% 50%
+- Warning: 45 93% 55%
+- Error: 0 84% 65%
 
 ### B. Typography
 
 **Font Families:**
-- Primary: 'Inter' (Google Fonts) - clean, modern, excellent readability for UI
-- Headers: 'Inter' with tighter letter-spacing (-0.02em)
-- Data/Numbers: 'JetBrains Mono' (Google Fonts) - for times, dates, IDs
+- Primary: 'Inter' (Google Fonts) - Variable weight for fluid hierarchy
+- Accent Headers: 'Inter' with font-weight 700-800, tracking-tight
+- Monospace: 'JetBrains Mono' for data/codes
 
 **Hierarchy:**
-- H1: 2.5rem (40px), font-weight 700, line-height 1.2
-- H2: 2rem (32px), font-weight 600, line-height 1.3
-- H3: 1.5rem (24px), font-weight 600, line-height 1.4
-- Body: 1rem (16px), font-weight 400, line-height 1.6
-- Small/Caption: 0.875rem (14px), font-weight 400, line-height 1.5
-- Button Text: 0.9375rem (15px), font-weight 500
+- H1: 3rem (48px), font-weight 800, tracking-tight, gradient text
+- H2: 2.25rem (36px), font-weight 700, tracking-tight
+- H3: 1.75rem (28px), font-weight 600
+- Body: 1.0625rem (17px), font-weight 400, line-height 1.7
+- Small: 0.9375rem (15px), font-weight 400
+- Buttons: 0.9375rem (15px), font-weight 600
 
 ### C. Layout System
 
-**Spacing Primitives**: Use Tailwind units of 2, 4, 6, 8, 12, 16, 20
-- Component padding: p-4 to p-6
-- Section spacing: py-12 to py-20
-- Card gaps: gap-4 to gap-6
-- Input spacing: p-3
-- Button padding: px-6 py-3
+**Spacing Primitives**: Tailwind units of 4, 8, 12, 16, 24, 32
+- Component padding: p-8 to p-12
+- Section spacing: py-16 to py-32 (generous vertical rhythm)
+- Card gaps: gap-8 to gap-12
+- Form spacing: space-y-8
+- Button padding: px-8 py-4
 
 **Grid System:**
-- Container max-width: max-w-7xl (1280px)
-- Main content: 2-column layout (sidebar + content area)
-- Forms: Single column, max-w-2xl for readability
-- Schedule cards: Grid with responsive columns (grid-cols-1 md:grid-cols-2 lg:grid-cols-3)
+- Container: max-w-7xl with px-12 (spacious margins)
+- Dashboard: 3-column asymmetric grid (sidebar 280px + main content)
+- Cards: grid-cols-1 md:grid-cols-2 xl:grid-cols-3 with gap-8
+- Forms: max-w-3xl, single column with ample breathing room
 
 ### D. Component Library
 
 **Navigation:**
-- Top navbar: Team logo/name, quick actions (Add Schedule, Notifications), profile menu
-- Sidebar: Icon + text navigation (Dashboard, Schedules, Team, Venues, Settings)
-- Breadcrumbs: For deep navigation paths
+- Top navbar: Glassmorphic effect with backdrop-blur, gradient underline on active
+- Sidebar: Icon-first with smooth expand animation, gradient accent on hover
+- No breadcrumbs (spacious design eliminates need)
+
+**Cards (Borderless Design):**
+- Background: Subtle gradient overlays on white/dark surface
+- Shadow: shadow-lg with colored glow (primary color at 10% opacity)
+- Hover: Lift with shadow-2xl and slight scale (scale-102)
+- Padding: p-8 to p-10 (generous internal spacing)
+- Corner radius: rounded-2xl (softer, modern)
 
 **Data Display:**
-- Cards: Rounded corners (rounded-lg), subtle shadow (shadow-sm), hover lift effect
-- Tables: Striped rows, sortable headers, action column with icons
-- Calendar View: Month/week/day toggle, color-coded by category, click-to-create events
-- List View: Dense schedule list with date grouping, sport icons, attendance indicators
+- Tables: Remove all borders, use gradient backgrounds for headers, hover row highlights
+- Calendar: Gradient event blocks, smooth day transitions
+- Stats cards: Large numbers with gradient text, minimal supporting copy
 
 **Forms & Inputs:**
-- Text inputs: Rounded (rounded-md), clear focus states with primary color ring
-- Select dropdowns: Custom styled with sport icons for sports selection
-- Date/Time pickers: Integrated calendar overlay, time slots
-- Multi-step forms: Progress indicator for club registration
-- Toggle switches: For optional fields (start/end time)
-- Text areas: For notes/remarks with character count
+- Inputs: No borders, gradient bottom-border (2px) on focus, bg-surface with shadow-md
+- Selects: Custom dropdown with gradient selected state
+- Date/Time: Overlay calendar with smooth slide-in animation
+- Toggles: Gradient fill when active, smooth spring animation
+- Character counts: Gradient text for visual interest
 
 **Buttons:**
-- Primary: Solid background with primary color, white text, rounded-md
-- Secondary: Outline with primary color border
-- Danger: Red for deletions
-- Icon buttons: For quick actions (edit, delete, copy)
-- FAB (Floating Action Button): Bottom-right corner for "Add Schedule"
+- Primary: Gradient background (primary gradient), white text, rounded-xl, shadow-lg
+- Secondary: Transparent with gradient border (2px), gradient text
+- Icon buttons: Circular with gradient on hover
+- FAB: Gradient with pulsing shadow animation
 
 **Overlays:**
-- Modals: Centered, max-w-2xl, backdrop blur
-- Slide-overs: From right for quick forms (Add Coach, Add Venue)
-- Toast notifications: Top-right corner for confirmations/errors
-- Dropdowns: For action menus and filters
+- Modals: Backdrop blur-xl, slide-up animation (300ms ease-out), max-w-3xl
+- Slide-overs: From right with smooth transform, gradient header
+- Toasts: Gradient left-border, slide-in from top-right
+- Dropdowns: Soft shadow-2xl, smooth scale-in animation
 
 **Status Indicators:**
-- Badges: Pill-shaped for categories (学年), attendance status
-- Progress bars: For form completion, team capacity
-- Icons: Heroicons for consistent iconography (calendar, users, map-pin, clipboard)
+- Badges: Gradient backgrounds (subtle), rounded-full, no borders
+- Progress: Gradient-filled bars with smooth transitions
+- Icons: Heroicons with gradient color fills
 
-### E. Visual Enhancements
+### E. Animations & Motion
 
-**Illustrations/Images:**
-- Empty states: Sport-themed illustrations when no data (no schedules yet, no venues)
-- Sport icons: Baseball, soccer, basketball icons in registration and display
-- Team ID display: Large, prominent ID card design when club is created
+**Core Animations:**
+- Page transitions: Smooth fade + subtle slide (200ms)
+- Card interactions: Transform scale-102 with shadow growth (150ms ease-out)
+- Button press: Scale-95 active state (100ms)
+- Form validation: Gentle shake for errors, slide-down for messages
+- Loading: Gradient shimmer skeleton screens
+- Success states: Scale pulse + gradient flash (500ms)
 
-**Micro-interactions:**
-- Button hover: Slight scale (scale-105), shadow increase
-- Card hover: Lift effect with shadow-md
-- Form validation: Real-time with inline messages
-- Loading states: Skeleton screens for data loading
-- Success animations: Checkmark animation on save
-
-**Spacing & Rhythm:**
-- Consistent vertical rhythm with py-8 between major sections
-- Card grid spacing: gap-6 for breathability
-- Form field spacing: space-y-4 for comfortable scanning
-- Dashboard widget spacing: gap-4 to gap-6
+**Motion Principles:**
+- Use spring physics for natural feel (bounce-in effects)
+- Stagger animations for list items (50ms delay each)
+- Parallax scroll on dashboard stats
+- Smooth gradient transitions on hover (300ms)
 
 ### F. Page-Specific Designs
 
-**Club Registration Flow:**
-- Multi-step wizard (4 steps): Basic Info → Sport Selection → Owner Account → Confirmation
-- Visual progress indicator at top
-- Large sport selection cards with icons
-- Success screen with generated Team ID prominently displayed
+**Club Registration:**
+- Full-screen wizard with gradient progress bar
+- Large card design (max-w-4xl) with generous p-12
+- Sport selection: Oversized cards with gradient hover states
+- Success screen: Animated gradient backdrop, large Team ID with gradient text
 
 **Dashboard:**
-- Top stats row: Upcoming events, team members, active coaches (3-column grid)
-- Recent schedules section with cards
-- Quick actions panel: Add Schedule, Add Coach, Manage Venues
-- Calendar widget showing week view
+- Hero stats row: 3 large gradient cards with animated numbers
+- Schedule preview: Borderless cards in masonry-style grid
+- Quick actions: Gradient FAB cluster (bottom-right)
+- Calendar widget: Gradient event blocks, smooth month transitions
 
 **Schedule Management:**
-- Calendar/List view toggle (tabs)
-- Filter sidebar: By category, venue, date range
-- Add Schedule button (prominent, top-right)
-- Schedule cards: Date/time header, title, venue, category badge, attendance count, quick actions
+- Floating filter panel (glassmorphic, top-left)
+- Grid/List toggle with smooth layout transition
+- Schedule cards: Gradient category ribbons, borderless with shadow-xl
+- Add button: Gradient FAB with ripple effect
 
-**Venue & Category Management:**
-- Simple CRUD interface with tables
-- Add button triggers slide-over form
-- Edit inline or in modal
-- Delete with confirmation
+**Images:**
+- Dashboard hero: Abstract sports-themed gradient mesh background (top section, 40vh)
+- Empty states: Minimal line illustrations with gradient accents
+- Sport icons: Duotone style with gradient fills
+
+### G. Visual Enhancements
+
+**Gradient Applications:**
+- Headers: Gradient text for H1 titles
+- Dividers: 1px gradient lines instead of solid borders
+- Backgrounds: Subtle mesh gradients on hero sections
+- Hover states: Gradient overlay on interactive elements
+- Shadows: Colored shadows using primary gradient colors
+
+**Spacing Strategy:**
+- Section padding: py-24 to py-32 for desktop, py-16 for mobile
+- Card spacing: Minimum gap-8 between elements
+- Form fields: mb-8 for generous vertical rhythm
+- Content max-width: Always centered with ample side margins (px-12)
 
 ---
 
 ## Implementation Notes
 
-- Use Heroicons CDN for all icons
-- Prioritize mobile responsiveness (coaches use phones on field)
-- Implement dark mode toggle in profile menu
-- Use skeleton loaders during data fetch
-- Maintain consistent 8px spacing grid throughout
-- All interactive elements have clear hover/focus states
-- Forms include helpful placeholder text and validation messages in Japanese
+- Use Heroicons CDN with gradient color overlays
+- Implement gradient utilities: bg-gradient-to-r, from-[color], via-[color], to-[color]
+- Dark mode: Increase gradient saturation by 15% for vibrancy
+- All transitions use ease-out or spring timing
+- Shadow colors match gradient hues at low opacity
+- Maintain 8px base grid, but scale up spacing significantly
+- Remove all border utilities except gradient focus rings
+- Form validation uses smooth animations, never jarring

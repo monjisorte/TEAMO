@@ -40,11 +40,11 @@ function App() {
           <div className="flex h-screen w-full">
             <AppSidebar />
             <div className="flex flex-col flex-1 min-w-0">
-              <header className="flex items-center justify-between p-4 border-b">
+              <header className="flex items-center justify-between px-8 py-4 border-b bg-card/50 backdrop-blur-sm">
                 <SidebarTrigger data-testid="button-sidebar-toggle" />
                 <ThemeToggle />
               </header>
-              <main className="flex-1 overflow-auto p-6">
+              <main className="flex-1 overflow-auto p-8">
                 <Router />
               </main>
             </div>

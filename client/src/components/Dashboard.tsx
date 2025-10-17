@@ -39,52 +39,58 @@ const MOCK_SCHEDULES = [
 
 export function Dashboard() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">ダッシュボード</h1>
-        <p className="text-muted-foreground">チームの活動状況を確認</p>
+        <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">ダッシュボード</h1>
+        <p className="text-muted-foreground mt-2 text-lg">チームの活動状況を確認</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">今後の予定</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
+            <CardTitle className="text-sm font-medium text-muted-foreground">今後の予定</CardTitle>
+            <div className="rounded-xl bg-primary/10 p-3">
+              <Calendar className="h-5 w-5 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-upcoming-events">{MOCK_STATS.upcomingEvents}</div>
-            <p className="text-xs text-muted-foreground">イベント</p>
+            <div className="text-4xl font-bold" data-testid="text-upcoming-events">{MOCK_STATS.upcomingEvents}</div>
+            <p className="text-sm text-muted-foreground mt-1">イベント</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">チームメンバー</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
+            <CardTitle className="text-sm font-medium text-muted-foreground">チームメンバー</CardTitle>
+            <div className="rounded-xl bg-primary/10 p-3">
+              <Users className="h-5 w-5 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-team-members">{MOCK_STATS.teamMembers}</div>
-            <p className="text-xs text-muted-foreground">名</p>
+            <div className="text-4xl font-bold" data-testid="text-team-members">{MOCK_STATS.teamMembers}</div>
+            <p className="text-sm text-muted-foreground mt-1">名</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">コーチ</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
+            <CardTitle className="text-sm font-medium text-muted-foreground">コーチ</CardTitle>
+            <div className="rounded-xl bg-primary/10 p-3">
+              <Users className="h-5 w-5 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-active-coaches">{MOCK_STATS.activeCoaches}</div>
-            <p className="text-xs text-muted-foreground">名</p>
+            <div className="text-4xl font-bold" data-testid="text-active-coaches">{MOCK_STATS.activeCoaches}</div>
+            <p className="text-sm text-muted-foreground mt-1">名</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
+      <div className="grid gap-8 md:grid-cols-2">
+        <Card className="border-0 shadow-xl">
+          <CardHeader className="pb-6">
             <div className="flex items-center justify-between">
-              <CardTitle>直近のスケジュール</CardTitle>
+              <CardTitle className="text-xl">直近のスケジュール</CardTitle>
               <Button variant="ghost" size="sm" data-testid="button-view-all">
                 すべて表示
               </Button>
@@ -94,47 +100,47 @@ export function Dashboard() {
             {MOCK_SCHEDULES.map((schedule) => (
               <div
                 key={schedule.id}
-                className="flex items-start gap-4 p-3 rounded-lg hover-elevate"
+                className="flex items-start gap-4 p-4 rounded-2xl bg-muted/50 hover-elevate transition-all"
                 data-testid={`schedule-item-${schedule.id}`}
               >
-                <div className="flex flex-col items-center">
-                  <div className="text-2xl font-bold text-primary">
+                <div className="flex flex-col items-center justify-center min-w-[60px] h-16 rounded-xl bg-gradient-to-br from-primary to-purple-600 text-white">
+                  <div className="text-2xl font-bold">
                     {new Date(schedule.date).getDate()}
                   </div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs opacity-90">
                     {new Date(schedule.date).toLocaleDateString('ja-JP', { month: 'short' })}
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium truncate">{schedule.title}</h4>
-                  <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                  <h4 className="font-semibold truncate">{schedule.title}</h4>
+                  <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
                     <span>{schedule.time}</span>
                     <span>•</span>
                     <MapPin className="h-3 w-3" />
                     <span className="truncate">{schedule.venue}</span>
                   </div>
-                  <Badge variant="outline" className="mt-2">{schedule.category}</Badge>
+                  <Badge variant="outline" className="mt-3 rounded-full">{schedule.category}</Badge>
                 </div>
               </div>
             ))}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>クイックアクション</CardTitle>
+        <Card className="border-0 shadow-xl">
+          <CardHeader className="pb-6">
+            <CardTitle className="text-xl">クイックアクション</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <Button className="w-full justify-start gap-2" data-testid="button-add-schedule">
-              <Plus className="h-4 w-4" />
+          <CardContent className="space-y-4">
+            <Button className="w-full justify-start gap-3 h-14 text-base rounded-xl" data-testid="button-add-schedule">
+              <Plus className="h-5 w-5" />
               スケジュールを追加
             </Button>
-            <Button variant="outline" className="w-full justify-start gap-2" data-testid="button-add-coach">
-              <Plus className="h-4 w-4" />
+            <Button variant="outline" className="w-full justify-start gap-3 h-14 text-base rounded-xl border-2" data-testid="button-add-coach">
+              <Plus className="h-5 w-5" />
               コーチを追加
             </Button>
-            <Button variant="outline" className="w-full justify-start gap-2" data-testid="button-manage-venues">
-              <MapPin className="h-4 w-4" />
+            <Button variant="outline" className="w-full justify-start gap-3 h-14 text-base rounded-xl border-2" data-testid="button-manage-venues">
+              <MapPin className="h-5 w-5" />
               活動場所を管理
             </Button>
           </CardContent>

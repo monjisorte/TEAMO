@@ -45,36 +45,36 @@ export function ClubRegistration() {
 
   if (step === 4 && teamId) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background p-4">
-        <Card className="w-full max-w-2xl">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="rounded-full bg-primary/10 p-4">
-                <CheckCircle2 className="h-12 w-12 text-primary" />
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary/5 via-purple-500/5 to-background p-4">
+        <Card className="w-full max-w-3xl border-0 shadow-2xl">
+          <CardHeader className="text-center pb-8">
+            <div className="flex justify-center mb-6">
+              <div className="rounded-3xl bg-gradient-to-br from-primary to-purple-600 p-6">
+                <CheckCircle2 className="h-16 w-16 text-white" />
               </div>
             </div>
-            <CardTitle className="text-2xl">クラブ登録完了</CardTitle>
-            <CardDescription>チームIDが発行されました</CardDescription>
+            <CardTitle className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">クラブ登録完了</CardTitle>
+            <CardDescription className="text-lg mt-2">チームIDが発行されました</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="bg-muted/50 p-6 rounded-lg text-center">
-              <p className="text-sm text-muted-foreground mb-2">チームID</p>
-              <p className="text-3xl font-mono font-bold tracking-wider" data-testid="text-team-id">{teamId}</p>
+          <CardContent className="space-y-8">
+            <div className="bg-gradient-to-br from-primary/10 to-purple-600/10 p-8 rounded-2xl text-center">
+              <p className="text-sm text-muted-foreground mb-3">チームID</p>
+              <p className="text-5xl font-mono font-bold tracking-wider bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent" data-testid="text-team-id">{teamId}</p>
             </div>
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">登録情報:</p>
-              <div className="grid gap-2 text-sm">
-                <div className="flex justify-between">
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground font-medium">登録情報:</p>
+              <div className="grid gap-4 text-base">
+                <div className="flex justify-between items-center p-4 rounded-xl bg-muted/30">
                   <span className="text-muted-foreground">クラブ名:</span>
-                  <span className="font-medium">{formData.clubName}</span>
+                  <span className="font-semibold">{formData.clubName}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center p-4 rounded-xl bg-muted/30">
                   <span className="text-muted-foreground">スポーツ:</span>
-                  <Badge variant="outline">{SPORTS.find(s => s.value === formData.sport)?.label}</Badge>
+                  <Badge variant="outline" className="rounded-full text-base px-4 py-1">{SPORTS.find(s => s.value === formData.sport)?.label}</Badge>
                 </div>
               </div>
             </div>
-            <Button className="w-full" onClick={() => console.log('ダッシュボードへ')} data-testid="button-go-dashboard">
+            <Button className="w-full h-14 text-base rounded-xl" onClick={() => console.log('ダッシュボードへ')} data-testid="button-go-dashboard">
               ダッシュボードへ
             </Button>
           </CardContent>
@@ -84,27 +84,27 @@ export function ClubRegistration() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background p-4">
-      <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <div className="flex items-center gap-2 mb-2">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary/5 via-purple-500/5 to-background p-4">
+      <Card className="w-full max-w-3xl border-0 shadow-2xl">
+        <CardHeader className="pb-8">
+          <div className="flex items-center gap-3 mb-6">
             {[1, 2, 3].map((s) => (
               <div
                 key={s}
-                className={`h-2 flex-1 rounded-full ${s <= step ? "bg-primary" : "bg-muted"}`}
+                className={`h-2.5 flex-1 rounded-full transition-all ${s <= step ? "bg-gradient-to-r from-primary to-purple-600" : "bg-muted"}`}
               />
             ))}
           </div>
-          <CardTitle>
+          <CardTitle className="text-3xl">
             {step === 1 && "基本情報"}
             {step === 2 && "スポーツ選択"}
             {step === 3 && "オーナーアカウント"}
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-base mt-2">
             ステップ {step} / 3
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-8">
           {step === 1 && (
             <div className="space-y-4">
               <div className="space-y-2">
@@ -131,21 +131,21 @@ export function ClubRegistration() {
           )}
 
           {step === 2 && (
-            <div className="space-y-4">
-              <Label>スポーツを選択してください *</Label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-6">
+              <Label className="text-base">スポーツを選択してください *</Label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {SPORTS.map((sport) => (
                   <Card
                     key={sport.value}
-                    className={`cursor-pointer hover-elevate active-elevate-2 ${
-                      formData.sport === sport.value ? "ring-2 ring-primary" : ""
+                    className={`cursor-pointer hover-elevate active-elevate-2 border-0 shadow-lg transition-all ${
+                      formData.sport === sport.value ? "ring-4 ring-primary shadow-xl scale-105" : ""
                     }`}
                     onClick={() => updateField("sport", sport.value)}
                     data-testid={`card-sport-${sport.value}`}
                   >
-                    <CardContent className="flex flex-col items-center justify-center p-6">
-                      <div className="text-4xl mb-2">{sport.icon}</div>
-                      <p className="font-medium">{sport.label}</p>
+                    <CardContent className="flex flex-col items-center justify-center p-8">
+                      <div className="text-6xl mb-4">{sport.icon}</div>
+                      <p className="font-semibold text-lg">{sport.label}</p>
                     </CardContent>
                   </Card>
                 ))}
@@ -190,23 +190,24 @@ export function ClubRegistration() {
             </div>
           )}
 
-          <div className="flex justify-between gap-4 pt-4">
+          <div className="flex justify-between gap-4 pt-6">
             <Button
               variant="outline"
               onClick={handleBack}
               disabled={step === 1}
+              className="h-12 px-6 rounded-xl text-base"
               data-testid="button-back"
             >
-              <ChevronLeft className="h-4 w-4 mr-1" />
+              <ChevronLeft className="h-5 w-5 mr-2" />
               戻る
             </Button>
             {step < 3 ? (
-              <Button onClick={handleNext} data-testid="button-next">
+              <Button onClick={handleNext} className="h-12 px-6 rounded-xl text-base" data-testid="button-next">
                 次へ
-                <ChevronRight className="h-4 w-4 ml-1" />
+                <ChevronRight className="h-5 w-5 ml-2" />
               </Button>
             ) : (
-              <Button onClick={handleSubmit} data-testid="button-submit">
+              <Button onClick={handleSubmit} className="h-12 px-6 rounded-xl text-base" data-testid="button-submit">
                 登録完了
               </Button>
             )}

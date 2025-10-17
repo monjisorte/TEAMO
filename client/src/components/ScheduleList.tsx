@@ -57,14 +57,14 @@ export function ScheduleList() {
   const [view, setView] = useState<"list" | "calendar">("list");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">スケジュール管理</h1>
-          <p className="text-muted-foreground">日々の活動を登録・管理</p>
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">スケジュール管理</h1>
+          <p className="text-muted-foreground mt-2 text-lg">日々の活動を登録・管理</p>
         </div>
-        <Button data-testid="button-add-schedule">
-          <Plus className="h-4 w-4 mr-2" />
+        <Button className="h-12 px-6 rounded-xl text-base" data-testid="button-add-schedule">
+          <Plus className="h-5 w-5 mr-2" />
           新規追加
         </Button>
       </div>
@@ -81,50 +81,50 @@ export function ScheduleList() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="list" className="space-y-4 mt-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <TabsContent value="list" className="space-y-4 mt-8">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {MOCK_SCHEDULES.map((schedule) => (
-              <Card key={schedule.id} className="hover-elevate" data-testid={`schedule-card-${schedule.id}`}>
-                <CardHeader className="space-y-0 pb-4">
-                  <div className="flex items-start justify-between gap-2">
+              <Card key={schedule.id} className="border-0 shadow-lg hover-elevate transition-all" data-testid={`schedule-card-${schedule.id}`}>
+                <CardHeader className="space-y-0 pb-6">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <CardTitle className="text-lg truncate">{schedule.title}</CardTitle>
-                      <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
+                      <CardTitle className="text-xl truncate">{schedule.title}</CardTitle>
+                      <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
                         <span>{new Date(schedule.date).toLocaleDateString('ja-JP')}</span>
                       </div>
                     </div>
-                    <Badge variant="outline">{schedule.category}</Badge>
+                    <Badge variant="outline" className="rounded-full">{schedule.category}</Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Clock className="h-3 w-3" />
+                <CardContent className="space-y-4">
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center gap-3 text-muted-foreground">
+                      <Clock className="h-4 w-4" />
                       <span>
                         {schedule.startTime}
                         {schedule.endTime && ` - ${schedule.endTime}`}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
+                    <div className="flex items-center gap-3 text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
                       <span className="truncate">{schedule.venue}</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
                       <span className="text-xs text-muted-foreground">集合:</span>
-                      <span className="text-xs font-medium">{schedule.gatherTime}</span>
+                      <span className="text-sm font-semibold">{schedule.gatherTime}</span>
                     </div>
                   </div>
                   {schedule.notes && (
-                    <p className="text-xs text-muted-foreground border-t pt-3">{schedule.notes}</p>
+                    <p className="text-sm text-muted-foreground p-3 rounded-xl bg-muted/30">{schedule.notes}</p>
                   )}
-                  <div className="flex gap-2 pt-2">
-                    <Button variant="outline" size="sm" className="flex-1" data-testid={`button-edit-${schedule.id}`}>
-                      <Edit className="h-3 w-3 mr-1" />
+                  <div className="flex gap-3 pt-3">
+                    <Button variant="outline" size="sm" className="flex-1 rounded-xl" data-testid={`button-edit-${schedule.id}`}>
+                      <Edit className="h-4 w-4 mr-2" />
                       編集
                     </Button>
-                    <Button variant="outline" size="sm" data-testid={`button-delete-${schedule.id}`}>
-                      <Trash2 className="h-3 w-3" />
+                    <Button variant="outline" size="sm" className="rounded-xl" data-testid={`button-delete-${schedule.id}`}>
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardContent>
@@ -133,13 +133,15 @@ export function ScheduleList() {
           </div>
         </TabsContent>
 
-        <TabsContent value="calendar" className="mt-6">
-          <Card>
-            <CardContent className="p-6">
+        <TabsContent value="calendar" className="mt-8">
+          <Card className="border-0 shadow-xl">
+            <CardContent className="p-12">
               <div className="flex items-center justify-center h-96 text-muted-foreground">
                 <div className="text-center">
-                  <CalendarDays className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>カレンダービューは準備中です</p>
+                  <div className="rounded-2xl bg-primary/10 p-6 inline-block mb-6">
+                    <CalendarDays className="h-16 w-16 text-primary" />
+                  </div>
+                  <p className="text-lg">カレンダービューは準備中です</p>
                 </div>
               </div>
             </CardContent>

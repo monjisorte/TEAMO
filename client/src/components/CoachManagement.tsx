@@ -46,16 +46,16 @@ export function CoachManagement() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">コーチ管理</h1>
-          <p className="text-muted-foreground">チームのコーチを登録・管理</p>
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">コーチ管理</h1>
+          <p className="text-muted-foreground mt-2 text-lg">チームのコーチを登録・管理</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button data-testid="button-add-coach">
-              <Plus className="h-4 w-4 mr-2" />
+            <Button className="h-12 px-6 rounded-xl text-base" data-testid="button-add-coach">
+              <Plus className="h-5 w-5 mr-2" />
               コーチを追加
             </Button>
           </DialogTrigger>
@@ -111,43 +111,44 @@ export function CoachManagement() {
         </Dialog>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {coaches.map((coach) => (
-          <Card key={coach.id} className="hover-elevate" data-testid={`coach-card-${coach.id}`}>
-            <CardHeader className="space-y-0 pb-4">
+          <Card key={coach.id} className="border-0 shadow-lg hover-elevate transition-all" data-testid={`coach-card-${coach.id}`}>
+            <CardHeader className="space-y-0 pb-6">
               <div className="flex items-start gap-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                <Avatar className="h-16 w-16">
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white font-semibold text-xl">
                     {getInitials(coach.name)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <CardTitle className="text-lg truncate">{coach.name}</CardTitle>
-                  <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                    <Mail className="h-3 w-3" />
+                  <CardTitle className="text-xl truncate">{coach.name}</CardTitle>
+                  <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
+                    <Mail className="h-4 w-4" />
                     <span className="truncate">{coach.email}</span>
                   </div>
                   {coach.phone && (
-                    <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                      <Phone className="h-3 w-3" />
+                    <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                      <Phone className="h-4 w-4" />
                       <span>{coach.phone}</span>
                     </div>
                   )}
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="flex gap-2">
-              <Button variant="outline" size="sm" className="flex-1" data-testid={`button-edit-coach-${coach.id}`}>
-                <Edit className="h-3 w-3 mr-1" />
+            <CardContent className="flex gap-3">
+              <Button variant="outline" size="sm" className="flex-1 rounded-xl" data-testid={`button-edit-coach-${coach.id}`}>
+                <Edit className="h-4 w-4 mr-2" />
                 編集
               </Button>
               <Button
                 variant="outline"
                 size="sm"
+                className="rounded-xl"
                 onClick={() => handleDelete(coach.id)}
                 data-testid={`button-delete-coach-${coach.id}`}
               >
-                <Trash2 className="h-3 w-3" />
+                <Trash2 className="h-4 w-4" />
               </Button>
             </CardContent>
           </Card>
