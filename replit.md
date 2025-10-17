@@ -8,6 +8,26 @@ The application provides functionality for managing categories (age groups like 
 
 ## Recent Changes
 
+**October 17, 2025 - Category Team Isolation Implementation**
+- Implemented complete team isolation for categories to prevent cross-team category visibility
+- Database schema updates:
+  - Added `teamId` column to `categories` table (varchar, NOT NULL) with foreign key to teams
+  - Enforced team-level isolation at database level
+  - Used `npm run db:push --force` to apply schema changes (existing category data cleared due to NOT NULL constraint)
+- Backend API updates:
+  - Modified GET /api/categories to accept teamId query parameter and filter categories by team
+  - Updated POST /api/categories to include teamId from authenticated coach's team
+  - All category-related endpoints now enforce team isolation
+- Frontend component updates:
+  - CategoryManagement: Updated to use real API with teamId filtering (replaced mock data)
+  - ScheduleList: Updated category fetching with teamId parameter
+  - CategorySelection (player): Added teamId prop to fetch only team-specific categories
+  - PlayerAttendancePage & PlayerProfilePage: Pass teamId from player data to CategorySelection
+- Simplified CategoryManagement UI:
+  - Removed student count/list features for cleaner implementation
+  - Focused on core category management functionality
+- Result: Each team now has completely isolated categories with no cross-contamination
+
 **October 17, 2025 - Player Profile Management Implementation**
 - Implemented comprehensive profile management system for players
   - Renamed PlayerSettingsPage to PlayerProfilePage with expanded functionality
