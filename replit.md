@@ -8,6 +8,22 @@ The application provides functionality for managing categories (age groups like 
 
 ## Recent Changes
 
+**October 17, 2025 - Player Profile Management Implementation**
+- Implemented comprehensive profile management system for players
+  - Renamed PlayerSettingsPage to PlayerProfilePage with expanded functionality
+  - Added profile form with name (required), school name, birthdate, and photo upload
+  - Integrated category selection within profile management page
+- Created backend API endpoints for player profile management:
+  - GET /api/student/:studentId - Fetch complete player profile including all fields
+  - PATCH /api/student/:studentId - Update player profile (name, schoolName, birthDate, photoUrl)
+- Fixed React hooks order issue by refactoring PlayerPortal into two components:
+  - PlayerPortal: Handles authentication state and routing
+  - PlayerPortalContent: Contains useQuery hooks and renders authenticated player UI
+- Photo upload functionality implemented using base64 encoding (object storage not yet configured)
+- Profile updates persist correctly across page reloads with proper cache invalidation
+- Added debugging console logs for profile update flow
+- Successfully tested full profile update workflow with e2e tests
+
 **October 17, 2025 - Player Interface Unification with Sidebar Navigation**
 - Renamed all "student" terminology to "player" throughout the application
   - Changed URLs from `/student` to `/player`
@@ -113,7 +129,12 @@ The application implements a custom design system with:
   - Visual attendance status display
 - Shared documents page for team resources
 - Contact page to reach team administrators
-- Settings page for category preferences
+- Profile management page (プロフィール管理):
+  - Personal information editing (name, school name, birthdate)
+  - Photo upload with preview (base64 encoding)
+  - Category selection for schedule filtering
+  - Form validation with zod
+  - Real-time save with success toast notifications
 - Consistent gradient-based design system with coach interface
 
 ### Backend Architecture
