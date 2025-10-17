@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,52 +15,93 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-
-// TODO: remove mock data
-const MOCK_STUDENTS = [
-  { id: "1", name: "田中太郎", categoryId: "cat-1" },
-  { id: "2", name: "佐藤花子", categoryId: "cat-1" },
-  { id: "3", name: "鈴木一郎", categoryId: "cat-1" },
-  { id: "4", name: "高橋美咲", categoryId: "cat-2" },
-  { id: "5", name: "渡辺健太", categoryId: "cat-2" },
-  { id: "6", name: "伊藤さくら", categoryId: "cat-2" },
-  { id: "7", name: "山本大輔", categoryId: "cat-1" },
-  { id: "8", name: "中村愛", categoryId: "cat-2" },
-];
-
-const MOCK_CATEGORIES = [
-  { id: "cat-1", name: "U-12", description: "12歳以下" },
-  { id: "cat-2", name: "U-15", description: "15歳以下" },
-  { id: "cat-3", name: "U-18", description: "18歳以下" },
-  { id: "cat-4", name: "全学年", description: "全員参加" },
-];
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import type { Category, Team } from "@shared/schema";
 
 export function CategoryManagement() {
-  const [categories, setCategories] = useState(MOCK_CATEGORIES);
+  const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newCategory, setNewCategory] = useState({ name: "", description: "" });
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  const getStudentCount = (categoryId: string) => {
-    return MOCK_STUDENTS.filter(s => s.categoryId === categoryId).length;
-  };
+  // Get the first team (coach's team)
+  const { data: teams = [] } = useQuery<Team[]>({
+    queryKey: ["/api/teams"],
+  });
+  const team = teams[0];
 
-  const getCategoryStudents = (categoryId: string) => {
-    return MOCK_STUDENTS.filter(s => s.categoryId === categoryId);
-  };
+  // Fetch categories for this team
+  const { data: categories = [], isLoading } = useQuery<Category[]>({
+    queryKey: ["/api/categories", team?.id],
+    enabled: !!team?.id,
+  });
 
-  const handleAdd = () => {
-    if (newCategory.name) {
-      setCategories([...categories, { id: `cat-${Date.now()}`, ...newCategory }]);
+  const createCategoryMutation = useMutation({
+    mutationFn: async (data: { teamId: string; name: string; description?: string }) => {
+      const response = await apiRequest("POST", "/api/categories", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/categories", team?.id] });
       setNewCategory({ name: "", description: "" });
       setIsDialogOpen(false);
-      console.log('カテゴリを追加:', newCategory);
+      toast({
+        title: "成功",
+        description: "カテゴリを追加しました",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "カテゴリの追加に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (categoryId: string) => {
+      const response = await apiRequest("DELETE", `/api/categories/${categoryId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/categories", team?.id] });
+      toast({
+        title: "成功",
+        description: "カテゴリを削除しました",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "カテゴリの削除に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAdd = () => {
+    if (!team) {
+      toast({
+        title: "エラー",
+        description: "チームが見つかりません",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newCategory.name) {
+      createCategoryMutation.mutate({
+        teamId: team.id,
+        name: newCategory.name,
+        description: newCategory.description || undefined,
+      });
     }
   };
 
   const handleDelete = (id: string) => {
-    setCategories(categories.filter(c => c.id !== id));
-    console.log('カテゴリを削除:', id);
+    deleteCategoryMutation.mutate(id);
   };
 
   return (
@@ -117,44 +159,46 @@ export function CategoryManagement() {
         </Dialog>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {categories.map((category) => {
-          const studentCount = getStudentCount(category.id);
-          return (
-            <Card key={category.id} className="border-0 shadow-lg hover-elevate transition-all" data-testid={`category-card-${category.id}`}>
-              <CardHeader className="space-y-0 pb-6">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-4 flex-1 min-w-0">
-                    <div className="rounded-2xl bg-gradient-to-br from-primary to-purple-600 p-3">
-                      <Tag className="h-6 w-6 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-lg mb-2">
-                        <Badge variant="outline" className="text-base rounded-full px-4 py-1">{category.name}</Badge>
-                      </CardTitle>
-                      {category.description && (
-                        <p className="text-sm text-muted-foreground">{category.description}</p>
-                      )}
+      {isLoading ? (
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">読み込み中...</p>
+        </div>
+      ) : !team ? (
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground">
+            チームが見つかりません。先にチームを作成してください。
+          </CardContent>
+        </Card>
+      ) : categories.length === 0 ? (
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground">
+            カテゴリがありません。「カテゴリを追加」ボタンから作成してください。
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {categories.map((category) => {
+            return (
+              <Card key={category.id} className="border-0 shadow-lg hover-elevate transition-all" data-testid={`category-card-${category.id}`}>
+                <CardHeader className="space-y-0 pb-6">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
+                      <div className="rounded-2xl bg-gradient-to-br from-primary to-purple-600 p-3">
+                        <Tag className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-lg mb-2">
+                          <Badge variant="outline" className="text-base rounded-full px-4 py-1">{category.name}</Badge>
+                        </CardTitle>
+                        {category.description && (
+                          <p className="text-sm text-muted-foreground">{category.description}</p>
+                        )}
                     </div>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                {/* 生徒数表示 */}
-                <div 
-                  className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-primary/10 to-purple-600/10 cursor-pointer hover-elevate"
-                  onClick={() => setSelectedCategory(category.id)}
-                  data-testid={`student-count-${category.id}`}
-                >
-                  <Users className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium">{studentCount}名</span>
-                </div>
-                
                 <div className="flex gap-3">
-                  <Button variant="outline" size="sm" className="flex-1 rounded-xl" data-testid={`button-edit-category-${category.id}`}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    編集
-                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
@@ -162,7 +206,8 @@ export function CategoryManagement() {
                     onClick={() => handleDelete(category.id)}
                     data-testid={`button-delete-category-${category.id}`}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    削除
                   </Button>
                 </div>
               </CardContent>
@@ -170,52 +215,8 @@ export function CategoryManagement() {
           );
         })}
       </div>
-
-      {/* 生徒一覧ポップアップ */}
-      <Dialog open={!!selectedCategory} onOpenChange={(open) => !open && setSelectedCategory(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">登録生徒一覧</DialogTitle>
-            <DialogDescription>
-              {selectedCategory && categories.find(c => c.id === selectedCategory)?.name} のメンバー
-            </DialogDescription>
-          </DialogHeader>
-          {selectedCategory && (() => {
-            const students = getCategoryStudents(selectedCategory);
-            const category = categories.find(c => c.id === selectedCategory);
-            
-            return (
-              <div className="space-y-4">
-                <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-purple-600/10">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Users className="h-4 w-4 text-primary" />
-                    <span className="font-medium">合計 {students.length}名</span>
-                  </div>
-                </div>
-
-                <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-                  {students.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">登録されている生徒がいません</p>
-                  ) : (
-                    students.map((student) => (
-                      <div 
-                        key={student.id} 
-                        className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover-elevate"
-                        data-testid={`student-${student.id}`}
-                      >
-                        <span className="font-medium">{student.name}</span>
-                        <Badge variant="outline" className="rounded-full">
-                          {category?.name}
-                        </Badge>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            );
-          })()}
-        </DialogContent>
-      </Dialog>
+      )}
     </div>
   );
 }
+

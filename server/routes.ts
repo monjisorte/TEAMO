@@ -142,10 +142,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Category Endpoints
   app.get("/api/categories", async (req, res) => {
     try {
-      const allCategories = await db.select().from(categories);
-      res.json(allCategories);
+      const { teamId } = req.query;
+      
+      if (!teamId) {
+        return res.status(400).json({ error: "teamId is required" });
+      }
+      
+      const teamCategories = await db.select()
+        .from(categories)
+        .where(eq(categories.teamId, teamId as string));
+      
+      res.json(teamCategories);
     } catch (error) {
       console.error("Error fetching categories:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/categories", async (req, res) => {
+    try {
+      const { teamId, name, description } = req.body;
+
+      if (!teamId || !name) {
+        return res.status(400).json({ error: "teamId and name are required" });
+      }
+
+      const newCategory = await db.insert(categories).values({
+        teamId,
+        name,
+        description,
+      }).returning();
+
+      res.status(201).json(newCategory[0]);
+    } catch (error) {
+      console.error("Error creating category:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/categories/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await db.delete(categories).where(eq(categories.id, id));
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error deleting category:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
