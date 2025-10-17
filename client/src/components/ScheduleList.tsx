@@ -78,6 +78,7 @@ const MOCK_SCHEDULES = [
     venue: "中央グラウンド",
     category: "U-12",
     notes: "ボールと水筒を持参してください",
+    studentCanRegister: true,
   },
   {
     id: "2",
@@ -89,6 +90,7 @@ const MOCK_SCHEDULES = [
     venue: "市民体育館",
     category: "U-15",
     notes: "ユニフォーム着用",
+    studentCanRegister: false,
   },
   {
     id: "3",
@@ -100,6 +102,7 @@ const MOCK_SCHEDULES = [
     venue: "中央グラウンド",
     category: "U-12",
     notes: "",
+    studentCanRegister: true,
   },
   {
     id: "4",
@@ -111,6 +114,7 @@ const MOCK_SCHEDULES = [
     venue: "県立スタジアム",
     category: "全学年",
     notes: "お弁当持参",
+    studentCanRegister: true,
   },
 ];
 
@@ -393,24 +397,36 @@ export function ScheduleList() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-56">
-                            <DropdownMenuLabel>移動先を選択</DropdownMenuLabel>
+                            <DropdownMenuLabel>移動先を選択（同日のみ）</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            {MOCK_SCHEDULES.filter(s => s.id !== selectedSchedule).map(s => (
-                              <DropdownMenuItem 
-                                key={s.id}
-                                onClick={() => {
-                                  console.log(`Moving student ${studentId} to schedule ${s.id}`);
-                                }}
-                                data-testid={`move-to-${s.id}`}
-                              >
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{s.title}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {new Date(s.date).toLocaleDateString('ja-JP')} {s.startTime}
-                                  </span>
-                                </div>
-                              </DropdownMenuItem>
-                            ))}
+                            {MOCK_SCHEDULES.filter(s => 
+                              s.id !== selectedSchedule && 
+                              s.date === schedule?.date
+                            ).length > 0 ? (
+                              MOCK_SCHEDULES.filter(s => 
+                                s.id !== selectedSchedule && 
+                                s.date === schedule?.date
+                              ).map(s => (
+                                <DropdownMenuItem 
+                                  key={s.id}
+                                  onClick={() => {
+                                    console.log(`Moving student ${studentId} to schedule ${s.id}`);
+                                  }}
+                                  data-testid={`move-to-${s.id}`}
+                                >
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{s.title}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {s.startTime}
+                                    </span>
+                                  </div>
+                                </DropdownMenuItem>
+                              ))
+                            ) : (
+                              <div className="p-2 text-sm text-muted-foreground text-center">
+                                同じ日のイベントがありません
+                              </div>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
