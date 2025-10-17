@@ -14,6 +14,7 @@ import VenuesPage from "@/pages/VenuesPage";
 import CategoriesPage from "@/pages/CategoriesPage";
 import CoachesPage from "@/pages/CoachesPage";
 import RegisterPage from "@/pages/RegisterPage";
+import TeamManagement from "@/pages/TeamManagement";
 import StudentLogin from "@/pages/StudentLogin";
 import StudentDashboard from "@/pages/StudentDashboard";
 
@@ -61,6 +62,7 @@ function Router() {
       <Route path="/categories" component={CategoriesPage} />
       <Route path="/coaches" component={CoachesPage} />
       <Route path="/register" component={RegisterPage} />
+      <Route path="/teams" component={TeamManagement} />
       <Route path="/student" component={StudentPortal} />
       <Route component={NotFound} />
     </Switch>

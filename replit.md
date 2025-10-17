@@ -8,15 +8,32 @@ The application provides functionality for managing categories (age groups like 
 
 ## Recent Changes
 
-**October 17, 2025 - Student Attendance & Category Management Enhancements**
-- Extended database schema with `students` and `attendance` tables for comprehensive participant tracking
-- Implemented attendance count display on schedule cards with visual indicators (○△×)
-- Added clickable attendance summary that opens detailed participant view with transfer functionality
-- Enabled student transfer between activities via dropdown menu in participant details
-- Enhanced category cards to display registered student count
-- Implemented category click-through to view full student roster
-- All components updated with modern gradient design system
-- Mock data added for development and testing purposes
+**October 17, 2025 - Student Portal Implementation**
+- Implemented complete student interface with authentication system
+- Added team management with random 8-character team codes for secure access
+- Created student account registration and login functionality
+- Implemented category selection for students to choose which schedules to view
+- Built attendance management view (○△× selection with comments)
+- Created calendar view with month/week toggle and schedule details popup
+- Added shared documents section for team resources
+- Implemented contact form to send messages to team administrators
+- Extended database schema:
+  - `teams` table with unique team codes and contact emails
+  - Updated `students` table with email/password authentication and team linking
+  - `student_categories` table for category subscriptions
+  - `attendance` table with comment field and timestamps
+  - `shared_documents` table for team resources
+- Added utility functions for password hashing and team code generation
+- Created 5 specialized student components in `client/src/components/student/`
+- Implemented dual interface: coach dashboard (with sidebar) and student portal (standalone)
+
+**Earlier - Schedule Management Enhancements**
+- Implemented 5-minute interval time selection for start time, end time, and gather time
+- Added venue management with dropdown selection and Google Maps integration (clickable venue links)
+- Changed registration control to "生徒側から参加登録を不可能にする" checkbox (default: unchecked = students can register)
+- Implemented file upload functionality (max 10 files) using Replit object storage with Uppy
+- Extended database schema with `venues`, `schedule_files` tables
+- Database successfully pushed with all new tables
 
 ## User Preferences
 
@@ -50,19 +67,34 @@ The application implements a custom design system with:
 - Custom hooks in `client/src/hooks/` for shared logic (mobile detection, toast notifications)
 
 **Key Features:**
+
+*Coach Interface:*
 - Responsive sidebar navigation with collapsible states
 - Theme toggle (light/dark mode) with localStorage persistence
 - Multi-step club registration wizard
-- Schedule management with calendar and list views
-- Attendance tracking with visual status indicators (○ present, △ maybe, × absent)
-  - Schedule cards display attendance count summaries
-  - Click to view detailed participant list with status
-  - Student transfer functionality to move participants between activities
+- Schedule management with 5-minute interval time selection
+- File attachment support (up to 10 files per schedule)
+- Venue management with Google Maps integration
 - Category/age group management with student associations
-  - Category cards display student count
-  - Click to view full student roster for each category
-- Venue management for frequently used locations
-- Coach management with contact information
+- Team management with unique team code generation
+- Coach contact information management
+
+*Student Interface (Standalone Portal):*
+- Secure authentication with email/password
+- Team registration using 8-character team codes
+- Category subscription system to filter visible schedules
+- Attendance management:
+  - ○△× status selection for each event
+  - Comment field for additional notes
+  - Real-time save functionality
+- Calendar views:
+  - Month view with event indicators
+  - Week view with detailed schedule cards
+  - Event detail popup with Google Maps venue links
+  - Visual attendance status display
+- Shared documents repository for team resources
+- Contact form to reach team administrators
+- Clean, focused interface without coach navigation elements
 
 ### Backend Architecture
 
@@ -89,11 +121,16 @@ The application implements a custom design system with:
 - Static file serving in production
 
 **Data Models** (defined in `shared/schema.ts`):
-- **Users**: Authentication and user management
+- **Users**: Coach authentication and user management
+- **Teams**: Team information with unique 8-character codes and contact emails
 - **Categories**: Team categories/age groups (U-12, U-15, etc.)
-- **Students**: Team members associated with categories
-- **Schedules**: Events with title, date, time, venue, category, and notes
-- **Attendance**: (Implied structure) Links students to schedules with status
+- **Students**: Team members with email/password authentication, linked to teams
+- **StudentCategories**: Junction table for student category subscriptions
+- **Schedules**: Events with title, date, time, venue, category, notes, and file attachments
+- **Attendance**: Links students to schedules with status (○△×), comments, and timestamps
+- **Venues**: Predefined locations with addresses for Google Maps integration
+- **ScheduleFiles**: File attachments for schedules stored in object storage
+- **SharedDocuments**: Team resources and documents accessible to all students
 
 All models use UUID primary keys generated via PostgreSQL's `gen_random_uuid()`.
 

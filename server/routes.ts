@@ -84,6 +84,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Team Management Endpoints
+  app.get("/api/teams", async (req, res) => {
+    try {
+      const allTeams = await db.select().from(teams);
+      res.json(allTeams);
+    } catch (error) {
+      console.error("Error fetching teams:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/teams", async (req, res) => {
+    try {
+      const { name, contactEmail } = req.body;
+
+      if (!name || !contactEmail) {
+        return res.status(400).json({ error: "Name and contact email are required" });
+      }
+
+      // Generate unique team code
+      let teamCode = generateTeamCode();
+      let existing = await db.select().from(teams).where(eq(teams.teamCode, teamCode)).limit(1);
+      
+      // Ensure team code is unique
+      while (existing.length > 0) {
+        teamCode = generateTeamCode();
+        existing = await db.select().from(teams).where(eq(teams.teamCode, teamCode)).limit(1);
+      }
+
+      const newTeam = await db.insert(teams).values({
+        name,
+        contactEmail,
+        teamCode,
+      }).returning();
+
+      res.status(201).json(newTeam[0]);
+    } catch (error) {
+      console.error("Error creating team:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Student Authentication Endpoints
   app.post("/api/student/register", async (req, res) => {
     try {
