@@ -158,7 +158,7 @@ function App() {
       <TooltipProvider>
         {isPlayerPortal ? (
           <>
-            <Router />
+            <PlayerPortal />
             <Toaster />
           </>
         ) : (
