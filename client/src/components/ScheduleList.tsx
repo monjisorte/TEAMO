@@ -221,7 +221,16 @@ export function ScheduleList() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1">
                             <h3 className="text-2xl font-bold mb-2">{schedule.title}</h3>
-                            <Badge variant="outline" className="rounded-full">{schedule.category}</Badge>
+                            <div className="flex gap-2">
+                              <Badge variant="outline" className="rounded-full">{schedule.category}</Badge>
+                              <Badge 
+                                variant={schedule.studentCanRegister ? "default" : "secondary"} 
+                                className="rounded-full"
+                                data-testid={`badge-register-${schedule.id}`}
+                              >
+                                {schedule.studentCanRegister ? "生徒登録可" : "コーチ指定"}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
 
