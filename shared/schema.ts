@@ -64,3 +64,26 @@ export const attendances = pgTable("attendances", {
 export const insertAttendanceSchema = createInsertSchema(attendances).omit({ id: true });
 export type InsertAttendance = z.infer<typeof insertAttendanceSchema>;
 export type Attendance = typeof attendances.$inferSelect;
+
+export const venues = pgTable("venues", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  address: text("address"),
+});
+
+export const insertVenueSchema = createInsertSchema(venues).omit({ id: true });
+export type InsertVenue = z.infer<typeof insertVenueSchema>;
+export type Venue = typeof venues.$inferSelect;
+
+export const scheduleFiles = pgTable("schedule_files", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  scheduleId: varchar("schedule_id").notNull(),
+  fileName: text("file_name").notNull(),
+  fileUrl: text("file_url").notNull(),
+  fileSize: text("file_size"),
+  uploadedAt: timestamp("uploaded_at").notNull().defaultNow(),
+});
+
+export const insertScheduleFileSchema = createInsertSchema(scheduleFiles).omit({ id: true, uploadedAt: true });
+export type InsertScheduleFile = z.infer<typeof insertScheduleFileSchema>;
+export type ScheduleFile = typeof scheduleFiles.$inferSelect;
