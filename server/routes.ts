@@ -140,9 +140,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Category Endpoints
-  app.get("/api/categories", async (req, res) => {
+  app.get("/api/categories/:teamId", async (req, res) => {
     try {
-      const { teamId } = req.query;
+      const { teamId } = req.params;
       
       if (!teamId) {
         return res.status(400).json({ error: "teamId is required" });
@@ -150,7 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const teamCategories = await db.select()
         .from(categories)
-        .where(eq(categories.teamId, teamId as string));
+        .where(eq(categories.teamId, teamId));
       
       res.json(teamCategories);
     } catch (error) {
