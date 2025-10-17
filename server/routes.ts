@@ -263,6 +263,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Student Profile
+  app.get("/api/student/:studentId", async (req, res) => {
+    try {
+      const { studentId } = req.params;
+      
+      const student = await db.select().from(students).where(eq(students.id, studentId)).limit(1);
+      if (student.length === 0) {
+        return res.status(404).json({ error: "Student not found" });
+      }
+
+      const { password, ...studentData } = student[0];
+      res.json(studentData);
+    } catch (error) {
+      console.error("Error fetching student profile:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/student/:studentId", async (req, res) => {
+    try {
+      const { studentId } = req.params;
+      const { name, schoolName, birthDate, photoUrl } = req.body;
+
+      const updateData: any = {};
+      if (name !== undefined) updateData.name = name;
+      if (schoolName !== undefined) updateData.schoolName = schoolName;
+      if (birthDate !== undefined) updateData.birthDate = birthDate;
+      if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
+
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ error: "No fields to update" });
+      }
+
+      await db.update(students).set(updateData).where(eq(students.id, studentId));
+
+      const updatedStudent = await db.select().from(students).where(eq(students.id, studentId)).limit(1);
+      const { password, ...studentData } = updatedStudent[0];
+      
+      res.json(studentData);
+    } catch (error) {
+      console.error("Error updating student profile:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Student Category Selection
   app.get("/api/student/:studentId/categories", async (req, res) => {
     try {

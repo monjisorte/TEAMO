@@ -25,7 +25,7 @@ import PlayerAttendancePage from "@/pages/PlayerAttendancePage";
 import PlayerCalendarPage from "@/pages/PlayerCalendarPage";
 import PlayerDocumentsPage from "@/pages/PlayerDocumentsPage";
 import PlayerContactPage from "@/pages/PlayerContactPage";
-import PlayerSettingsPage from "@/pages/PlayerSettingsPage";
+import PlayerProfilePage from "@/pages/PlayerProfilePage";
 import { PlayerSidebar } from "@/components/PlayerSidebar";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
@@ -65,12 +65,12 @@ function PlayerPortal() {
   }
 
   // Fetch team info
-  const { data: teams } = useQuery({
+  const { data: teams } = useQuery<Array<{ id: string; name: string }>>({
     queryKey: ["/api/teams"],
     enabled: !!player?.teamId,
   });
 
-  const team = teams?.find((t: any) => t.id === player.teamId);
+  const team = teams?.find(t => t.id === player.teamId);
   const teamName = team?.name || "チーム";
 
   const style = {
@@ -120,7 +120,7 @@ function PlayerPortal() {
                 {() => <PlayerContactPage teamId={player.teamId} playerName={player.name} playerEmail={player.email} />}
               </Route>
               <Route path="/player/profile">
-                {() => <PlayerSettingsPage playerId={player.id} />}
+                {() => <PlayerProfilePage playerId={player.id} />}
               </Route>
               <Route path="/player">
                 {() => <PlayerAttendancePage playerId={player.id} />}
