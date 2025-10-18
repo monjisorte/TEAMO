@@ -188,7 +188,7 @@ function CoachPortalContent({ coachId, onLogout }: { coachId: string; onLogout: 
   return (
     <SidebarProvider style={style as React.CSSProperties}>
       <div className="flex h-screen w-full">
-        <AppSidebar />
+        <AppSidebar teamId={coach.teamId} teamName={teamName} />
         <div className="flex flex-col flex-1 min-w-0">
           <header className="flex items-center justify-between px-8 py-4 border-b bg-card/50 backdrop-blur-sm">
             <div className="flex items-center gap-4">

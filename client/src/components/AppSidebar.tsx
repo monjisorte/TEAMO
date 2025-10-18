@@ -11,6 +11,7 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 
 const menuItems = [
   {
@@ -70,8 +71,23 @@ const menuItems = [
   },
 ];
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  teamId?: string;
+  teamName?: string;
+}
+
+export function AppSidebar({ teamId, teamName }: AppSidebarProps) {
   const [location] = useLocation();
+
+  // Fetch team info if not provided
+  const { data: teams } = useQuery<Array<{ id: string; name: string; teamCode: string }>>({
+    queryKey: ["/api/teams"],
+    enabled: !teamName && !!teamId,
+  });
+
+  const team = teams?.find(t => t.id === teamId);
+  const displayTeamName = teamName || team?.name || "チーム";
+  const displayTeamCode = team?.teamCode || "---";
 
   return (
     <Sidebar>
@@ -81,8 +97,8 @@ export function AppSidebar() {
             <Calendar className="h-5 w-5 text-primary-foreground" />
           </div>
           <div>
-            <h2 className="font-semibold">スポーツチーム</h2>
-            <p className="text-xs text-muted-foreground">管理システム</p>
+            <h2 className="font-semibold" data-testid="text-sidebar-team-name">{displayTeamName}</h2>
+            <p className="text-xs text-muted-foreground" data-testid="text-sidebar-team-code">{displayTeamCode}</p>
           </div>
         </div>
       </SidebarHeader>
