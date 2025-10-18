@@ -73,7 +73,7 @@ interface ScheduleFormData {
   endMinute: string;
   gatherHour: string;
   gatherMinute: string;
-  categoryId: string;
+  categoryIds: string[];
   venue: string;
   notes: string;
   studentCanRegister: boolean;
@@ -92,6 +92,10 @@ export function ScheduleList() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<Array<{ name: string; url: string; size: number }>>([]);
+  const [showRecurringDeleteDialog, setShowRecurringDeleteDialog] = useState(false);
+  const [scheduleToDelete, setScheduleToDelete] = useState<Schedule | null>(null);
+  const [showRecurringEditDialog, setShowRecurringEditDialog] = useState(false);
+  const [pendingScheduleData, setPendingScheduleData] = useState<Partial<Schedule> | null>(null);
 
   const [formData, setFormData] = useState<ScheduleFormData>({
     title: "",
@@ -102,7 +106,7 @@ export function ScheduleList() {
     endMinute: "0",
     gatherHour: "9",
     gatherMinute: "45",
-    categoryId: "",
+    categoryIds: [],
     venue: "",
     notes: "",
     studentCanRegister: true,
@@ -229,7 +233,7 @@ export function ScheduleList() {
       endMinute: "0",
       gatherHour: "9",
       gatherMinute: "45",
-      categoryId: "",
+      categoryIds: [],
       venue: "",
       notes: "",
       studentCanRegister: true,
@@ -242,7 +246,7 @@ export function ScheduleList() {
   };
 
   const handleSaveSchedule = () => {
-    if (!formData.title || !formData.date || !formData.categoryId || !formData.venue) {
+    if (!formData.title || !formData.date || formData.categoryIds.length === 0) {
       toast({ title: "必須項目を入力してください", variant: "destructive" });
       return;
     }
@@ -256,8 +260,9 @@ export function ScheduleList() {
       endMinute: parseInt(formData.endMinute),
       gatherHour: parseInt(formData.gatherHour),
       gatherMinute: parseInt(formData.gatherMinute),
-      categoryId: formData.categoryId,
-      venue: formData.venue,
+      categoryIds: formData.categoryIds,
+      categoryId: formData.categoryIds[0] || null,
+      venue: formData.venue || "未定",
       notes: formData.notes,
       studentCanRegister: formData.studentCanRegister,
       recurrenceRule: formData.recurrenceRule === "none" ? null : formData.recurrenceRule,
@@ -271,14 +276,40 @@ export function ScheduleList() {
     };
 
     if (editingSchedule) {
-      updateScheduleMutation.mutate({ id: editingSchedule.id, data: scheduleData });
+      if (editingSchedule.parentScheduleId) {
+        setPendingScheduleData(scheduleData);
+        setShowRecurringEditDialog(true);
+      } else {
+        updateScheduleMutation.mutate({ id: editingSchedule.id, data: scheduleData });
+      }
     } else {
       createScheduleMutation.mutate(scheduleData);
     }
   };
 
+  const handleUpdateRecurringSchedule = (updateAll: boolean) => {
+    if (!editingSchedule || !pendingScheduleData) return;
+    
+    if (updateAll) {
+      const parentId = editingSchedule.parentScheduleId;
+      const relatedSchedules = schedules.filter(s => 
+        s.parentScheduleId === parentId || s.id === parentId
+      );
+      
+      relatedSchedules.forEach(s => {
+        updateScheduleMutation.mutate({ id: s.id, data: pendingScheduleData });
+      });
+    } else {
+      updateScheduleMutation.mutate({ id: editingSchedule.id, data: pendingScheduleData });
+    }
+    
+    setShowRecurringEditDialog(false);
+    setPendingScheduleData(null);
+  };
+
   const handleEditSchedule = (schedule: Schedule) => {
     setEditingSchedule(schedule);
+    const categoryIds = schedule.categoryIds || (schedule.categoryId ? [schedule.categoryId] : []);
     setFormData({
       title: schedule.title,
       date: schedule.date,
@@ -288,8 +319,8 @@ export function ScheduleList() {
       endMinute: (schedule.endMinute ?? 0).toString(),
       gatherHour: (schedule.gatherHour ?? 9).toString(),
       gatherMinute: (schedule.gatherMinute ?? 45).toString(),
-      categoryId: schedule.categoryId,
-      venue: schedule.venue,
+      categoryIds: categoryIds,
+      venue: schedule.venue || "",
       notes: schedule.notes || "",
       studentCanRegister: schedule.studentCanRegister,
       recurrenceRule: schedule.recurrenceRule || "none",
@@ -300,10 +331,35 @@ export function ScheduleList() {
     setShowEditDialog(true);
   };
 
-  const handleDeleteSchedule = (id: string) => {
-    if (confirm("このスケジュールを削除しますか？")) {
-      deleteScheduleMutation.mutate(id);
+  const handleDeleteSchedule = (schedule: Schedule) => {
+    if (schedule.parentScheduleId) {
+      setScheduleToDelete(schedule);
+      setShowRecurringDeleteDialog(true);
+    } else {
+      if (confirm("このスケジュールを削除しますか？")) {
+        deleteScheduleMutation.mutate(schedule.id);
+      }
     }
+  };
+
+  const handleDeleteRecurringSchedule = (deleteAll: boolean) => {
+    if (!scheduleToDelete) return;
+    
+    if (deleteAll) {
+      const parentId = scheduleToDelete.parentScheduleId;
+      const relatedSchedules = schedules.filter(s => 
+        s.parentScheduleId === parentId || s.id === parentId
+      );
+      
+      relatedSchedules.forEach(s => {
+        deleteScheduleMutation.mutate(s.id);
+      });
+    } else {
+      deleteScheduleMutation.mutate(scheduleToDelete.id);
+    }
+    
+    setShowRecurringDeleteDialog(false);
+    setScheduleToDelete(null);
   };
 
   const handleParticipantMove = async (attendanceId: string, newScheduleId: string) => {
@@ -343,9 +399,10 @@ export function ScheduleList() {
   };
 
   // フィルタリングされたスケジュール
-  const filteredSchedules = schedules.filter(schedule =>
-    selectedCategories.includes(schedule.categoryId)
-  );
+  const filteredSchedules = schedules.filter(schedule => {
+    const scheduleCategoryIds = schedule.categoryIds || (schedule.categoryId ? [schedule.categoryId] : []);
+    return scheduleCategoryIds.some(catId => selectedCategories.includes(catId));
+  });
 
   return (
     <div className="space-y-8">
@@ -410,7 +467,8 @@ export function ScheduleList() {
             ) : (
               filteredSchedules.map((schedule) => {
                 const attendance = getAttendanceCount(schedule.id);
-                const category = categories.find(c => c.id === schedule.categoryId);
+                const scheduleCategoryIds = schedule.categoryIds || (schedule.categoryId ? [schedule.categoryId] : []);
+                const scheduleCategories = categories.filter(c => scheduleCategoryIds.includes(c.id));
                 return (
                   <Card key={schedule.id} className="border-0 shadow-lg hover-elevate transition-all" data-testid={`schedule-card-${schedule.id}`}>
                     <CardContent className="p-6">
@@ -431,7 +489,9 @@ export function ScheduleList() {
                             <div className="flex-1">
                               <h3 className="text-2xl font-bold mb-2">{schedule.title}</h3>
                               <div className="flex gap-2 flex-wrap">
-                                <Badge variant="outline" className="rounded-full">{category?.name}</Badge>
+                                {scheduleCategories.map(cat => (
+                                  <Badge key={cat.id} variant="outline" className="rounded-full">{cat.name}</Badge>
+                                ))}
                                 <Badge 
                                   variant={schedule.studentCanRegister ? "default" : "secondary"} 
                                   className="rounded-full"
@@ -462,7 +522,7 @@ export function ScheduleList() {
                             </div>
                             <div className="flex items-center gap-3 text-muted-foreground">
                               <MapPin className="h-4 w-4" />
-                              {schedule.venue !== "未定" && schedule.venue !== "その他" ? (
+                              {schedule.venue && schedule.venue !== "未定" && schedule.venue !== "その他" ? (
                                 <a
                                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(schedule.venue)}`}
                                   target="_blank"
@@ -473,7 +533,7 @@ export function ScheduleList() {
                                   {schedule.venue}
                                 </a>
                               ) : (
-                                <span className="truncate">{schedule.venue}</span>
+                                <span className="truncate">{schedule.venue || "未定"}</span>
                               )}
                             </div>
                           </div>
@@ -529,7 +589,7 @@ export function ScheduleList() {
                               variant="outline" 
                               size="sm" 
                               className="rounded-xl" 
-                              onClick={() => handleDeleteSchedule(schedule.id)}
+                              onClick={() => handleDeleteSchedule(schedule)}
                               data-testid={`button-delete-${schedule.id}`}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -553,6 +613,7 @@ export function ScheduleList() {
             students={students}
             onScheduleClick={(schedule) => {
               setEditingSchedule(schedule);
+              const categoryIds = schedule.categoryIds || (schedule.categoryId ? [schedule.categoryId] : []);
               setFormData({
                 title: schedule.title,
                 date: schedule.date,
@@ -562,8 +623,8 @@ export function ScheduleList() {
                 endMinute: schedule.endMinute?.toString() || "0",
                 gatherHour: schedule.gatherHour?.toString() || "9",
                 gatherMinute: schedule.gatherMinute?.toString() || "45",
-                categoryId: schedule.categoryId,
-                venue: schedule.venue,
+                categoryIds: categoryIds,
+                venue: schedule.venue || "",
                 notes: schedule.notes || "",
                 studentCanRegister: schedule.studentCanRegister,
                 recurrenceRule: schedule.recurrenceRule || "none",
@@ -682,18 +743,35 @@ export function ScheduleList() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="category">カテゴリ *</Label>
-                <Select value={formData.categoryId} onValueChange={(value) => setFormData({ ...formData, categoryId: value })}>
-                  <SelectTrigger data-testid="select-schedule-category">
-                    <SelectValue placeholder="選択してください" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map(category => (
-                      <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-2 col-span-2">
+                <Label>カテゴリ *</Label>
+                <div className="flex flex-wrap gap-4 p-4 rounded-xl bg-muted/30">
+                  {categories.map((category) => (
+                    <div key={category.id} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`form-category-${category.id}`}
+                        checked={formData.categoryIds.includes(category.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData({ 
+                              ...formData, 
+                              categoryIds: [...formData.categoryIds, category.id] 
+                            });
+                          } else {
+                            setFormData({ 
+                              ...formData, 
+                              categoryIds: formData.categoryIds.filter(id => id !== category.id) 
+                            });
+                          }
+                        }}
+                        data-testid={`checkbox-form-category-${category.id}`}
+                      />
+                      <Label htmlFor={`form-category-${category.id}`} className="cursor-pointer font-medium">
+                        {category.name}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* 開始時刻 */}
@@ -777,11 +855,11 @@ export function ScheduleList() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="venue">活動場所 *</Label>
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="venue">活動場所</Label>
                 <Select value={formData.venue} onValueChange={(value) => setFormData({ ...formData, venue: value })}>
                   <SelectTrigger data-testid="select-schedule-venue">
-                    <SelectValue placeholder="活動場所を選択" />
+                    <SelectValue placeholder="活動場所を選択（未選択の場合は「未定」）" />
                   </SelectTrigger>
                   <SelectContent>
                     {venues.map(venue => (
@@ -922,6 +1000,90 @@ export function ScheduleList() {
               data-testid="button-save-schedule"
             >
               {editingSchedule ? "更新" : "追加"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 繰り返しスケジュール削除確認ダイアログ */}
+      <Dialog open={showRecurringDeleteDialog} onOpenChange={setShowRecurringDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>繰り返しスケジュールの削除</DialogTitle>
+            <DialogDescription>
+              このスケジュールは繰り返しスケジュールです。どのように削除しますか？
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => handleDeleteRecurringSchedule(false)}
+              data-testid="button-delete-single"
+            >
+              このイベントのみ削除
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => handleDeleteRecurringSchedule(true)}
+              data-testid="button-delete-all"
+            >
+              すべての繰り返しイベントを削除
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowRecurringDeleteDialog(false);
+                setScheduleToDelete(null);
+              }}
+              data-testid="button-cancel-delete"
+            >
+              キャンセル
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 繰り返しスケジュール編集確認ダイアログ */}
+      <Dialog open={showRecurringEditDialog} onOpenChange={setShowRecurringEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>繰り返しスケジュールの編集</DialogTitle>
+            <DialogDescription>
+              このスケジュールは繰り返しスケジュールです。どのように更新しますか？
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => handleUpdateRecurringSchedule(false)}
+              data-testid="button-update-single"
+            >
+              このイベントのみ更新
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => handleUpdateRecurringSchedule(true)}
+              data-testid="button-update-all"
+            >
+              すべての繰り返しイベントを更新
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowRecurringEditDialog(false);
+                setPendingScheduleData(null);
+              }}
+              data-testid="button-cancel-update"
+            >
+              キャンセル
             </Button>
           </DialogFooter>
         </DialogContent>
