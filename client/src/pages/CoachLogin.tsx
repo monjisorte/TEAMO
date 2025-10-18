@@ -1,0 +1,152 @@
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { ClubRegistration } from "@/components/ClubRegistration";
+
+const loginSchema = z.object({
+  email: z.string().email("有効なメールアドレスを入力してください"),
+  password: z.string().min(6, "パスワードは6文字以上である必要があります"),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
+
+interface CoachLoginProps {
+  onLoginSuccess: (coach: { id: string; name: string; email: string; teamId: string }) => void;
+}
+
+export default function CoachLogin({ onLoginSuccess }: CoachLoginProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const loginForm = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const onLogin = async (data: LoginFormValues) => {
+    setIsLoading(true);
+    try {
+      const response = await apiRequest("POST", "/api/coach/login", data);
+      const result = await response.json();
+      
+      if (response.ok) {
+        localStorage.setItem("coachData", JSON.stringify(result.coach));
+        onLoginSuccess(result.coach);
+        toast({
+          title: "ログイン成功",
+          description: `ようこそ、${result.coach.name}さん`,
+        });
+      } else {
+        toast({
+          title: "ログイン失敗",
+          description: result.error || "メールアドレスまたはパスワードが正しくありません",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "エラー",
+        description: "ログイン中にエラーが発生しました",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-2xl text-center">コーチポータル</CardTitle>
+          <CardDescription className="text-center">
+            チーム管理とスケジュール作成
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="login">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login" data-testid="tab-coach-login">ログイン</TabsTrigger>
+              <TabsTrigger value="register" data-testid="tab-coach-register">新規登録</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="login">
+              <Form {...loginForm}>
+                <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
+                  <FormField
+                    control={loginForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>メールアドレス</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="email" 
+                            placeholder="email@example.com" 
+                            data-testid="input-coach-login-email"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={loginForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>パスワード</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="password" 
+                            placeholder="••••••" 
+                            data-testid="input-coach-login-password"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={isLoading}
+                    data-testid="button-coach-login"
+                  >
+                    {isLoading ? "ログイン中..." : "ログイン"}
+                  </Button>
+                </form>
+              </Form>
+            </TabsContent>
+            
+            <TabsContent value="register">
+              <div className="text-sm text-muted-foreground text-center mb-4">
+                新規チーム登録は別ページで行います
+              </div>
+              <Button 
+                className="w-full"
+                onClick={() => window.location.href = '/register'}
+                data-testid="button-go-register"
+              >
+                新規チーム登録へ
+              </Button>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
