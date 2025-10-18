@@ -46,6 +46,16 @@ export function CalendarView({ schedules, categories, attendances, students, onS
     return category?.name || "未分類";
   };
 
+  const getScheduleCategoryIds = (schedule: Schedule): string[] => {
+    if (schedule.categoryIds && schedule.categoryIds.length > 0) {
+      return schedule.categoryIds;
+    }
+    if (schedule.categoryId) {
+      return [schedule.categoryId];
+    }
+    return [];
+  };
+
   const getAttendanceCount = (scheduleId: string) => {
     if (!attendances || attendances.length === 0) return 0;
     const scheduleAttendances = attendances.filter(a => a.scheduleId === scheduleId);
@@ -285,10 +295,13 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                         : "";
                       const attendanceCount = getAttendanceCount(schedule.id);
                       
+                      const categoryIds = getScheduleCategoryIds(schedule);
+                      const primaryCategoryId = categoryIds[0];
+                      
                       return (
                         <div
                           key={schedule.id}
-                          className={`text-xs p-1.5 rounded border ${getCategoryColor(schedule.categoryId)}`}
+                          className={`text-xs p-1.5 rounded border ${primaryCategoryId ? getCategoryColor(primaryCategoryId) : 'bg-muted/10 text-muted-foreground border-muted/20'}`}
                           data-testid={`schedule-${schedule.id}`}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -402,11 +415,15 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                       {/* Schedule Info */}
                       <div className="space-y-3">
                         <div className="flex items-start justify-between gap-4">
-                          <div className="space-y-1 flex-1">
+                          <div className="space-y-2 flex-1">
                             <h3 className="text-xl font-bold">{schedule.title}</h3>
-                            <Badge className={getCategoryColor(schedule.categoryId)}>
-                              {getCategoryName(schedule.categoryId)}
-                            </Badge>
+                            <div className="flex flex-wrap gap-2">
+                              {getScheduleCategoryIds(schedule).map((categoryId) => (
+                                <Badge key={categoryId} className={getCategoryColor(categoryId)}>
+                                  {getCategoryName(categoryId)}
+                                </Badge>
+                              ))}
+                            </div>
                           </div>
                           <Button
                             variant="outline"
@@ -437,7 +454,7 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                           )}
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-muted-foreground min-w-[80px]">会場:</span>
-                            <span>{schedule.venue}</span>
+                            <span>{schedule.venue || "未定"}</span>
                           </div>
                           {schedule.notes && (
                             <div className="flex items-start gap-2">
