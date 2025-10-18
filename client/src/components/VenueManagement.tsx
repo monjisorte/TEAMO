@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Plus, Edit, Trash2 } from "lucide-react";
+import { MapPin, Plus, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,33 +13,114 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
-// TODO: remove mock data
-const MOCK_VENUES = [
-  { id: 1, name: "中央グラウンド", address: "東京都渋谷区中央1-1-1" },
-  { id: 2, name: "市民体育館", address: "東京都渋谷区西2-2-2" },
-  { id: 3, name: "県立スタジアム", address: "東京都新宿区東3-3-3" },
-  { id: 4, name: "第一小学校グラウンド", address: "東京都渋谷区南4-4-4" },
-];
+interface Venue {
+  id: string;
+  teamId: string;
+  name: string;
+  address: string | null;
+}
 
 export function VenueManagement() {
-  const [venues, setVenues] = useState(MOCK_VENUES);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
   const [newVenue, setNewVenue] = useState({ name: "", address: "" });
 
-  const handleAdd = () => {
-    if (newVenue.name && newVenue.address) {
-      setVenues([...venues, { id: Date.now(), ...newVenue }]);
+  // Get teamId from localStorage
+  const coachData = localStorage.getItem("coachData");
+  const teamId = coachData ? JSON.parse(coachData).teamId : null;
+
+  // Fetch venues
+  const { data: venues = [], isLoading } = useQuery<Venue[]>({
+    queryKey: ["/api/teams", teamId, "venues"],
+    enabled: !!teamId,
+  });
+
+  // Add venue mutation
+  const addVenueMutation = useMutation({
+    mutationFn: async (data: { name: string; address: string }) => {
+      return await apiRequest("POST", "/api/venues", { ...data, teamId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teams", teamId, "venues"] });
       setNewVenue({ name: "", address: "" });
-      setIsDialogOpen(false);
-      console.log('場所を追加:', newVenue);
+      setIsAddDialogOpen(false);
+      toast({
+        title: "成功",
+        description: "活動場所を追加しました",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "活動場所の追加に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete venue mutation
+  const deleteVenueMutation = useMutation({
+    mutationFn: async (venueId: string) => {
+      return await apiRequest("DELETE", `/api/venues/${venueId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teams", teamId, "venues"] });
+      setIsDeleteDialogOpen(false);
+      setSelectedVenue(null);
+      toast({
+        title: "成功",
+        description: "活動場所を削除しました",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "活動場所の削除に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAdd = () => {
+    if (newVenue.name) {
+      addVenueMutation.mutate(newVenue);
     }
   };
 
-  const handleDelete = (id: number) => {
-    setVenues(venues.filter(v => v.id !== id));
-    console.log('場所を削除:', id);
+  const handleDeleteClick = (venue: Venue) => {
+    setSelectedVenue(venue);
+    setIsDeleteDialogOpen(true);
   };
+
+  const handleDeleteConfirm = () => {
+    if (selectedVenue) {
+      deleteVenueMutation.mutate(selectedVenue.id);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-muted-foreground">読み込み中...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -48,7 +129,7 @@ export function VenueManagement() {
           <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">活動場所管理</h1>
           <p className="text-muted-foreground mt-2 text-lg">頻繁に使用する場所を登録</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button className="h-12 px-6 rounded-xl text-base" data-testid="button-add-venue">
               <Plus className="h-5 w-5 mr-2" />
@@ -74,7 +155,7 @@ export function VenueManagement() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="venue-address">住所</Label>
+                <Label htmlFor="venue-address">住所（任意）</Label>
                 <Input
                   id="venue-address"
                   value={newVenue.address}
@@ -85,11 +166,15 @@ export function VenueManagement() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)} data-testid="button-cancel">
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} data-testid="button-cancel">
                 キャンセル
               </Button>
-              <Button onClick={handleAdd} data-testid="button-save-venue">
-                追加
+              <Button 
+                onClick={handleAdd}
+                disabled={addVenueMutation.isPending}
+                data-testid="button-save-venue"
+              >
+                {addVenueMutation.isPending ? "追加中..." : "追加"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -107,29 +192,51 @@ export function VenueManagement() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-xl truncate">{venue.name}</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{venue.address}</p>
+                    {venue.address && (
+                      <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{venue.address}</p>
+                    )}
                   </div>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="flex gap-3">
-              <Button variant="outline" size="sm" className="flex-1 rounded-xl" data-testid={`button-edit-venue-${venue.id}`}>
-                <Edit className="h-4 w-4 mr-2" />
-                編集
-              </Button>
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-xl"
-                onClick={() => handleDelete(venue.id)}
+                className="flex-1 rounded-xl"
+                onClick={() => handleDeleteClick(venue)}
                 data-testid={`button-delete-venue-${venue.id}`}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4 mr-2" />
+                削除
               </Button>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>本当に削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedVenue?.name}を削除します。この操作は取り消せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">キャンセル</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              disabled={deleteVenueMutation.isPending}
+              data-testid="button-confirm-delete"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteVenueMutation.isPending ? "削除中..." : "削除する"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
