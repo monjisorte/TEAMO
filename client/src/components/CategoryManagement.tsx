@@ -25,16 +25,14 @@ export function CategoryManagement() {
   const [newCategory, setNewCategory] = useState({ name: "", description: "" });
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  // Get the first team (coach's team)
-  const { data: teams = [] } = useQuery<Team[]>({
-    queryKey: ["/api/teams"],
-  });
-  const team = teams[0];
+  // Get teamId from localStorage
+  const coachData = localStorage.getItem("coachData");
+  const teamId = coachData ? JSON.parse(coachData).teamId : null;
 
   // Fetch categories for this team
   const { data: categories = [], isLoading } = useQuery<Category[]>({
-    queryKey: ["/api/categories", team?.id],
-    enabled: !!team?.id,
+    queryKey: ["/api/categories", teamId],
+    enabled: !!teamId,
   });
 
   const createCategoryMutation = useMutation({
@@ -43,7 +41,7 @@ export function CategoryManagement() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/categories", team?.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/categories", teamId] });
       setNewCategory({ name: "", description: "" });
       setIsDialogOpen(false);
       toast({
@@ -66,7 +64,7 @@ export function CategoryManagement() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/categories", team?.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/categories", teamId] });
       toast({
         title: "成功",
         description: "カテゴリを削除しました",
@@ -82,7 +80,7 @@ export function CategoryManagement() {
   });
 
   const handleAdd = () => {
-    if (!team) {
+    if (!teamId) {
       toast({
         title: "エラー",
         description: "チームが見つかりません",
@@ -93,7 +91,7 @@ export function CategoryManagement() {
 
     if (newCategory.name) {
       createCategoryMutation.mutate({
-        teamId: team.id,
+        teamId: teamId,
         name: newCategory.name,
         description: newCategory.description || undefined,
       });
@@ -163,7 +161,7 @@ export function CategoryManagement() {
         <div className="flex items-center justify-center h-64">
           <p className="text-muted-foreground">読み込み中...</p>
         </div>
-      ) : !team ? (
+      ) : !teamId ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
             チームが見つかりません。先にチームを作成してください。
