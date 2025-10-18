@@ -95,23 +95,20 @@ function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogou
           </header>
           <main className="flex-1 overflow-auto p-8">
             <Switch>
-              <Route path="/player/attendance">
+              <Route path="/attendance">
                 {() => <PlayerAttendancePage playerId={player.id} teamId={player.teamId} />}
               </Route>
-              <Route path="/player/calendar">
-                {() => <PlayerCalendarPage playerId={player.id} />}
-              </Route>
-              <Route path="/player/documents">
+              <Route path="/information">
                 {() => <PlayerDocumentsPage teamId={player.teamId} />}
               </Route>
-              <Route path="/player/contact">
-                {() => <PlayerContactPage teamId={player.teamId} playerName={player.name} playerEmail={player.email} />}
-              </Route>
-              <Route path="/player/profile">
+              <Route path="/profile">
                 {() => <PlayerProfilePage playerId={player.id} teamId={player.teamId} />}
               </Route>
-              <Route path="/player">
-                {() => <PlayerAttendancePage playerId={player.id} teamId={player.teamId} />}
+              <Route path="/contact">
+                {() => <PlayerContactPage teamId={player.teamId} playerName={player.name} playerEmail={player.email} />}
+              </Route>
+              <Route path="/">
+                {() => <PlayerCalendarPage playerId={player.id} />}
               </Route>
             </Switch>
           </main>
@@ -136,13 +133,13 @@ function PlayerPortal() {
   const handleLoginSuccess = (playerData: PlayerData) => {
     localStorage.setItem("playerData", JSON.stringify(playerData));
     setPlayerId(playerData.id);
-    setLocation("/player/attendance");
+    setLocation("/");
   };
 
   const handleLogout = () => {
     localStorage.removeItem("playerData");
     setPlayerId(null);
-    setLocation("/player");
+    setLocation("/login");
   };
 
   if (!playerId) {
@@ -175,7 +172,7 @@ function Router() {
 
 function App() {
   const [location] = useLocation();
-  const isPlayerPortal = location.startsWith("/player");
+  const isCoachPortal = location.startsWith("/team");
   
   const style = {
     "--sidebar-width": "16rem",
@@ -184,12 +181,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        {isPlayerPortal ? (
-          <>
-            <PlayerPortal />
-            <Toaster />
-          </>
-        ) : (
+        {isCoachPortal ? (
           <SidebarProvider style={style as React.CSSProperties}>
             <div className="flex h-screen w-full">
               <AppSidebar />
@@ -204,6 +196,10 @@ function App() {
               </div>
             </div>
           </SidebarProvider>
+        ) : (
+          <>
+            <PlayerPortal />
+          </>
         )}
         <Toaster />
       </TooltipProvider>

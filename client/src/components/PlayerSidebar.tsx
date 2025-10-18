@@ -14,28 +14,28 @@ import { Link, useLocation } from "wouter";
 
 const menuItems = [
   {
-    title: "出欠管理",
-    url: "/player/attendance",
-    icon: CheckSquare,
-  },
-  {
     title: "カレンダー",
-    url: "/player/calendar",
+    url: "/",
     icon: CalendarIcon,
   },
   {
+    title: "出欠管理",
+    url: "/attendance",
+    icon: CheckSquare,
+  },
+  {
     title: "共有資料",
-    url: "/player/documents",
+    url: "/information",
     icon: FileText,
   },
   {
     title: "プロフィール管理",
-    url: "/player/profile",
+    url: "/profile",
     icon: User,
   },
   {
     title: "問い合わせ",
-    url: "/player/contact",
+    url: "/contact",
     icon: Mail,
   },
 ];
