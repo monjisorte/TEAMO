@@ -443,6 +443,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Coach Management
+  app.get("/api/teams/:teamId/coaches", async (req, res) => {
+    try {
+      const { teamId } = req.params;
+
+      const teamCoaches = await db.select({
+        id: coaches.id,
+        name: coaches.name,
+        email: coaches.email,
+        role: coaches.role,
+        createdAt: coaches.createdAt,
+      }).from(coaches).where(eq(coaches.teamId, teamId));
+
+      res.json(teamCoaches);
+    } catch (error) {
+      console.error("Error fetching coaches:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/coaches/:coachId", async (req, res) => {
+    try {
+      const { coachId } = req.params;
+
+      // Check if coach exists
+      const coach = await db.select().from(coaches).where(eq(coaches.id, coachId)).limit(1);
+      if (coach.length === 0) {
+        return res.status(404).json({ error: "Coach not found" });
+      }
+
+      // Delete coach
+      await db.delete(coaches).where(eq(coaches.id, coachId));
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error deleting coach:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/coaches/:coachId/password", async (req, res) => {
+    try {
+      const { coachId } = req.params;
+      const { password } = req.body;
+
+      if (!password || password.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters" });
+      }
+
+      // Check if coach exists
+      const coach = await db.select().from(coaches).where(eq(coaches.id, coachId)).limit(1);
+      if (coach.length === 0) {
+        return res.status(404).json({ error: "Coach not found" });
+      }
+
+      // Hash and update password
+      const hashedPassword = await hashPassword(password);
+      await db.update(coaches).set({ password: hashedPassword }).where(eq(coaches.id, coachId));
+
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error updating coach password:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Student Profile
   app.get("/api/student/:studentId", async (req, res) => {
     try {
