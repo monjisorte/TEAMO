@@ -47,7 +47,7 @@ export function CoachManagement() {
   const [newPassword, setNewPassword] = useState("");
 
   // Get teamId from localStorage
-  const coachData = localStorage.getItem("coach");
+  const coachData = localStorage.getItem("coachData");
   const teamId = coachData ? JSON.parse(coachData).teamId : null;
 
   // Fetch coaches
@@ -59,10 +59,7 @@ export function CoachManagement() {
   // Add coach mutation
   const addCoachMutation = useMutation({
     mutationFn: async (data: { name: string; email: string; password: string }) => {
-      return await apiRequest(`/api/coach/register`, {
-        method: "POST",
-        body: JSON.stringify({ ...data, teamId }),
-      });
+      return await apiRequest("POST", `/api/coach/register`, { ...data, teamId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/teams", teamId, "coaches"] });
@@ -85,9 +82,7 @@ export function CoachManagement() {
   // Delete coach mutation
   const deleteCoachMutation = useMutation({
     mutationFn: async (coachId: string) => {
-      return await apiRequest(`/api/coaches/${coachId}`, {
-        method: "DELETE",
-      });
+      return await apiRequest("DELETE", `/api/coaches/${coachId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/teams", teamId, "coaches"] });
@@ -110,10 +105,7 @@ export function CoachManagement() {
   // Set password mutation
   const setPasswordMutation = useMutation({
     mutationFn: async ({ coachId, password }: { coachId: string; password: string }) => {
-      return await apiRequest(`/api/coaches/${coachId}/password`, {
-        method: "PATCH",
-        body: JSON.stringify({ password }),
-      });
+      return await apiRequest("PATCH", `/api/coaches/${coachId}/password`, { password });
     },
     onSuccess: () => {
       setIsPasswordDialogOpen(false);

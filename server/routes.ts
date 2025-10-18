@@ -364,9 +364,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Coach Authentication
   app.post("/api/coach/register", async (req, res) => {
     try {
+      console.log("Coach register request received:", req.body);
       const { name, email, password, teamId } = req.body;
 
       if (!name || !email || !password || !teamId) {
+        console.log("Missing required fields:", { name: !!name, email: !!email, password: !!password, teamId: !!teamId });
         return res.status(400).json({ error: "All fields are required" });
       }
 
