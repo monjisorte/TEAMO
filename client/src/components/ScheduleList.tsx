@@ -532,6 +532,8 @@ export function ScheduleList() {
           <CalendarView 
             schedules={filteredSchedules}
             categories={categories}
+            attendances={attendances}
+            students={students}
             onScheduleClick={(schedule) => {
               setEditingSchedule(schedule);
               setFormData({

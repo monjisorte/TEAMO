@@ -1,22 +1,65 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { Schedule, Category } from "@shared/schema";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import type { Schedule, Category, Attendance, Student } from "@shared/schema";
 
 interface CalendarViewProps {
   schedules: Schedule[];
   categories: Category[];
+  attendances: Attendance[];
+  students: Student[];
   onScheduleClick?: (schedule: Schedule) => void;
 }
 
-export function CalendarView({ schedules, categories, onScheduleClick }: CalendarViewProps) {
+export function CalendarView({ schedules, categories, attendances, students, onScheduleClick }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDaySchedules, setSelectedDaySchedules] = useState<Schedule[]>([]);
 
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(c => c.id === categoryId);
     return category?.name || "未分類";
+  };
+
+  const getAttendanceCount = (scheduleId: string) => {
+    const scheduleAttendances = attendances.filter(a => a.scheduleId === scheduleId);
+    const confirmedCount = scheduleAttendances.filter(a => a.status === "○").length;
+    return confirmedCount;
+  };
+
+  const getAttendancesBySchedule = (scheduleId: string) => {
+    return attendances.filter(a => a.scheduleId === scheduleId);
+  };
+
+  const getStudentName = (studentId: string) => {
+    const student = students.find(s => s.id === studentId);
+    return student?.name || "不明";
+  };
+
+  const handleDateClick = (day: number, monthOffset: number) => {
+    const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + monthOffset, day);
+    const daySchedules = getSchedulesForDate(day, monthOffset);
+    
+    if (daySchedules.length > 0) {
+      setSelectedDate(targetDate);
+      setSelectedDaySchedules(daySchedules);
+    }
+  };
+
+  const closeDialog = () => {
+    setSelectedDate(null);
+    setSelectedDaySchedules([]);
   };
 
   const getCategoryColor = (categoryId: string) => {
@@ -177,8 +220,9 @@ export function CalendarView({ schedules, categories, onScheduleClick }: Calenda
                   key={`current-${day}`}
                   className={`min-h-[120px] p-2 border-b border-r ${
                     today ? "bg-primary/5" : ""
-                  }`}
+                  } ${daySchedules.length > 0 ? "cursor-pointer hover-elevate" : ""}`}
                   data-testid={`calendar-day-${day}`}
+                  onClick={() => handleDateClick(day, 0)}
                 >
                   <div
                     className={`text-sm mb-1 font-semibold ${
@@ -198,18 +242,28 @@ export function CalendarView({ schedules, categories, onScheduleClick }: Calenda
                       const startTime = schedule.startHour !== null && schedule.startMinute !== null
                         ? `${String(schedule.startHour).padStart(2, '0')}:${String(schedule.startMinute).padStart(2, '0')}`
                         : "";
+                      const attendanceCount = getAttendanceCount(schedule.id);
                       
                       return (
                         <div
                           key={schedule.id}
-                          className={`text-xs p-1.5 rounded border cursor-pointer hover-elevate ${getCategoryColor(schedule.categoryId)}`}
-                          onClick={() => onScheduleClick?.(schedule)}
+                          className={`text-xs p-1.5 rounded border ${getCategoryColor(schedule.categoryId)}`}
                           data-testid={`schedule-${schedule.id}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDateClick(day, 0);
+                          }}
                         >
                           <div className="font-medium truncate">{schedule.title}</div>
-                          {startTime && (
-                            <div className="text-[10px] opacity-80">{startTime}</div>
-                          )}
+                          <div className="flex items-center justify-between gap-1 mt-0.5">
+                            {startTime && (
+                              <div className="text-[10px] opacity-80">{startTime}</div>
+                            )}
+                            <div className="flex items-center gap-0.5 text-[10px]">
+                              <Users className="h-2.5 w-2.5" />
+                              <span>{attendanceCount}</span>
+                            </div>
+                          </div>
                         </div>
                       );
                     })}
@@ -268,6 +322,174 @@ export function CalendarView({ schedules, categories, onScheduleClick }: Calenda
           </Badge>
         ))}
       </div>
+
+      {/* Event Details Dialog */}
+      <Dialog open={selectedDate !== null} onOpenChange={(open) => !open && closeDialog()}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto" data-testid="dialog-event-details">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedDate && `${selectedDate.getFullYear()}年${selectedDate.getMonth() + 1}月${selectedDate.getDate()}日のイベント`}
+            </DialogTitle>
+            <DialogDescription>
+              この日に予定されているイベントの詳細と参加者情報
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {selectedDaySchedules.map((schedule, index) => {
+              const startTime = schedule.startHour !== null && schedule.startMinute !== null
+                ? `${String(schedule.startHour).padStart(2, '0')}:${String(schedule.startMinute).padStart(2, '0')}`
+                : "";
+              const endTime = schedule.endHour !== null && schedule.endMinute !== null
+                ? `${String(schedule.endHour).padStart(2, '0')}:${String(schedule.endMinute).padStart(2, '0')}`
+                : "";
+              const gatherTime = schedule.gatherHour !== null && schedule.gatherMinute !== null
+                ? `${String(schedule.gatherHour).padStart(2, '0')}:${String(schedule.gatherMinute).padStart(2, '0')}`
+                : "";
+
+              const scheduleAttendances = getAttendancesBySchedule(schedule.id);
+              const confirmedAttendances = scheduleAttendances.filter(a => a.status === "○");
+              const maybeAttendances = scheduleAttendances.filter(a => a.status === "△");
+              const absentAttendances = scheduleAttendances.filter(a => a.status === "×");
+
+              return (
+                <div key={schedule.id}>
+                  {index > 0 && <Separator className="my-6" />}
+                  
+                  <Card className="border-0 shadow-md">
+                    <CardContent className="p-6 space-y-4">
+                      {/* Schedule Info */}
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="space-y-1 flex-1">
+                            <h3 className="text-xl font-bold">{schedule.title}</h3>
+                            <Badge className={getCategoryColor(schedule.categoryId)}>
+                              {getCategoryName(schedule.categoryId)}
+                            </Badge>
+                          </div>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              closeDialog();
+                              onScheduleClick?.(schedule);
+                            }}
+                            data-testid={`button-edit-schedule-${schedule.id}`}
+                          >
+                            編集
+                          </Button>
+                        </div>
+
+                        <div className="space-y-2 text-sm">
+                          {(startTime || endTime) && (
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-muted-foreground min-w-[80px]">時間:</span>
+                              <span>
+                                {startTime && endTime ? `${startTime} 〜 ${endTime}` : startTime || endTime}
+                              </span>
+                            </div>
+                          )}
+                          {gatherTime && (
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-muted-foreground min-w-[80px]">集合時間:</span>
+                              <span>{gatherTime}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-muted-foreground min-w-[80px]">会場:</span>
+                            <span>{schedule.venue}</span>
+                          </div>
+                          {schedule.notes && (
+                            <div className="flex items-start gap-2">
+                              <span className="font-semibold text-muted-foreground min-w-[80px]">メモ:</span>
+                              <span className="flex-1">{schedule.notes}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Attendance Info */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          <h4 className="font-semibold">参加者情報</h4>
+                        </div>
+
+                        <div className="grid gap-3">
+                          {/* Confirmed */}
+                          {confirmedAttendances.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge variant="default" className="bg-green-500">
+                                  ○ 参加 ({confirmedAttendances.length}名)
+                                </Badge>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {confirmedAttendances.map(attendance => (
+                                  <Badge key={attendance.id} variant="outline">
+                                    {getStudentName(attendance.studentId)}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Maybe */}
+                          {maybeAttendances.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge variant="default" className="bg-yellow-500">
+                                  △ 未定 ({maybeAttendances.length}名)
+                                </Badge>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {maybeAttendances.map(attendance => (
+                                  <Badge key={attendance.id} variant="outline">
+                                    {getStudentName(attendance.studentId)}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Absent */}
+                          {absentAttendances.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge variant="default" className="bg-red-500">
+                                  × 欠席 ({absentAttendances.length}名)
+                                </Badge>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {absentAttendances.map(attendance => (
+                                  <Badge key={attendance.id} variant="outline">
+                                    {getStudentName(attendance.studentId)}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {scheduleAttendances.length === 0 && (
+                            <p className="text-sm text-muted-foreground">
+                              まだ参加者の回答がありません
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              );
+            })}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDialog} data-testid="button-close-dialog">
+              閉じる
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
