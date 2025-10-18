@@ -150,6 +150,7 @@ export type Attendance = typeof attendances.$inferSelect;
 
 export const venues = pgTable("venues", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  teamId: varchar("team_id").notNull().references(() => teams.id),
   name: text("name").notNull(),
   address: text("address"),
 });
