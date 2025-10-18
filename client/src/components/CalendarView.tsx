@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Users, Calendar as CalendarIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -11,9 +11,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import type { Schedule, Category, Attendance, Student } from "@shared/schema";
 
 interface CalendarViewProps {
@@ -22,15 +27,19 @@ interface CalendarViewProps {
   attendances: Attendance[];
   students: Student[];
   onScheduleClick?: (schedule: Schedule) => void;
-  onScheduleDateChange?: (scheduleId: string, newDate: string) => void;
+  onParticipantMove?: (attendanceId: string, newScheduleId: string) => void;
 }
 
-export function CalendarView({ schedules, categories, attendances, students, onScheduleClick, onScheduleDateChange }: CalendarViewProps) {
+export function CalendarView({ schedules, categories, attendances, students, onScheduleClick, onParticipantMove }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedDaySchedules, setSelectedDaySchedules] = useState<Schedule[]>([]);
-  const [changeDateSchedule, setChangeDateSchedule] = useState<Schedule | null>(null);
-  const [newDate, setNewDate] = useState("");
+  const [moveParticipantData, setMoveParticipantData] = useState<{
+    attendance: Attendance;
+    fromSchedule: Schedule;
+    studentName: string;
+  } | null>(null);
+  const [targetScheduleId, setTargetScheduleId] = useState("");
 
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(c => c.id === categoryId);
@@ -70,21 +79,27 @@ export function CalendarView({ schedules, categories, attendances, students, onS
     setSelectedDaySchedules([]);
   };
 
-  const openChangeDateDialog = (schedule: Schedule) => {
-    setChangeDateSchedule(schedule);
-    setNewDate(schedule.date);
+  const openMoveParticipantDialog = (attendance: Attendance, fromSchedule: Schedule) => {
+    const student = students.find(s => s.id === attendance.studentId);
+    if (student) {
+      setMoveParticipantData({
+        attendance,
+        fromSchedule,
+        studentName: student.name,
+      });
+      setTargetScheduleId("");
+    }
   };
 
-  const closeChangeDateDialog = () => {
-    setChangeDateSchedule(null);
-    setNewDate("");
+  const closeMoveParticipantDialog = () => {
+    setMoveParticipantData(null);
+    setTargetScheduleId("");
   };
 
-  const handleDateChange = () => {
-    if (changeDateSchedule && newDate && onScheduleDateChange) {
-      onScheduleDateChange(changeDateSchedule.id, newDate);
-      closeChangeDateDialog();
-      closeDialog();
+  const handleParticipantMove = () => {
+    if (moveParticipantData && targetScheduleId && onParticipantMove) {
+      onParticipantMove(moveParticipantData.attendance.id, targetScheduleId);
+      closeMoveParticipantDialog();
     }
   };
 
@@ -393,28 +408,16 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                               {getCategoryName(schedule.categoryId)}
                             </Badge>
                           </div>
-                          <div className="flex gap-2">
-                            {selectedDaySchedules.length > 1 && (
-                              <Button
-                                variant="outline"
-                                onClick={() => openChangeDateDialog(schedule)}
-                                data-testid={`button-change-date-${schedule.id}`}
-                              >
-                                <CalendarIcon className="h-4 w-4 mr-2" />
-                                日付変更
-                              </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              onClick={() => {
-                                closeDialog();
-                                onScheduleClick?.(schedule);
-                              }}
-                              data-testid={`button-edit-schedule-${schedule.id}`}
-                            >
-                              編集
-                            </Button>
-                          </div>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              closeDialog();
+                              onScheduleClick?.(schedule);
+                            }}
+                            data-testid={`button-edit-schedule-${schedule.id}`}
+                          >
+                            編集
+                          </Button>
                         </div>
 
                         <div className="space-y-2 text-sm">
@@ -463,9 +466,22 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                               </div>
                               <div className="flex flex-wrap gap-2">
                                 {confirmedAttendances.map(attendance => (
-                                  <Badge key={attendance.id} variant="outline">
-                                    {getStudentName(attendance.studentId)}
-                                  </Badge>
+                                  <div key={attendance.id} className="flex items-center gap-2">
+                                    <Badge variant="outline">
+                                      {getStudentName(attendance.studentId)}
+                                    </Badge>
+                                    {selectedDaySchedules.length > 1 && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 px-2"
+                                        onClick={() => openMoveParticipantDialog(attendance, schedule)}
+                                        data-testid={`button-move-${attendance.id}`}
+                                      >
+                                        <ArrowRight className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                  </div>
                                 ))}
                               </div>
                             </div>
@@ -481,9 +497,22 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                               </div>
                               <div className="flex flex-wrap gap-2">
                                 {maybeAttendances.map(attendance => (
-                                  <Badge key={attendance.id} variant="outline">
-                                    {getStudentName(attendance.studentId)}
-                                  </Badge>
+                                  <div key={attendance.id} className="flex items-center gap-2">
+                                    <Badge variant="outline">
+                                      {getStudentName(attendance.studentId)}
+                                    </Badge>
+                                    {selectedDaySchedules.length > 1 && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 px-2"
+                                        onClick={() => openMoveParticipantDialog(attendance, schedule)}
+                                        data-testid={`button-move-${attendance.id}`}
+                                      >
+                                        <ArrowRight className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                  </div>
                                 ))}
                               </div>
                             </div>
@@ -499,9 +528,22 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                               </div>
                               <div className="flex flex-wrap gap-2">
                                 {absentAttendances.map(attendance => (
-                                  <Badge key={attendance.id} variant="outline">
-                                    {getStudentName(attendance.studentId)}
-                                  </Badge>
+                                  <div key={attendance.id} className="flex items-center gap-2">
+                                    <Badge variant="outline">
+                                      {getStudentName(attendance.studentId)}
+                                    </Badge>
+                                    {selectedDaySchedules.length > 1 && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 px-2"
+                                        onClick={() => openMoveParticipantDialog(attendance, schedule)}
+                                        data-testid={`button-move-${attendance.id}`}
+                                      >
+                                        <ArrowRight className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                  </div>
                                 ))}
                               </div>
                             </div>
@@ -529,35 +571,47 @@ export function CalendarView({ schedules, categories, attendances, students, onS
         </DialogContent>
       </Dialog>
 
-      {/* Date Change Dialog */}
-      <Dialog open={changeDateSchedule !== null} onOpenChange={(open) => !open && closeChangeDateDialog()}>
-        <DialogContent data-testid="dialog-change-date">
+      {/* Move Participant Dialog */}
+      <Dialog open={moveParticipantData !== null} onOpenChange={(open) => !open && closeMoveParticipantDialog()}>
+        <DialogContent data-testid="dialog-move-participant">
           <DialogHeader>
-            <DialogTitle>イベントの日付を変更</DialogTitle>
+            <DialogTitle>参加者を別のイベントに移動</DialogTitle>
             <DialogDescription>
-              {changeDateSchedule?.title} の日付を変更します
+              {moveParticipantData?.studentName} さんを別のイベントに移動します
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="new-date">新しい日付</Label>
-              <Input
-                id="new-date"
-                type="date"
-                value={newDate}
-                onChange={(e) => setNewDate(e.target.value)}
-                data-testid="input-new-date"
-              />
+              <div className="text-sm">
+                <span className="font-semibold">現在のイベント:</span> {moveParticipantData?.fromSchedule.title}
+              </div>
+              <div className="space-y-2 mt-4">
+                <label className="text-sm font-semibold">移動先のイベント</label>
+                <Select value={targetScheduleId} onValueChange={setTargetScheduleId}>
+                  <SelectTrigger data-testid="select-target-schedule">
+                    <SelectValue placeholder="イベントを選択してください" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedDaySchedules
+                      .filter(s => s.id !== moveParticipantData?.fromSchedule.id)
+                      .map(schedule => (
+                        <SelectItem key={schedule.id} value={schedule.id}>
+                          {schedule.title}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={closeChangeDateDialog} data-testid="button-cancel-date-change">
+            <Button variant="outline" onClick={closeMoveParticipantDialog} data-testid="button-cancel-move">
               キャンセル
             </Button>
-            <Button onClick={handleDateChange} disabled={!newDate} data-testid="button-confirm-date-change">
-              変更する
+            <Button onClick={handleParticipantMove} disabled={!targetScheduleId} data-testid="button-confirm-move">
+              移動する
             </Button>
           </DialogFooter>
         </DialogContent>

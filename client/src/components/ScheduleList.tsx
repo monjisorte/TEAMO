@@ -306,8 +306,21 @@ export function ScheduleList() {
     }
   };
 
-  const handleScheduleDateChange = (scheduleId: string, newDate: string) => {
-    updateScheduleMutation.mutate({ id: scheduleId, data: { date: newDate } });
+  const handleParticipantMove = async (attendanceId: string, newScheduleId: string) => {
+    try {
+      const response = await apiRequest("PUT", `/api/attendances/${attendanceId}`, {
+        scheduleId: newScheduleId,
+      });
+      
+      if (response.ok) {
+        queryClient.invalidateQueries({ queryKey: ["/api/attendances"] });
+        toast({ title: "参加者を移動しました" });
+      } else {
+        toast({ title: "エラーが発生しました", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "エラーが発生しました", variant: "destructive" });
+    }
   };
 
   // 出席状況を集計
@@ -560,7 +573,7 @@ export function ScheduleList() {
               });
               setShowEditDialog(true);
             }}
-            onScheduleDateChange={handleScheduleDateChange}
+            onParticipantMove={handleParticipantMove}
           />
         </TabsContent>
       </Tabs>
