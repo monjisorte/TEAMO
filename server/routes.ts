@@ -988,8 +988,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           endDate.setDate(startDate.getDate() + 6);
           break;
         case "next-week":
-          const nextWeekStart = today.getDay() === 0 ? 1 : 7 - today.getDay() + 1;
-          startDate.setDate(today.getDate() + nextWeekStart);
+          // Calculate this week's Sunday
+          const currentDayOfWeek = today.getDay();
+          const thisWeekSunday = new Date(today);
+          thisWeekSunday.setDate(today.getDate() - currentDayOfWeek);
+          // Next week starts 7 days after this week's Sunday
+          startDate = new Date(thisWeekSunday);
+          startDate.setDate(thisWeekSunday.getDate() + 7);
+          endDate = new Date(startDate);
           endDate.setDate(startDate.getDate() + 6);
           break;
         case "this-month":
