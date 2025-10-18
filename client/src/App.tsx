@@ -37,15 +37,29 @@ interface PlayerData {
   teamId: string;
 }
 
-function PlayerPortalContent({ player, onLogout }: { player: PlayerData; onLogout: () => void }) {
+function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogout: () => void }) {
+  // Fetch latest player data from server
+  const { data: player, isLoading: playerLoading } = useQuery<PlayerData>({
+    queryKey: [`/api/student/${playerId}`],
+    enabled: !!playerId,
+  });
+
   // Fetch team info
   const { data: teams } = useQuery<Array<{ id: string; name: string }>>({
     queryKey: ["/api/teams"],
     enabled: !!player?.teamId,
   });
 
-  const team = teams?.find(t => t.id === player.teamId);
+  const team = teams?.find(t => t.id === player?.teamId);
   const teamName = team?.name || "チーム";
+
+  if (playerLoading || !player) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-muted-foreground">読み込み中...</p>
+      </div>
+    );
+  }
 
   const style = {
     "--sidebar-width": "16rem",
@@ -108,32 +122,34 @@ function PlayerPortalContent({ player, onLogout }: { player: PlayerData; onLogou
 }
 
 function PlayerPortal() {
-  const [player, setPlayer] = useState<PlayerData | null>(null);
+  const [playerId, setPlayerId] = useState<string | null>(null);
   const [, setLocation] = useLocation();
 
   useEffect(() => {
     const savedPlayer = localStorage.getItem("playerData");
     if (savedPlayer) {
-      setPlayer(JSON.parse(savedPlayer));
+      const playerData = JSON.parse(savedPlayer);
+      setPlayerId(playerData.id);
     }
   }, []);
 
   const handleLoginSuccess = (playerData: PlayerData) => {
-    setPlayer(playerData);
+    localStorage.setItem("playerData", JSON.stringify(playerData));
+    setPlayerId(playerData.id);
     setLocation("/player/attendance");
   };
 
   const handleLogout = () => {
     localStorage.removeItem("playerData");
-    setPlayer(null);
+    setPlayerId(null);
     setLocation("/player");
   };
 
-  if (!player) {
+  if (!playerId) {
     return <PlayerLogin onLoginSuccess={handleLoginSuccess} />;
   }
 
-  return <PlayerPortalContent player={player} onLogout={handleLogout} />;
+  return <PlayerPortalContent playerId={playerId} onLogout={handleLogout} />;
 }
 
 function Router() {
