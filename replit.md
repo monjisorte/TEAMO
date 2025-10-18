@@ -16,7 +16,7 @@ Preferred communication style: Simple, everyday language.
 **Component Architecture:** Reusable UI components, feature-specific components (e.g., Dashboard, ScheduleList), and page components as route handlers. Custom hooks encapsulate shared logic.
 
 **Key Features:**
-*   **Coach Interface:** Responsive sidebar navigation, theme toggle, multi-step club registration, schedule management with 5-minute intervals and file attachments (up to 10 files), venue management with Google Maps integration, category/age group management, team management with unique codes, and coach contact information. Dashboard displays real-time statistics (upcoming events by period, team members count, active coaches count) connected to the database. Schedule management includes both list view and calendar view (month display) with category-based color coding. Calendar view displays participant counts (○ marks) for each event, and clicking dates shows event details with participant lists (○△× status) and edit functionality.
+*   **Coach Interface:** Responsive sidebar navigation, theme toggle, multi-step club registration, schedule management with 5-minute intervals and file attachments (up to 10 files), venue management with Google Maps integration, category/age group management, team management with unique codes, and coach contact information. Dashboard displays real-time statistics (upcoming events by period, team members count, active coaches count) connected to the database. Schedule management includes both list view and calendar view (month display) with category-based color coding. **Multiple category selection** is supported when creating schedules (checkbox-based UI). **Venue is optional** - defaults to "未定" (TBD) if not specified. **Recurring schedule auto-generation** creates multiple schedule instances based on recurrence rules (daily, weekly, monthly) with safety limit of 100 occurrences. Recurring schedule deletion/editing prompts confirmation dialog with "this event only" vs "all events in series" options. Calendar view displays participant counts (○ marks) for each event, and clicking dates shows event details with participant lists (○△× status) and edit functionality. **Participant moving feature** allows coaches to move participants between events on the same day via "→" button in calendar event details dialog.
 *   **Player Interface:** Unified design with the coach interface, secure email/password authentication, team registration via 8-character codes, category subscription for schedule filtering, attendance management (○△× status, comments, real-time save), calendar views (month/week) with event details and venue links, shared documents section, contact form, and a profile management page for personal information, photo upload, and category selection with Zod validation.
 
 ### Backend Architecture
@@ -24,16 +24,18 @@ Preferred communication style: Simple, everyday language.
 
 **Server Structure:** `server/index.ts` handles Express setup, `server/routes.ts` for API routes, `server/db.ts` for Drizzle ORM configuration, and `server/storage.ts` provides an abstraction layer for storage operations, currently in-memory but designed for database-backed migration.
 
-**Data Models:** Defined in `shared/schema.ts`, including Users, Teams, Categories, Students, StudentCategories, Schedules, Attendance, Venues, ScheduleFiles, and SharedDocuments. All models use UUID primary keys and are designed for team isolation via `teamId` foreign keys.
+**Data Models:** Defined in `shared/schema.ts`, including Users, Teams, Categories, Students, StudentCategories, Schedules, Attendance, Venues, ScheduleFiles, and SharedDocuments. All models use UUID primary keys and are designed for team isolation via `teamId` foreign keys. **Schedules table** supports both single category (`categoryId`) and multiple categories (`categoryIds` array) with backward compatibility, optional venue field (nullable), and recurring schedule metadata (`recurrenceRule`, `recurrenceInterval`, `recurrenceDays`, `recurrenceEndDate`, `parentScheduleId` for linking recurring instances).
 
 **API Endpoints:**
 *   `/api/stats/:teamId` - GET dashboard statistics (upcoming events count by period, team members count, active coaches count, recent schedules). Accepts query parameter `period` (this-week, next-week, this-month, next-month).
-*   `/api/schedules` - GET/POST schedule management
+*   `/api/schedules` - GET/POST (with recurring schedule auto-generation) schedule management
+*   `/api/schedules/:id` - PUT (with `updateType` parameter: "this" | "all" for recurring schedules), DELETE (with `deleteType` query parameter: "this" | "all" for recurring schedules)
 *   `/api/categories` - GET/POST/DELETE category management
 *   `/api/venues` - GET/POST/DELETE venue management
 *   `/api/students` - GET student data
 *   `/api/coaches` - GET/POST/DELETE coach management
-*   `/api/attendances` - GET/POST/PUT attendance tracking
+*   `/api/attendances` - GET/POST attendance tracking
+*   `/api/attendances/:id` - PUT attendance update (supports scheduleId change for participant moving)
 
 ### Database Architecture
 **ORM and Schema:** Drizzle ORM with PostgreSQL dialect, schema-first approach with TypeScript type inference, Zod integration for runtime validation, and migration support via drizzle-kit.
