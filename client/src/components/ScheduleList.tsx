@@ -306,6 +306,10 @@ export function ScheduleList() {
     }
   };
 
+  const handleScheduleDateChange = (scheduleId: string, newDate: string) => {
+    updateScheduleMutation.mutate({ id: scheduleId, data: { date: newDate } });
+  };
+
   // 出席状況を集計
   const getAttendanceCount = (scheduleId: string) => {
     const scheduleAttendances = attendances.filter(a => a.scheduleId === scheduleId);
@@ -556,6 +560,7 @@ export function ScheduleList() {
               });
               setShowEditDialog(true);
             }}
+            onScheduleDateChange={handleScheduleDateChange}
           />
         </TabsContent>
       </Tabs>
