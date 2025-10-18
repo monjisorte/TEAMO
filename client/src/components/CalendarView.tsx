@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users, Calendar as CalendarIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -12,6 +12,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import type { Schedule, Category, Attendance, Student } from "@shared/schema";
 
 interface CalendarViewProps {
@@ -20,12 +22,15 @@ interface CalendarViewProps {
   attendances: Attendance[];
   students: Student[];
   onScheduleClick?: (schedule: Schedule) => void;
+  onScheduleDateChange?: (scheduleId: string, newDate: string) => void;
 }
 
-export function CalendarView({ schedules, categories, attendances, students, onScheduleClick }: CalendarViewProps) {
+export function CalendarView({ schedules, categories, attendances, students, onScheduleClick, onScheduleDateChange }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedDaySchedules, setSelectedDaySchedules] = useState<Schedule[]>([]);
+  const [changeDateSchedule, setChangeDateSchedule] = useState<Schedule | null>(null);
+  const [newDate, setNewDate] = useState("");
 
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(c => c.id === categoryId);
@@ -63,6 +68,24 @@ export function CalendarView({ schedules, categories, attendances, students, onS
   const closeDialog = () => {
     setSelectedDate(null);
     setSelectedDaySchedules([]);
+  };
+
+  const openChangeDateDialog = (schedule: Schedule) => {
+    setChangeDateSchedule(schedule);
+    setNewDate(schedule.date);
+  };
+
+  const closeChangeDateDialog = () => {
+    setChangeDateSchedule(null);
+    setNewDate("");
+  };
+
+  const handleDateChange = () => {
+    if (changeDateSchedule && newDate && onScheduleDateChange) {
+      onScheduleDateChange(changeDateSchedule.id, newDate);
+      closeChangeDateDialog();
+      closeDialog();
+    }
   };
 
   const getCategoryColor = (categoryId: string) => {
@@ -370,16 +393,28 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                               {getCategoryName(schedule.categoryId)}
                             </Badge>
                           </div>
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              closeDialog();
-                              onScheduleClick?.(schedule);
-                            }}
-                            data-testid={`button-edit-schedule-${schedule.id}`}
-                          >
-                            編集
-                          </Button>
+                          <div className="flex gap-2">
+                            {selectedDaySchedules.length > 1 && (
+                              <Button
+                                variant="outline"
+                                onClick={() => openChangeDateDialog(schedule)}
+                                data-testid={`button-change-date-${schedule.id}`}
+                              >
+                                <CalendarIcon className="h-4 w-4 mr-2" />
+                                日付変更
+                              </Button>
+                            )}
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                closeDialog();
+                                onScheduleClick?.(schedule);
+                              }}
+                              data-testid={`button-edit-schedule-${schedule.id}`}
+                            >
+                              編集
+                            </Button>
+                          </div>
                         </div>
 
                         <div className="space-y-2 text-sm">
@@ -489,6 +524,40 @@ export function CalendarView({ schedules, categories, attendances, students, onS
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog} data-testid="button-close-dialog">
               閉じる
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Date Change Dialog */}
+      <Dialog open={changeDateSchedule !== null} onOpenChange={(open) => !open && closeChangeDateDialog()}>
+        <DialogContent data-testid="dialog-change-date">
+          <DialogHeader>
+            <DialogTitle>イベントの日付を変更</DialogTitle>
+            <DialogDescription>
+              {changeDateSchedule?.title} の日付を変更します
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-date">新しい日付</Label>
+              <Input
+                id="new-date"
+                type="date"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                data-testid="input-new-date"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeChangeDateDialog} data-testid="button-cancel-date-change">
+              キャンセル
+            </Button>
+            <Button onClick={handleDateChange} disabled={!newDate} data-testid="button-confirm-date-change">
+              変更する
             </Button>
           </DialogFooter>
         </DialogContent>
