@@ -111,11 +111,9 @@ export function ScheduleList() {
     recurrenceEndDate: "",
   });
 
-  // Get the first team (coach's team)
-  const { data: teams = [] } = useQuery<Array<{ id: string; name: string }>>({
-    queryKey: ["/api/teams"],
-  });
-  const team = teams[0];
+  // Get teamId from localStorage
+  const coachData = localStorage.getItem("coachData");
+  const teamId = coachData ? JSON.parse(coachData).teamId : null;
 
   // データ取得
   const { data: schedules = [] } = useQuery<Schedule[]>({
@@ -123,8 +121,8 @@ export function ScheduleList() {
   });
 
   const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/categories", team?.id],
-    enabled: !!team?.id,
+    queryKey: ["/api/categories", teamId],
+    enabled: !!teamId,
   });
 
   const { data: students = [] } = useQuery<Student[]>({
@@ -136,8 +134,8 @@ export function ScheduleList() {
   });
 
   const { data: venues = [] } = useQuery<Array<{ id: string; name: string; address: string | null }>>({
-    queryKey: ["/api/teams", team?.id, "venues"],
-    enabled: !!team?.id,
+    queryKey: ["/api/teams", teamId, "venues"],
+    enabled: !!teamId,
   });
 
   // 初回ロード時に全カテゴリを選択
