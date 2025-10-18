@@ -33,16 +33,19 @@ export function CalendarView({ schedules, categories, attendances, students, onS
   };
 
   const getAttendanceCount = (scheduleId: string) => {
+    if (!attendances || attendances.length === 0) return 0;
     const scheduleAttendances = attendances.filter(a => a.scheduleId === scheduleId);
     const confirmedCount = scheduleAttendances.filter(a => a.status === "○").length;
     return confirmedCount;
   };
 
   const getAttendancesBySchedule = (scheduleId: string) => {
+    if (!attendances || attendances.length === 0) return [];
     return attendances.filter(a => a.scheduleId === scheduleId);
   };
 
   const getStudentName = (studentId: string) => {
+    if (!students || students.length === 0) return "不明";
     const student = students.find(s => s.id === studentId);
     return student?.name || "不明";
   };
