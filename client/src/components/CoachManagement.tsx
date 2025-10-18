@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Plus, Mail, Phone, Edit, Trash2 } from "lucide-react";
+import { Plus, Mail, Key, Trash2, Shield } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,37 +13,181 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
-// TODO: remove mock data
-const MOCK_COACHES = [
-  { id: 1, name: "山田太郎", email: "yamada@example.com", phone: "090-1234-5678" },
-  { id: 2, name: "佐藤花子", email: "sato@example.com", phone: "080-2345-6789" },
-  { id: 3, name: "鈴木一郎", email: "suzuki@example.com", phone: "070-3456-7890" },
-];
+interface Coach {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  createdAt: string;
+}
 
 export function CoachManagement() {
-  const [coaches, setCoaches] = useState(MOCK_COACHES);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newCoach, setNewCoach] = useState({ name: "", email: "", phone: "" });
+  const { toast } = useToast();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedCoach, setSelectedCoach] = useState<Coach | null>(null);
+  const [newCoach, setNewCoach] = useState({ name: "", email: "", password: "" });
+  const [newPassword, setNewPassword] = useState("");
 
-  const handleAdd = () => {
-    if (newCoach.name && newCoach.email) {
-      setCoaches([...coaches, { id: Date.now(), ...newCoach }]);
-      setNewCoach({ name: "", email: "", phone: "" });
-      setIsDialogOpen(false);
-      console.log('コーチを追加:', newCoach);
+  // Get teamId from localStorage
+  const coachData = localStorage.getItem("coach");
+  const teamId = coachData ? JSON.parse(coachData).teamId : null;
+
+  // Fetch coaches
+  const { data: coaches = [], isLoading } = useQuery<Coach[]>({
+    queryKey: ["/api/teams", teamId, "coaches"],
+    enabled: !!teamId,
+  });
+
+  // Add coach mutation
+  const addCoachMutation = useMutation({
+    mutationFn: async (data: { name: string; email: string; password: string }) => {
+      return await apiRequest(`/api/coach/register`, {
+        method: "POST",
+        body: JSON.stringify({ ...data, teamId }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teams", teamId, "coaches"] });
+      setNewCoach({ name: "", email: "", password: "" });
+      setIsAddDialogOpen(false);
+      toast({
+        title: "成功",
+        description: "コーチを追加しました",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "コーチの追加に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete coach mutation
+  const deleteCoachMutation = useMutation({
+    mutationFn: async (coachId: string) => {
+      return await apiRequest(`/api/coaches/${coachId}`, {
+        method: "DELETE",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teams", teamId, "coaches"] });
+      setIsDeleteDialogOpen(false);
+      setSelectedCoach(null);
+      toast({
+        title: "成功",
+        description: "コーチを削除しました",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "コーチの削除に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Set password mutation
+  const setPasswordMutation = useMutation({
+    mutationFn: async ({ coachId, password }: { coachId: string; password: string }) => {
+      return await apiRequest(`/api/coaches/${coachId}/password`, {
+        method: "PATCH",
+        body: JSON.stringify({ password }),
+      });
+    },
+    onSuccess: () => {
+      setIsPasswordDialogOpen(false);
+      setSelectedCoach(null);
+      setNewPassword("");
+      toast({
+        title: "成功",
+        description: "パスワードを設定しました",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "パスワードの設定に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAddCoach = () => {
+    if (newCoach.name && newCoach.email && newCoach.password) {
+      if (newCoach.password.length < 6) {
+        toast({
+          title: "エラー",
+          description: "パスワードは6文字以上で入力してください",
+          variant: "destructive",
+        });
+        return;
+      }
+      addCoachMutation.mutate(newCoach);
     }
   };
 
-  const handleDelete = (id: number) => {
-    setCoaches(coaches.filter(c => c.id !== id));
-    console.log('コーチを削除:', id);
+  const handleDeleteClick = (coach: Coach) => {
+    setSelectedCoach(coach);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (selectedCoach) {
+      deleteCoachMutation.mutate(selectedCoach.id);
+    }
+  };
+
+  const handlePasswordClick = (coach: Coach) => {
+    setSelectedCoach(coach);
+    setIsPasswordDialogOpen(true);
+  };
+
+  const handlePasswordSet = () => {
+    if (selectedCoach && newPassword) {
+      if (newPassword.length < 6) {
+        toast({
+          title: "エラー",
+          description: "パスワードは6文字以上で入力してください",
+          variant: "destructive",
+        });
+        return;
+      }
+      setPasswordMutation.mutate({ coachId: selectedCoach.id, password: newPassword });
+    }
   };
 
   const getInitials = (name: string) => {
     return name.slice(0, 2);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-muted-foreground">読み込み中...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -52,7 +196,7 @@ export function CoachManagement() {
           <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">コーチ管理</h1>
           <p className="text-muted-foreground mt-2 text-lg">チームのコーチを登録・管理</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button className="h-12 px-6 rounded-xl text-base" data-testid="button-add-coach">
               <Plus className="h-5 w-5 mr-2" />
@@ -89,22 +233,27 @@ export function CoachManagement() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="coach-phone">電話番号（任意）</Label>
+                <Label htmlFor="coach-password">パスワード（6文字以上）</Label>
                 <Input
-                  id="coach-phone"
-                  value={newCoach.phone}
-                  onChange={(e) => setNewCoach({ ...newCoach, phone: e.target.value })}
-                  placeholder="090-1234-5678"
-                  data-testid="input-coach-phone"
+                  id="coach-password"
+                  type="password"
+                  value={newCoach.password}
+                  onChange={(e) => setNewCoach({ ...newCoach, password: e.target.value })}
+                  placeholder="パスワードを入力"
+                  data-testid="input-coach-password"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)} data-testid="button-cancel">
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} data-testid="button-cancel">
                 キャンセル
               </Button>
-              <Button onClick={handleAdd} data-testid="button-save-coach">
-                追加
+              <Button 
+                onClick={handleAddCoach} 
+                disabled={addCoachMutation.isPending}
+                data-testid="button-save-coach"
+              >
+                {addCoachMutation.isPending ? "追加中..." : "追加"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -122,38 +271,116 @@ export function CoachManagement() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <CardTitle className="text-xl truncate">{coach.name}</CardTitle>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <CardTitle className="text-xl truncate">{coach.name}</CardTitle>
+                    {coach.role === "owner" && (
+                      <Badge variant="default" className="rounded-full" data-testid={`badge-owner-${coach.id}`}>
+                        <Shield className="h-3 w-3 mr-1" />
+                        オーナー
+                      </Badge>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
                     <Mail className="h-4 w-4" />
                     <span className="truncate">{coach.email}</span>
                   </div>
-                  {coach.phone && (
-                    <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                      <Phone className="h-4 w-4" />
-                      <span>{coach.phone}</span>
-                    </div>
-                  )}
                 </div>
               </div>
             </CardHeader>
             <CardContent className="flex gap-3">
-              <Button variant="outline" size="sm" className="flex-1 rounded-xl" data-testid={`button-edit-coach-${coach.id}`}>
-                <Edit className="h-4 w-4 mr-2" />
-                編集
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-xl"
-                onClick={() => handleDelete(coach.id)}
-                data-testid={`button-delete-coach-${coach.id}`}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1 rounded-xl" 
+                onClick={() => handlePasswordClick(coach)}
+                data-testid={`button-set-password-${coach.id}`}
               >
-                <Trash2 className="h-4 w-4" />
+                <Key className="h-4 w-4 mr-2" />
+                パスワード設定
               </Button>
+              {coach.role !== "owner" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl"
+                  onClick={() => handleDeleteClick(coach)}
+                  data-testid={`button-delete-coach-${coach.id}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>本当に削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedCoach?.name}さんを削除すると、このコーチはチームにアクセスできなくなります。
+              この操作は取り消せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">キャンセル</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              disabled={deleteCoachMutation.isPending}
+              data-testid="button-confirm-delete"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteCoachMutation.isPending ? "削除中..." : "削除する"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Password Setting Dialog */}
+      <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>パスワード設定</DialogTitle>
+            <DialogDescription>
+              {selectedCoach?.name}さんの新しいパスワードを設定します
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">新しいパスワード（6文字以上）</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="新しいパスワードを入力"
+                data-testid="input-new-password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsPasswordDialogOpen(false);
+                setNewPassword("");
+              }}
+              data-testid="button-cancel-password"
+            >
+              キャンセル
+            </Button>
+            <Button 
+              onClick={handlePasswordSet}
+              disabled={setPasswordMutation.isPending}
+              data-testid="button-confirm-password"
+            >
+              {setPasswordMutation.isPending ? "設定中..." : "設定する"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
