@@ -305,6 +305,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Coach Authentication
+  app.post("/api/coach/register", async (req, res) => {
+    try {
+      const { name, email, password, teamId } = req.body;
+
+      if (!name || !email || !password || !teamId) {
+        return res.status(400).json({ error: "All fields are required" });
+      }
+
+      // Check if email already exists
+      const existingCoach = await db.select().from(coaches).where(eq(coaches.email, email)).limit(1);
+      if (existingCoach.length > 0) {
+        return res.status(400).json({ error: "Email already registered" });
+      }
+
+      // Hash password and create coach
+      const hashedPassword = await hashPassword(password);
+      const newCoach = await db.insert(coaches).values({
+        name,
+        email,
+        password: hashedPassword,
+        teamId,
+      }).returning();
+
+      res.status(201).json({ coach: { id: newCoach[0].id, name: newCoach[0].name, email: newCoach[0].email } });
+    } catch (error) {
+      console.error("Error registering coach:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   app.post("/api/coach/login", async (req, res) => {
     try {
       const { email, password } = req.body;
