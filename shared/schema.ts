@@ -86,6 +86,20 @@ export const insertStudentSchema = createInsertSchema(students).omit({ id: true,
 export type InsertStudent = z.infer<typeof insertStudentSchema>;
 export type Student = typeof students.$inferSelect;
 
+export const coaches = pgTable("coaches", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  teamId: varchar("team_id").notNull(),
+  role: text("role").default("coach"), // "owner", "coach", "assistant"
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertCoachSchema = createInsertSchema(coaches).omit({ id: true, createdAt: true });
+export type InsertCoach = z.infer<typeof insertCoachSchema>;
+export type Coach = typeof coaches.$inferSelect;
+
 export const schedules = pgTable("schedules", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
