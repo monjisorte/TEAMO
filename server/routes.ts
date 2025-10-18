@@ -956,6 +956,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Dashboard Statistics
+  app.get("/api/stats/:teamId", async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      const { period = "this-week" } = req.query;
+
+      // Get team's categories
+      const teamCategories = await db.select().from(categories).where(eq(categories.teamId, teamId));
+      const categoryIds = teamCategories.map(cat => cat.id);
+
+      if (categoryIds.length === 0) {
+        return res.json({
+          upcomingEvents: 0,
+          teamMembers: 0,
+          activeCoaches: 0,
+          schedules: []
+        });
+      }
+
+      // Calculate date range based on period
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      let startDate = new Date(today);
+      let endDate = new Date(today);
+
+      switch (period) {
+        case "this-week":
+          const dayOfWeek = today.getDay();
+          startDate.setDate(today.getDate() - dayOfWeek);
+          endDate.setDate(startDate.getDate() + 6);
+          break;
+        case "next-week":
+          const nextWeekStart = today.getDay() === 0 ? 1 : 7 - today.getDay() + 1;
+          startDate.setDate(today.getDate() + nextWeekStart);
+          endDate.setDate(startDate.getDate() + 6);
+          break;
+        case "this-month":
+          startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+          endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+          break;
+        case "next-month":
+          startDate = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+          endDate = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+          break;
+      }
+
+      const startDateStr = startDate.toISOString().split('T')[0];
+      const endDateStr = endDate.toISOString().split('T')[0];
+
+      // Count upcoming schedules
+      const allSchedules = await db.select().from(schedules).where(
+        inArray(schedules.categoryId, categoryIds)
+      );
+      
+      const upcomingSchedules = allSchedules.filter(s => 
+        s.date >= startDateStr && s.date <= endDateStr
+      );
+
+      // Count team members
+      const teamMembers = await db.select().from(students).where(eq(students.teamId, teamId));
+
+      // Count coaches
+      const activeCoaches = await db.select().from(coaches).where(eq(coaches.teamId, teamId));
+
+      // Get recent schedules for display
+      const recentSchedules = allSchedules
+        .filter(s => s.date >= today.toISOString().split('T')[0])
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(0, 6);
+
+      res.json({
+        upcomingEvents: upcomingSchedules.length,
+        teamMembers: teamMembers.length,
+        activeCoaches: activeCoaches.length,
+        schedules: recentSchedules
+      });
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Contact Form (send email to team contact)
   app.post("/api/team/:teamId/contact", async (req, res) => {
     try {
