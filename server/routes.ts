@@ -832,7 +832,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { folderId, teamId } = req.query;
       
-      let result;
+      let result: any[];
       if (folderId) {
         result = await db.select().from(sharedDocuments).where(eq(sharedDocuments.folderId, folderId as string));
       } else if (teamId) {

@@ -16,7 +16,7 @@ Preferred communication style: Simple, everyday language.
 **Component Architecture:** Reusable UI components, feature-specific components (e.g., Dashboard, ScheduleList), and page components as route handlers. Custom hooks encapsulate shared logic.
 
 **Key Features:**
-*   **Coach Interface:** Responsive sidebar navigation, theme toggle, multi-step club registration, schedule management with 5-minute intervals and file attachments (up to 10 files), venue management with Google Maps integration, category/age group management, team management with unique codes, and coach contact information.
+*   **Coach Interface:** Responsive sidebar navigation, theme toggle, multi-step club registration, schedule management with 5-minute intervals and file attachments (up to 10 files), venue management with Google Maps integration, category/age group management, team management with unique codes, and coach contact information. Dashboard displays real-time statistics (upcoming events by period, team members count, active coaches count) connected to the database. Schedule management includes both list view and calendar view (month display) with category-based color coding.
 *   **Player Interface:** Unified design with the coach interface, secure email/password authentication, team registration via 8-character codes, category subscription for schedule filtering, attendance management (○△× status, comments, real-time save), calendar views (month/week) with event details and venue links, shared documents section, contact form, and a profile management page for personal information, photo upload, and category selection with Zod validation.
 
 ### Backend Architecture
@@ -25,6 +25,15 @@ Preferred communication style: Simple, everyday language.
 **Server Structure:** `server/index.ts` handles Express setup, `server/routes.ts` for API routes, `server/db.ts` for Drizzle ORM configuration, and `server/storage.ts` provides an abstraction layer for storage operations, currently in-memory but designed for database-backed migration.
 
 **Data Models:** Defined in `shared/schema.ts`, including Users, Teams, Categories, Students, StudentCategories, Schedules, Attendance, Venues, ScheduleFiles, and SharedDocuments. All models use UUID primary keys and are designed for team isolation via `teamId` foreign keys.
+
+**API Endpoints:**
+*   `/api/stats/:teamId` - GET dashboard statistics (upcoming events count by period, team members count, active coaches count, recent schedules). Accepts query parameter `period` (this-week, next-week, this-month, next-month).
+*   `/api/schedules` - GET/POST schedule management
+*   `/api/categories` - GET/POST/DELETE category management
+*   `/api/venues` - GET/POST/DELETE venue management
+*   `/api/students` - GET student data
+*   `/api/coaches` - GET/POST/DELETE coach management
+*   `/api/attendances` - GET/POST/PUT attendance tracking
 
 ### Database Architecture
 **ORM and Schema:** Drizzle ORM with PostgreSQL dialect, schema-first approach with TypeScript type inference, Zod integration for runtime validation, and migration support via drizzle-kit.
