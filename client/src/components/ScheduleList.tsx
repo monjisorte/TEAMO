@@ -135,6 +135,11 @@ export function ScheduleList() {
     queryKey: ["/api/attendances"],
   });
 
+  const { data: venues = [] } = useQuery<Array<{ id: string; name: string; address: string | null }>>({
+    queryKey: ["/api/teams", team?.id, "venues"],
+    enabled: !!team?.id,
+  });
+
   // 初回ロード時に全カテゴリを選択
   useState(() => {
     if (categories.length > 0 && selectedCategories.length === 0) {
@@ -736,13 +741,16 @@ export function ScheduleList() {
 
               <div className="space-y-2">
                 <Label htmlFor="venue">活動場所 *</Label>
-                <Input
-                  id="venue"
-                  placeholder="例: 中央グラウンド"
-                  value={formData.venue}
-                  onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
-                  data-testid="input-schedule-venue"
-                />
+                <Select value={formData.venue} onValueChange={(value) => setFormData({ ...formData, venue: value })}>
+                  <SelectTrigger data-testid="select-schedule-venue">
+                    <SelectValue placeholder="活動場所を選択" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {venues.map(venue => (
+                      <SelectItem key={venue.id} value={venue.name}>{venue.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* 繰り返し設定 */}
