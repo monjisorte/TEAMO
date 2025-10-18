@@ -214,7 +214,7 @@ function CoachPortalContent({ coachId, onLogout }: { coachId: string; onLogout: 
             </div>
           </header>
           <main className="flex-1 overflow-auto p-8">
-            <Router />
+            <CoachRouter />
           </main>
         </div>
       </div>
@@ -253,7 +253,7 @@ function CoachPortal() {
   return <CoachPortalContent coachId={coachId} onLogout={handleLogout} />;
 }
 
-function Router() {
+function CoachRouter() {
   return (
     <Switch>
       <Route path="/team" component={HomePage} />
@@ -267,7 +267,6 @@ function Router() {
       <Route path="/team/information2" component={TeamInfoPage} />
       <Route path="/team/line" component={LineNotificationsPage} />
       <Route path="/team/invite" component={InvitePage} />
-      <Route path="/login" component={RegisterPage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -275,16 +274,27 @@ function Router() {
 
 function App() {
   const [location] = useLocation();
-  const isCoachPortal = location.startsWith("/team") || location === "/login" || location === "/register";
 
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        {isCoachPortal ? (
-          <CoachPortal />
-        ) : (
-          <PlayerPortal />
-        )}
+        <Switch>
+          <Route path="/register">
+            {() => <RegisterPage />}
+          </Route>
+          <Route path="/login">
+            {() => <CoachPortal />}
+          </Route>
+          <Route path="/team">
+            {() => <CoachPortal />}
+          </Route>
+          <Route path="/team/:rest*">
+            {() => <CoachPortal />}
+          </Route>
+          <Route>
+            {() => <PlayerPortal />}
+          </Route>
+        </Switch>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
