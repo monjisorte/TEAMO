@@ -36,6 +36,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { CalendarView } from "@/components/CalendarView";
 import type { Schedule, Category, Student, Attendance } from "@shared/schema";
 
 // 時間（0-23）のオプションを生成
@@ -528,13 +529,32 @@ export function ScheduleList() {
         </TabsContent>
 
         <TabsContent value="calendar" className="mt-8">
-          <Card className="border-0 shadow-xl">
-            <CardContent className="p-8">
-              <div className="text-center text-muted-foreground py-12">
-                カレンダービューは今後実装予定です
-              </div>
-            </CardContent>
-          </Card>
+          <CalendarView 
+            schedules={filteredSchedules}
+            categories={categories}
+            onScheduleClick={(schedule) => {
+              setEditingSchedule(schedule);
+              setFormData({
+                title: schedule.title,
+                date: schedule.date,
+                startHour: schedule.startHour?.toString() || "10",
+                startMinute: schedule.startMinute?.toString() || "0",
+                endHour: schedule.endHour?.toString() || "12",
+                endMinute: schedule.endMinute?.toString() || "0",
+                gatherHour: schedule.gatherHour?.toString() || "9",
+                gatherMinute: schedule.gatherMinute?.toString() || "45",
+                categoryId: schedule.categoryId,
+                venue: schedule.venue,
+                notes: schedule.notes || "",
+                studentCanRegister: schedule.studentCanRegister,
+                recurrenceRule: schedule.recurrenceRule || "none",
+                recurrenceInterval: schedule.recurrenceInterval?.toString() || "1",
+                recurrenceDays: schedule.recurrenceDays ? JSON.parse(schedule.recurrenceDays) : [],
+                recurrenceEndDate: schedule.recurrenceEndDate || "",
+              });
+              setShowEditDialog(true);
+            }}
+          />
         </TabsContent>
       </Tabs>
 
