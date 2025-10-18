@@ -400,6 +400,9 @@ export function ScheduleList() {
 
   // フィルタリングされたスケジュール
   const filteredSchedules = schedules.filter(schedule => {
+    // カテゴリが選択されていない場合は全て表示
+    if (selectedCategories.length === 0) return true;
+    
     const scheduleCategoryIds = schedule.categoryIds || (schedule.categoryId ? [schedule.categoryId] : []);
     return scheduleCategoryIds.some(catId => selectedCategories.includes(catId));
   });
