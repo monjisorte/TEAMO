@@ -152,19 +152,18 @@ function PlayerPortal() {
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={HomePage} />
-      <Route path="/schedules" component={SchedulesPage} />
-      <Route path="/venues" component={VenuesPage} />
-      <Route path="/categories" component={CategoriesPage} />
-      <Route path="/coaches" component={CoachesPage} />
-      <Route path="/register" component={RegisterPage} />
-      <Route path="/teams" component={TeamManagement} />
-      <Route path="/team-info" component={TeamInfoPage} />
-      <Route path="/documents" component={DocumentsPage} />
-      <Route path="/tuition" component={TuitionPage} />
-      <Route path="/invite" component={InvitePage} />
-      <Route path="/line-notifications" component={LineNotificationsPage} />
-      <Route path="/player" component={PlayerPortal} />
+      <Route path="/team" component={HomePage} />
+      <Route path="/team/schedule" component={SchedulesPage} />
+      <Route path="/team/place" component={VenuesPage} />
+      <Route path="/team/category" component={CategoriesPage} />
+      <Route path="/team/staffs" component={CoachesPage} />
+      <Route path="/team/setting" component={TeamManagement} />
+      <Route path="/team/information" component={DocumentsPage} />
+      <Route path="/team/billing" component={TuitionPage} />
+      <Route path="/team/information2" component={TeamInfoPage} />
+      <Route path="/team/line" component={LineNotificationsPage} />
+      <Route path="/team/invite" component={InvitePage} />
+      <Route path="/login" component={RegisterPage} />
       <Route component={NotFound} />
     </Switch>
   );

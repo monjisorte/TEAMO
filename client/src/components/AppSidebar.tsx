@@ -15,57 +15,57 @@ import { Link, useLocation } from "wouter";
 const menuItems = [
   {
     title: "ダッシュボード",
-    url: "/",
+    url: "/team",
     icon: Home,
   },
   {
     title: "スケジュール",
-    url: "/schedules",
+    url: "/team/schedule",
     icon: Calendar,
   },
   {
     title: "活動場所",
-    url: "/venues",
+    url: "/team/place",
     icon: MapPin,
   },
   {
     title: "カテゴリ",
-    url: "/categories",
+    url: "/team/category",
     icon: Tag,
   },
   {
     title: "コーチ",
-    url: "/coaches",
+    url: "/team/staffs",
     icon: Users,
   },
   {
     title: "チーム管理",
-    url: "/teams",
+    url: "/team/setting",
     icon: Shield,
   },
   {
     title: "共有資料",
-    url: "/documents",
+    url: "/team/information",
     icon: FileText,
   },
   {
     title: "月謝管理",
-    url: "/tuition",
+    url: "/team/billing",
     icon: DollarSign,
   },
   {
     title: "チーム情報",
-    url: "/team-info",
+    url: "/team/information2",
     icon: SettingsIcon,
   },
   {
     title: "LINE通知",
-    url: "/line-notifications",
+    url: "/team/line",
     icon: Bell,
   },
   {
     title: "メンバー招待",
-    url: "/invite",
+    url: "/team/invite",
     icon: UserPlus,
   },
 ];
