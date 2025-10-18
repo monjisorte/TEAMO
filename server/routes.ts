@@ -9,7 +9,7 @@ import {
 import { ObjectPermission } from "./objectAcl";
 import { db } from "./db";
 import { teams, students, coaches, studentCategories, attendances, schedules, categories, sharedDocuments, folders, tuitionPayments, venues } from "@shared/schema";
-import { eq, and, inArray, isNull } from "drizzle-orm";
+import { eq, and, inArray, isNull, or } from "drizzle-orm";
 import { generateTeamCode, hashPassword, verifyPassword } from "./utils";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -97,8 +97,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/schedules", async (req, res) => {
     try {
-      const newSchedule = await db.insert(schedules).values(req.body).returning();
-      res.status(201).json(newSchedule[0]);
+      const { recurrenceRule, recurrenceInterval, recurrenceDays, recurrenceEndDate, ...scheduleData } = req.body;
+      
+      // Set default venue to "未定" if not provided
+      if (!scheduleData.venue || scheduleData.venue.trim() === "") {
+        scheduleData.venue = "未定";
+      }
+
+      // Create the first schedule
+      const newSchedule = await db.insert(schedules).values({
+        ...scheduleData,
+        recurrenceRule: recurrenceRule || "none",
+        recurrenceInterval: recurrenceInterval || 1,
+        recurrenceDays,
+        recurrenceEndDate,
+      }).returning();
+
+      const createdSchedules = [newSchedule[0]];
+
+      // If recurrence is enabled, generate additional schedules
+      if (recurrenceRule && recurrenceRule !== "none") {
+        const startDate = new Date(scheduleData.date);
+        const endDate = recurrenceEndDate ? new Date(recurrenceEndDate) : new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000); // Default to 1 year
+        const interval = recurrenceInterval || 1;
+        const recurringSchedules = [];
+
+        let currentDate = new Date(startDate);
+
+        while (currentDate <= endDate) {
+          let nextDate: Date | null = null;
+
+          if (recurrenceRule === "daily") {
+            currentDate.setDate(currentDate.getDate() + interval);
+            nextDate = new Date(currentDate);
+          } else if (recurrenceRule === "weekly") {
+            // For weekly recurrence, use recurrenceDays to determine which days
+            const selectedDays = recurrenceDays ? JSON.parse(recurrenceDays) : [startDate.getDay()];
+            
+            // Move to next week(s) based on interval
+            currentDate.setDate(currentDate.getDate() + 7 * interval);
+            
+            // Find the next matching day
+            let daysToAdd = 0;
+            const targetDay = selectedDays[0]; // Use first selected day for simplicity
+            const currentDay = currentDate.getDay();
+            
+            if (currentDay <= targetDay) {
+              daysToAdd = targetDay - currentDay;
+            } else {
+              daysToAdd = 7 - currentDay + targetDay;
+            }
+            
+            currentDate.setDate(currentDate.getDate() + daysToAdd);
+            nextDate = new Date(currentDate);
+          } else if (recurrenceRule === "monthly") {
+            currentDate.setMonth(currentDate.getMonth() + interval);
+            nextDate = new Date(currentDate);
+          }
+
+          if (nextDate && nextDate <= endDate) {
+            recurringSchedules.push({
+              ...scheduleData,
+              date: nextDate.toISOString().split('T')[0],
+              recurrenceRule,
+              recurrenceInterval,
+              recurrenceDays,
+              recurrenceEndDate,
+              parentScheduleId: newSchedule[0].id,
+            });
+          } else {
+            break;
+          }
+
+          // Safety limit: max 100 recurring schedules
+          if (recurringSchedules.length >= 100) {
+            break;
+          }
+        }
+
+        // Insert all recurring schedules
+        if (recurringSchedules.length > 0) {
+          const inserted = await db.insert(schedules).values(recurringSchedules).returning();
+          createdSchedules.push(...inserted);
+        }
+      }
+
+      res.status(201).json({
+        schedule: newSchedule[0],
+        count: createdSchedules.length,
+        allSchedules: createdSchedules,
+      });
     } catch (error) {
       console.error("Error creating schedule:", error);
       res.status(500).json({ error: "Internal server error" });
@@ -108,7 +196,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/schedules/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      await db.update(schedules).set(req.body).where(eq(schedules.id, id));
+      const { updateType, ...updateData } = req.body; // updateType: "this" | "all"
+
+      if (updateType === "all") {
+        // Get the schedule to find its parent or use itself as parent
+        const schedule = await db.select().from(schedules).where(eq(schedules.id, id)).limit(1);
+        if (schedule.length === 0) {
+          return res.status(404).json({ error: "Schedule not found" });
+        }
+
+        const parentId = schedule[0].parentScheduleId || schedule[0].id;
+
+        // Update all schedules in the series (including parent)
+        await db.update(schedules).set(updateData).where(
+          or(
+            eq(schedules.id, parentId),
+            eq(schedules.parentScheduleId, parentId)
+          )
+        );
+      } else {
+        // Update only this schedule
+        await db.update(schedules).set(updateData).where(eq(schedules.id, id));
+      }
+
       const updated = await db.select().from(schedules).where(eq(schedules.id, id)).limit(1);
       res.json(updated[0]);
     } catch (error) {
@@ -120,7 +230,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/schedules/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      await db.delete(schedules).where(eq(schedules.id, id));
+      const { deleteType } = req.query; // deleteType: "this" | "all"
+
+      if (deleteType === "all") {
+        // Get the schedule to find its parent or use itself as parent
+        const schedule = await db.select().from(schedules).where(eq(schedules.id, id)).limit(1);
+        if (schedule.length === 0) {
+          return res.status(404).json({ error: "Schedule not found" });
+        }
+
+        const parentId = schedule[0].parentScheduleId || schedule[0].id;
+
+        // Delete all schedules in the series (including parent)
+        await db.delete(schedules).where(
+          or(
+            eq(schedules.id, parentId),
+            eq(schedules.parentScheduleId, parentId)
+          )
+        );
+      } else {
+        // Delete only this schedule
+        await db.delete(schedules).where(eq(schedules.id, id));
+      }
+
       res.status(200).json({ success: true });
     } catch (error) {
       console.error("Error deleting schedule:", error);

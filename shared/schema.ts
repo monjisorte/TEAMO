@@ -110,8 +110,10 @@ export const schedules = pgTable("schedules", {
   endMinute: integer("end_minute"),
   gatherHour: integer("gather_hour"),
   gatherMinute: integer("gather_minute"),
-  categoryId: varchar("category_id").notNull(),
-  venue: text("venue").notNull(),
+  teamId: varchar("team_id"),
+  categoryId: varchar("category_id"), // Kept for backward compatibility
+  categoryIds: text("category_ids").array(), // Multiple categories support
+  venue: text("venue"), // Made nullable - defaults to "未定" if not set
   notes: text("notes"),
   studentCanRegister: boolean("student_can_register").notNull().default(true),
   recurrenceRule: text("recurrence_rule"), // none, daily, weekly, monthly
