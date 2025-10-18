@@ -26,11 +26,19 @@ import PlayerCalendarPage from "@/pages/PlayerCalendarPage";
 import PlayerDocumentsPage from "@/pages/PlayerDocumentsPage";
 import PlayerContactPage from "@/pages/PlayerContactPage";
 import PlayerProfilePage from "@/pages/PlayerProfilePage";
+import CoachLogin from "@/pages/CoachLogin";
 import { PlayerSidebar } from "@/components/PlayerSidebar";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
 interface PlayerData {
+  id: string;
+  name: string;
+  email: string;
+  teamId: string;
+}
+
+interface CoachData {
   id: string;
   name: string;
   email: string;
@@ -149,6 +157,102 @@ function PlayerPortal() {
   return <PlayerPortalContent playerId={playerId} onLogout={handleLogout} />;
 }
 
+function CoachPortalContent({ coachId, onLogout }: { coachId: string; onLogout: () => void }) {
+  // Fetch latest coach data from server
+  const { data: coach, isLoading: coachLoading } = useQuery<CoachData>({
+    queryKey: [`/api/coach/${coachId}`],
+    enabled: !!coachId,
+  });
+
+  // Fetch team info
+  const { data: teams } = useQuery<Array<{ id: string; name: string }>>({
+    queryKey: ["/api/teams"],
+    enabled: !!coach?.teamId,
+  });
+
+  const team = teams?.find(t => t.id === coach?.teamId);
+  const teamName = team?.name || "チーム";
+
+  if (coachLoading || !coach) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-muted-foreground">読み込み中...</p>
+      </div>
+    );
+  }
+
+  const style = {
+    "--sidebar-width": "16rem",
+  };
+
+  return (
+    <SidebarProvider style={style as React.CSSProperties}>
+      <div className="flex h-screen w-full">
+        <AppSidebar />
+        <div className="flex flex-col flex-1 min-w-0">
+          <header className="flex items-center justify-between px-8 py-4 border-b bg-card/50 backdrop-blur-sm">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger data-testid="button-sidebar-toggle" />
+              <div>
+                <h1 className="text-lg font-semibold" data-testid="text-coach-name">
+                  {coach.name}さん
+                </h1>
+                <p className="text-xs text-muted-foreground">{coach.email}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={onLogout}
+                data-testid="button-coach-logout"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                ログアウト
+              </Button>
+            </div>
+          </header>
+          <main className="flex-1 overflow-auto p-8">
+            <Router />
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
+  );
+}
+
+function CoachPortal() {
+  const [coachId, setCoachId] = useState<string | null>(null);
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    const savedCoach = localStorage.getItem("coachData");
+    if (savedCoach) {
+      const coachData = JSON.parse(savedCoach);
+      setCoachId(coachData.id);
+    }
+  }, []);
+
+  const handleLoginSuccess = (coachData: CoachData) => {
+    localStorage.setItem("coachData", JSON.stringify(coachData));
+    setCoachId(coachData.id);
+    setLocation("/team");
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("coachData");
+    setCoachId(null);
+    setLocation("/login");
+  };
+
+  if (!coachId) {
+    return <CoachLogin onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  return <CoachPortalContent coachId={coachId} onLogout={handleLogout} />;
+}
+
 function Router() {
   return (
     <Switch>
@@ -171,34 +275,15 @@ function Router() {
 
 function App() {
   const [location] = useLocation();
-  const isCoachPortal = location.startsWith("/team");
-  
-  const style = {
-    "--sidebar-width": "16rem",
-  };
+  const isCoachPortal = location.startsWith("/team") || location === "/login" || location === "/register";
 
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         {isCoachPortal ? (
-          <SidebarProvider style={style as React.CSSProperties}>
-            <div className="flex h-screen w-full">
-              <AppSidebar />
-              <div className="flex flex-col flex-1 min-w-0">
-                <header className="flex items-center justify-between px-8 py-4 border-b bg-card/50 backdrop-blur-sm">
-                  <SidebarTrigger data-testid="button-sidebar-toggle" />
-                  <ThemeToggle />
-                </header>
-                <main className="flex-1 overflow-auto p-8">
-                  <Router />
-                </main>
-              </div>
-            </div>
-          </SidebarProvider>
+          <CoachPortal />
         ) : (
-          <>
-            <PlayerPortal />
-          </>
+          <PlayerPortal />
         )}
         <Toaster />
       </TooltipProvider>
