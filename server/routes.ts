@@ -741,6 +741,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update attendance (for moving participants between schedules)
+  app.put("/api/attendances/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+
+      await db.update(attendances)
+        .set(updateData)
+        .where(eq(attendances.id, id));
+
+      const updated = await db.select().from(attendances).where(eq(attendances.id, id)).limit(1);
+      res.json(updated[0]);
+    } catch (error) {
+      console.error("Error updating attendance:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Shared Documents
   app.get("/api/team/:teamId/documents", async (req, res) => {
     try {
