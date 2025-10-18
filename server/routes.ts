@@ -8,7 +8,7 @@ import {
 } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { db } from "./db";
-import { teams, students, coaches, studentCategories, attendances, schedules, categories, sharedDocuments, folders, tuitionPayments } from "@shared/schema";
+import { teams, students, coaches, studentCategories, attendances, schedules, categories, sharedDocuments, folders, tuitionPayments, venues } from "@shared/schema";
 import { eq, and, inArray, isNull } from "drizzle-orm";
 import { generateTeamCode, hashPassword, verifyPassword } from "./utils";
 
@@ -506,6 +506,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json({ success: true });
     } catch (error) {
       console.error("Error updating coach password:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Venue Management
+  app.get("/api/teams/:teamId/venues", async (req, res) => {
+    try {
+      const { teamId } = req.params;
+
+      const teamVenues = await db.select().from(venues).where(eq(venues.teamId, teamId));
+      res.json(teamVenues);
+    } catch (error) {
+      console.error("Error fetching venues:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/venues", async (req, res) => {
+    try {
+      const { name, address, teamId } = req.body;
+
+      if (!name || !teamId) {
+        return res.status(400).json({ error: "Name and teamId are required" });
+      }
+
+      const newVenue = await db.insert(venues).values({
+        name,
+        address,
+        teamId,
+      }).returning();
+
+      res.status(201).json(newVenue[0]);
+    } catch (error) {
+      console.error("Error creating venue:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/venues/:venueId", async (req, res) => {
+    try {
+      const { venueId } = req.params;
+
+      // Check if venue exists
+      const venue = await db.select().from(venues).where(eq(venues.id, venueId)).limit(1);
+      if (venue.length === 0) {
+        return res.status(404).json({ error: "Venue not found" });
+      }
+
+      // Delete venue
+      await db.delete(venues).where(eq(venues.id, venueId));
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error deleting venue:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
