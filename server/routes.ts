@@ -8,7 +8,7 @@ import {
 } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { db } from "./db";
-import { teams, students, studentCategories, attendances, schedules, categories, sharedDocuments, folders, tuitionPayments } from "@shared/schema";
+import { teams, students, coaches, studentCategories, attendances, schedules, categories, sharedDocuments, folders, tuitionPayments } from "@shared/schema";
 import { eq, and, inArray, isNull } from "drizzle-orm";
 import { generateTeamCode, hashPassword, verifyPassword } from "./utils";
 
@@ -300,6 +300,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error logging in student:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Coach Authentication
+  app.post("/api/coach/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+
+      // Find coach
+      const coach = await db.select().from(coaches).where(eq(coaches.email, email)).limit(1);
+      if (coach.length === 0) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      // Verify password
+      const isValid = await verifyPassword(password, coach[0].password);
+      if (!isValid) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      res.status(200).json({ 
+        coach: { 
+          id: coach[0].id, 
+          name: coach[0].name, 
+          email: coach[0].email,
+          teamId: coach[0].teamId 
+        } 
+      });
+    } catch (error) {
+      console.error("Error logging in coach:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/coach/:coachId", async (req, res) => {
+    try {
+      const { coachId } = req.params;
+      
+      const coach = await db.select().from(coaches).where(eq(coaches.id, coachId)).limit(1);
+      if (coach.length === 0) {
+        return res.status(404).json({ error: "Coach not found" });
+      }
+
+      const { password, ...coachData } = coach[0];
+      res.json(coachData);
+    } catch (error) {
+      console.error("Error fetching coach profile:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
