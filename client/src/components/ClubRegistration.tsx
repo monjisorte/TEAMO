@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 const SPORTS = [
   { value: "baseball", label: "野球", icon: "⚾" },
@@ -13,7 +15,11 @@ const SPORTS = [
   { value: "basketball", label: "バスケットボール", icon: "🏀" },
 ];
 
-export function ClubRegistration() {
+interface ClubRegistrationProps {
+  onRegistrationSuccess?: (coach: { id: string; name: string; email: string; teamId: string }) => void;
+}
+
+export function ClubRegistration({ onRegistrationSuccess }: ClubRegistrationProps) {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     clubName: "",
@@ -23,7 +29,9 @@ export function ClubRegistration() {
     ownerEmail: "",
     password: "",
   });
-  const [teamId, setTeamId] = useState("");
+  const [teamCode, setTeamCode] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleNext = () => {
     if (step < 4) setStep(step + 1);
@@ -33,17 +41,60 @@ export function ClubRegistration() {
     if (step > 1) setStep(step - 1);
   };
 
-  const handleSubmit = () => {
-    const generatedId = `TEAM-${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
-    setTeamId(generatedId);
-    setStep(4);
+  const handleSubmit = async () => {
+    setIsLoading(true);
+    try {
+      const response = await apiRequest("POST", "/api/teams/register", formData);
+      const result = await response.json();
+
+      if (response.ok) {
+        setTeamCode(result.team.teamCode);
+        setStep(4);
+        
+        // Auto-login after registration
+        if (onRegistrationSuccess && result.coach) {
+          localStorage.setItem("coachData", JSON.stringify(result.coach));
+        }
+
+        toast({
+          title: "登録完了",
+          description: "チームとコーチアカウントが作成されました",
+        });
+      } else {
+        toast({
+          title: "登録失敗",
+          description: result.error || "登録中にエラーが発生しました",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast({
+        title: "エラー",
+        description: "登録中にエラーが発生しました",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const updateField = (field: string, value: string) => {
     setFormData({ ...formData, [field]: value });
   };
 
-  if (step === 4 && teamId) {
+  const handleGoToDashboard = () => {
+    if (onRegistrationSuccess) {
+      const coachData = localStorage.getItem("coachData");
+      if (coachData) {
+        onRegistrationSuccess(JSON.parse(coachData));
+      }
+    } else {
+      window.location.href = '/login';
+    }
+  };
+
+  if (step === 4 && teamCode) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary/5 via-purple-500/5 to-background p-4">
         <Card className="w-full max-w-3xl border-0 shadow-2xl">
@@ -54,12 +105,13 @@ export function ClubRegistration() {
               </div>
             </div>
             <CardTitle className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">クラブ登録完了</CardTitle>
-            <CardDescription className="text-lg mt-2">チームIDが発行されました</CardDescription>
+            <CardDescription className="text-lg mt-2">チームコードが発行されました</CardDescription>
           </CardHeader>
           <CardContent className="space-y-8">
             <div className="bg-gradient-to-br from-primary/10 to-purple-600/10 p-8 rounded-2xl text-center">
-              <p className="text-sm text-muted-foreground mb-3">チームID</p>
-              <p className="text-5xl font-mono font-bold tracking-wider bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent" data-testid="text-team-id">{teamId}</p>
+              <p className="text-sm text-muted-foreground mb-3">チームコード</p>
+              <p className="text-5xl font-mono font-bold tracking-wider bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent" data-testid="text-team-code">{teamCode}</p>
+              <p className="text-xs text-muted-foreground mt-4">このコードを使って選手を招待できます</p>
             </div>
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground font-medium">登録情報:</p>
@@ -69,12 +121,20 @@ export function ClubRegistration() {
                   <span className="font-semibold">{formData.clubName}</span>
                 </div>
                 <div className="flex justify-between items-center p-4 rounded-xl bg-muted/30">
+                  <span className="text-muted-foreground">オーナー:</span>
+                  <span className="font-semibold">{formData.ownerName}</span>
+                </div>
+                <div className="flex justify-between items-center p-4 rounded-xl bg-muted/30">
+                  <span className="text-muted-foreground">メールアドレス:</span>
+                  <span className="font-semibold">{formData.ownerEmail}</span>
+                </div>
+                <div className="flex justify-between items-center p-4 rounded-xl bg-muted/30">
                   <span className="text-muted-foreground">スポーツ:</span>
                   <Badge variant="outline" className="rounded-full text-base px-4 py-1">{SPORTS.find(s => s.value === formData.sport)?.label}</Badge>
                 </div>
               </div>
             </div>
-            <Button className="w-full h-14 text-base rounded-xl" onClick={() => console.log('ダッシュボードへ')} data-testid="button-go-dashboard">
+            <Button className="w-full h-14 text-base rounded-xl" onClick={handleGoToDashboard} data-testid="button-go-dashboard">
               ダッシュボードへ
             </Button>
           </CardContent>
