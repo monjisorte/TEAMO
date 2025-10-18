@@ -233,6 +233,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Team and Coach Registration (for new club registration)
+  app.post("/api/teams/register", async (req, res) => {
+    try {
+      const { clubName, address, sport, ownerName, ownerEmail, password } = req.body;
+
+      if (!clubName || !ownerName || !ownerEmail || !password) {
+        return res.status(400).json({ error: "All required fields must be provided" });
+      }
+
+      // Check if email already exists
+      const existingCoach = await db.select().from(coaches).where(eq(coaches.email, ownerEmail)).limit(1);
+      if (existingCoach.length > 0) {
+        return res.status(400).json({ error: "Email already registered" });
+      }
+
+      // Generate unique team code
+      let teamCode = generateTeamCode();
+      let existing = await db.select().from(teams).where(eq(teams.teamCode, teamCode)).limit(1);
+      
+      // Ensure team code is unique
+      while (existing.length > 0) {
+        teamCode = generateTeamCode();
+        existing = await db.select().from(teams).where(eq(teams.teamCode, teamCode)).limit(1);
+      }
+
+      // Create team
+      const newTeam = await db.insert(teams).values({
+        name: clubName,
+        contactEmail: ownerEmail,
+        teamCode,
+      }).returning();
+
+      // Create coach account for the owner
+      const hashedPassword = await hashPassword(password);
+      const newCoach = await db.insert(coaches).values({
+        name: ownerName,
+        email: ownerEmail,
+        password: hashedPassword,
+        teamId: newTeam[0].id,
+        role: "owner",
+      }).returning();
+
+      res.status(201).json({
+        team: newTeam[0],
+        coach: {
+          id: newCoach[0].id,
+          name: newCoach[0].name,
+          email: newCoach[0].email,
+          teamId: newCoach[0].teamId,
+        },
+      });
+    } catch (error) {
+      console.error("Error registering team and coach:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Student Authentication Endpoints
   app.post("/api/student/register", async (req, res) => {
     try {
