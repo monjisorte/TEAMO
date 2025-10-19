@@ -381,6 +381,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const newTeam = await db.insert(teams).values({
         name: clubName,
         contactEmail: ownerEmail,
+        ownerName: ownerName,
+        ownerEmail: ownerEmail,
+        representativeEmail: ownerEmail,
+        address: address,
+        sportType: sport,
         teamCode,
       }).returning();
 

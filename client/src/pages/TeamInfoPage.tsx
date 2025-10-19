@@ -29,12 +29,14 @@ export default function TeamInfoPage() {
   
   // Get coach's teamId from localStorage
   const [teamId, setTeamId] = useState<string | null>(null);
+  const [coachData, setCoachData] = useState<{ name: string; email: string } | null>(null);
 
   useEffect(() => {
     const savedCoach = localStorage.getItem("coachData");
     if (savedCoach) {
-      const coachData = JSON.parse(savedCoach);
-      setTeamId(coachData.teamId);
+      const coach = JSON.parse(savedCoach);
+      setTeamId(coach.teamId);
+      setCoachData({ name: coach.name, email: coach.email });
     }
   }, []);
 
@@ -61,9 +63,9 @@ export default function TeamInfoPage() {
   useEffect(() => {
     if (team) {
       setFormData({
-        ownerName: team.ownerName || "",
-        ownerEmail: team.ownerEmail || "",
-        representativeEmail: team.representativeEmail || team.contactEmail || "",
+        ownerName: team.ownerName || (coachData?.name || ""),
+        ownerEmail: team.ownerEmail || (coachData?.email || ""),
+        representativeEmail: team.representativeEmail || team.contactEmail || (coachData?.email || ""),
         address: team.address || "",
         sportType: team.sportType || "",
         monthlyFeeMember: team.monthlyFeeMember || 0,
@@ -72,7 +74,7 @@ export default function TeamInfoPage() {
         annualFee: team.annualFee || 0,
       });
     }
-  }, [team]);
+  }, [team, coachData]);
 
   const updateTeamMutation = useMutation({
     mutationFn: async (data: Partial<Team>) => {
@@ -290,13 +292,13 @@ export default function TeamInfoPage() {
                 <div>
                   <Label className="text-muted-foreground text-xs">オーナー名</Label>
                   <p className="text-sm font-medium" data-testid="text-owner-name">
-                    {team.ownerName || "未設定"}
+                    {team.ownerName || coachData?.name || "未設定"}
                   </p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground text-xs">オーナーメールアドレス</Label>
                   <p className="text-sm font-medium" data-testid="text-owner-email">
-                    {team.ownerEmail || "未設定"}
+                    {team.ownerEmail || coachData?.email || "未設定"}
                   </p>
                 </div>
               </div>
@@ -304,7 +306,7 @@ export default function TeamInfoPage() {
               <div>
                 <Label className="text-muted-foreground text-xs">代表メールアドレス</Label>
                 <p className="text-sm font-medium" data-testid="text-representative-email">
-                  {team.representativeEmail || team.contactEmail || "未設定"}
+                  {team.representativeEmail || team.contactEmail || coachData?.email || "未設定"}
                 </p>
               </div>
 
