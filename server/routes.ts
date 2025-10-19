@@ -727,6 +727,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all student-category relationships
+  app.get("/api/student-categories", async (req, res) => {
+    try {
+      const allStudentCategories = await db.select().from(studentCategories);
+      res.json(allStudentCategories);
+    } catch (error) {
+      console.error("Error fetching student-categories:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Student Category Selection
   app.get("/api/student/:studentId/categories", async (req, res) => {
     try {
