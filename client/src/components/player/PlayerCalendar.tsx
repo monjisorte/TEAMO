@@ -98,11 +98,27 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
   };
 
   const handlePrevious = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    if (viewMode === "week") {
+      // 週表示の場合は7日前に移動
+      const newDate = new Date(currentDate);
+      newDate.setDate(currentDate.getDate() - 7);
+      setCurrentDate(newDate);
+    } else {
+      // 月表示の場合は前月に移動
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    }
   };
 
   const handleNext = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    if (viewMode === "week") {
+      // 週表示の場合は7日後に移動
+      const newDate = new Date(currentDate);
+      newDate.setDate(currentDate.getDate() + 7);
+      setCurrentDate(newDate);
+    } else {
+      // 月表示の場合は翌月に移動
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    }
   };
 
   const handleToday = () => {
