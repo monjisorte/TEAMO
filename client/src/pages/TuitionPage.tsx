@@ -43,21 +43,30 @@ export default function TuitionPage() {
 
   const autoGenerateMutation = useMutation({
     mutationFn: async () => {
-      if (!team) throw new Error("Team not found");
-      return await apiRequest("POST", "/api/tuition-payments/auto-generate", {
+      if (!team) throw new Error("チームが見つかりません");
+      const response = await apiRequest("POST", "/api/tuition-payments/auto-generate", {
         teamId: team.id,
       });
+      return await response.json();
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ 
         queryKey: [`/api/tuition-payments?year=${selectedYear}&month=${selectedMonth}`] 
       });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/students"]
+      });
+      
+      const count = data.generatedCount || 0;
       toast({
-        title: "自動生成成功",
-        description: data.message || "月謝データを生成しました",
+        title: count > 0 ? "自動生成成功" : "自動生成完了",
+        description: count > 0 
+          ? `${count}件の月謝データを生成しました` 
+          : "生成すべき新しい月謝データはありませんでした（既に全て作成済みです）",
       });
     },
     onError: (error: any) => {
+      console.error("Auto-generate error:", error);
       toast({
         title: "エラー",
         description: error.message || "月謝データの生成に失敗しました",
@@ -202,10 +211,27 @@ export default function TuitionPage() {
     });
   };
 
-  const handleCategoryChange = (studentId: string, category: string | null) => {
+  const updateStudentPlayerTypeMutation = useMutation({
+    mutationFn: async (data: { studentId: string; playerType: string | null }) => {
+      return await apiRequest("PATCH", `/api/student/${data.studentId}`, {
+        playerType: data.playerType,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/students"]
+      });
+    },
+  });
+
+  const handleCategoryChange = async (studentId: string, category: string | null) => {
     const payment = getPaymentForStudent(studentId);
     const student = students.find((s) => s.id === studentId);
     
+    // categoryに基づいてplayerTypeを更新
+    const playerType = category === "team" ? "member" : category === "school" ? "school" : null;
+    
+    // まず月謝データを更新
     updatePaymentMutation.mutate({
       studentId,
       baseAmount: payment?.baseAmount ?? getDefaultBaseAmount(student!),
@@ -215,6 +241,12 @@ export default function TuitionPage() {
       amount: payment?.amount ?? calculateTotal(studentId),
       isPaid: payment?.isPaid || false,
       category,
+    });
+
+    // 次にstudentのplayerTypeも更新（区分を保存）
+    updateStudentPlayerTypeMutation.mutate({
+      studentId,
+      playerType,
     });
   };
 
