@@ -40,7 +40,7 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
   const getCurrentStatus = (scheduleId: string): AttendanceStatus => {
     if (statusMap[scheduleId]) return statusMap[scheduleId];
     const existing = getAttendanceForSchedule(scheduleId);
-    return (existing?.status as AttendanceStatus) || "×";
+    return (existing?.status as AttendanceStatus) || "-";
   };
 
   const getCurrentComment = (scheduleId: string): string => {
@@ -89,15 +89,20 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
     }
   };
 
-  const sortedSchedules = [...schedules].sort((a, b) => {
+  // 未回答のスケジュールのみ表示（出欠登録がないもの）
+  const unansweredSchedules = schedules.filter(schedule => {
+    return !getAttendanceForSchedule(schedule.id);
+  });
+
+  const sortedSchedules = [...unansweredSchedules].sort((a, b) => {
     return new Date(a.date).getTime() - new Date(b.date).getTime();
   });
 
-  if (schedules.length === 0) {
+  if (unansweredSchedules.length === 0) {
     return (
       <Card>
         <CardContent className="py-8 text-center text-muted-foreground">
-          スケジュールがありません
+          {schedules.length === 0 ? "スケジュールがありません" : "未回答のスケジュールはありません"}
         </CardContent>
       </Card>
     );
