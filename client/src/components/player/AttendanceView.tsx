@@ -124,13 +124,13 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
                     <span data-testid={`text-schedule-date-${schedule.id}`}>
                       {format(new Date(schedule.date), "M月d日(E)", { locale: ja })}
                     </span>
-                    {schedule.startTime && schedule.endTime && (
+                    {schedule.startHour !== null && schedule.startMinute !== null && schedule.endHour !== null && schedule.endMinute !== null && (
                       <span>
-                        {schedule.startTime} - {schedule.endTime}
+                        {String(schedule.startHour).padStart(2, '0')}:{String(schedule.startMinute).padStart(2, '0')} - {String(schedule.endHour).padStart(2, '0')}:{String(schedule.endMinute).padStart(2, '0')}
                       </span>
                     )}
-                    {schedule.gatherTime && (
-                      <Badge variant="outline">集合: {schedule.gatherTime}</Badge>
+                    {schedule.gatherHour !== null && schedule.gatherMinute !== null && (
+                      <Badge variant="outline">集合: {String(schedule.gatherHour).padStart(2, '0')}:{String(schedule.gatherMinute).padStart(2, '0')}</Badge>
                     )}
                   </div>
                   <div className="mt-1 text-sm">

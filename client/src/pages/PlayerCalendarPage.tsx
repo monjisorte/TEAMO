@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface PlayerCalendarPageProps {
   playerId: string;
+  teamId: string;
 }
 
-export default function PlayerCalendarPage({ playerId }: PlayerCalendarPageProps) {
+export default function PlayerCalendarPage({ playerId, teamId }: PlayerCalendarPageProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [hasCategoriesSelected, setHasCategoriesSelected] = useState(false);
 
@@ -38,6 +39,7 @@ export default function PlayerCalendarPage({ playerId }: PlayerCalendarPageProps
           </p>
           <CategorySelection
             studentId={playerId}
+            teamId={teamId}
             onCategoriesUpdated={handleCategoriesUpdated}
           />
         </CardContent>

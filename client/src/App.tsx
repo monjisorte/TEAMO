@@ -116,7 +116,7 @@ function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogou
                 {() => <PlayerContactPage teamId={player.teamId} playerName={player.name} playerEmail={player.email} />}
               </Route>
               <Route path="/">
-                {() => <PlayerCalendarPage playerId={player.id} />}
+                {() => <PlayerCalendarPage playerId={player.id} teamId={player.teamId} />}
               </Route>
             </Switch>
           </main>
