@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Users, MapPin, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ interface DashboardStats {
 export function Dashboard() {
   const [schedulePeriod, setSchedulePeriod] = useState<string>("this-week");
   const [showMembersDialog, setShowMembersDialog] = useState(false);
+  const [, setLocation] = useLocation();
 
   // Get teamId from localStorage
   const coachData = localStorage.getItem("coachData");
@@ -198,17 +200,13 @@ export function Dashboard() {
             <CardTitle className="text-xl">クイックアクション</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button className="w-full justify-start gap-3 h-14 text-base rounded-xl" data-testid="button-add-schedule">
+            <Button 
+              className="w-full justify-start gap-3 h-14 text-base rounded-xl" 
+              onClick={() => setLocation("/team/schedule")}
+              data-testid="button-add-schedule"
+            >
               <Plus className="h-5 w-5" />
               スケジュールを追加
-            </Button>
-            <Button variant="outline" className="w-full justify-start gap-3 h-14 text-base rounded-xl border-2" data-testid="button-add-coach">
-              <Plus className="h-5 w-5" />
-              コーチを追加
-            </Button>
-            <Button variant="outline" className="w-full justify-start gap-3 h-14 text-base rounded-xl border-2" data-testid="button-manage-venues">
-              <MapPin className="h-5 w-5" />
-              活動場所を管理
             </Button>
           </CardContent>
         </Card>
