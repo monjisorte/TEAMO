@@ -28,9 +28,10 @@ interface CalendarViewProps {
   students: Student[];
   onScheduleClick?: (schedule: Schedule) => void;
   onParticipantMove?: (attendanceId: string, newScheduleId: string) => void;
+  onDeleteSchedule?: (schedule: Schedule) => void;
 }
 
-export function CalendarView({ schedules, categories, attendances, students, onScheduleClick, onParticipantMove }: CalendarViewProps) {
+export function CalendarView({ schedules, categories, attendances, students, onScheduleClick, onParticipantMove, onDeleteSchedule }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedDaySchedules, setSelectedDaySchedules] = useState<Schedule[]>([]);
@@ -429,16 +430,28 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                               ))}
                             </div>
                           </div>
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              closeDialog();
-                              onScheduleClick?.(schedule);
-                            }}
-                            data-testid={`button-edit-schedule-${schedule.id}`}
-                          >
-                            編集
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                closeDialog();
+                                onScheduleClick?.(schedule);
+                              }}
+                              data-testid={`button-edit-schedule-${schedule.id}`}
+                            >
+                              編集
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={() => {
+                                closeDialog();
+                                onDeleteSchedule?.(schedule);
+                              }}
+                              data-testid={`button-delete-schedule-${schedule.id}`}
+                            >
+                              削除
+                            </Button>
+                          </div>
                         </div>
 
                         <div className="space-y-2 text-sm">

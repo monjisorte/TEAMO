@@ -599,15 +599,6 @@ export function ScheduleList() {
                               <Edit className="h-4 w-4 mr-2" />
                               編集
                             </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="rounded-xl" 
-                              onClick={() => handleDeleteSchedule(schedule)}
-                              data-testid={`button-delete-${schedule.id}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
                           </div>
                         </div>
                       </div>
@@ -649,6 +640,7 @@ export function ScheduleList() {
               setShowEditDialog(true);
             }}
             onParticipantMove={handleParticipantMove}
+            onDeleteSchedule={handleDeleteSchedule}
           />
         </TabsContent>
       </Tabs>
@@ -708,6 +700,36 @@ export function ScheduleList() {
                       ))}
                     </div>
                   )}
+                </div>
+
+                <div className="flex gap-3 pt-4 border-t">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1" 
+                    onClick={() => {
+                      if (schedule) {
+                        handleEditSchedule(schedule);
+                        setSelectedSchedule(null);
+                      }
+                    }}
+                    data-testid={`button-edit-from-popup-${selectedSchedule}`}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    編集
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => {
+                      if (schedule) {
+                        handleDeleteSchedule(schedule);
+                        setSelectedSchedule(null);
+                      }
+                    }}
+                    data-testid={`button-delete-from-popup-${selectedSchedule}`}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    削除
+                  </Button>
                 </div>
               </div>
             );
