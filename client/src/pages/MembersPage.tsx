@@ -16,24 +16,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { Student, Category, StudentCategory, Team } from "@shared/schema";
+import type { Student, Category, StudentCategory } from "@shared/schema";
 import { Users, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
-export default function MembersPage() {
+interface MembersPageProps {
+  teamId: string;
+}
+
+export default function MembersPage({ teamId }: MembersPageProps) {
   const { toast } = useToast();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
-
-  const { data: teams = [] } = useQuery<Team[]>({
-    queryKey: ["/api/teams"],
-  });
-
-  const team = teams[0];
-  const teamId = team?.id;
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: teamId ? [`/api/categories/${teamId}`] : [],

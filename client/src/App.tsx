@@ -226,7 +226,7 @@ function CoachPortalContent({ coachId, onLogout }: { coachId: string; onLogout: 
             </div>
           </header>
           <main className="flex-1 overflow-auto p-8">
-            <CoachRouter />
+            <CoachRouter teamId={coach.teamId} />
           </main>
         </div>
       </div>
@@ -265,7 +265,7 @@ function CoachPortal() {
   return <CoachPortalContent coachId={coachId} onLogout={handleLogout} />;
 }
 
-function CoachRouter() {
+function CoachRouter({ teamId }: { teamId: string }) {
   return (
     <Switch>
       <Route path="/team" component={HomePage} />
@@ -273,7 +273,9 @@ function CoachRouter() {
       <Route path="/team/place" component={VenuesPage} />
       <Route path="/team/category" component={CategoriesPage} />
       <Route path="/team/staffs" component={CoachesPage} />
-      <Route path="/team/members" component={MembersPage} />
+      <Route path="/team/members">
+        {() => <MembersPage teamId={teamId} />}
+      </Route>
       <Route path="/team/information" component={DocumentsPage} />
       <Route path="/team/billing" component={TuitionPage} />
       <Route path="/team/information2" component={TeamInfoPage} />
