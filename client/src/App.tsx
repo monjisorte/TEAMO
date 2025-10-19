@@ -25,7 +25,9 @@ import PlayerCalendarPage from "@/pages/PlayerCalendarPage";
 import PlayerDocumentsPage from "@/pages/PlayerDocumentsPage";
 import PlayerContactPage from "@/pages/PlayerContactPage";
 import PlayerProfilePage from "@/pages/PlayerProfilePage";
+import PlayerMembersPage from "@/pages/player/PlayerMembersPage";
 import CoachLogin from "@/pages/CoachLogin";
+import MembersPage from "@/pages/MembersPage";
 import { PlayerSidebar } from "@/components/PlayerSidebar";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
@@ -104,6 +106,9 @@ function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogou
             <Switch>
               <Route path="/attendance">
                 {() => <PlayerAttendancePage playerId={player.id} teamId={player.teamId} />}
+              </Route>
+              <Route path="/members">
+                {() => <PlayerMembersPage />}
               </Route>
               <Route path="/information">
                 {() => <PlayerDocumentsPage teamId={player.teamId} />}
@@ -260,6 +265,7 @@ function CoachRouter() {
       <Route path="/team/place" component={VenuesPage} />
       <Route path="/team/category" component={CategoriesPage} />
       <Route path="/team/staffs" component={CoachesPage} />
+      <Route path="/team/members" component={MembersPage} />
       <Route path="/team/information" component={DocumentsPage} />
       <Route path="/team/billing" component={TuitionPage} />
       <Route path="/team/information2" component={TeamInfoPage} />
