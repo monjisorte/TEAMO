@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { Student } from "@shared/schema";
+import type { Student, Category, StudentCategory, Team } from "@shared/schema";
 import { Users, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -25,10 +26,39 @@ export default function MembersPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
+
+  const { data: teams = [] } = useQuery<Team[]>({
+    queryKey: ["/api/teams"],
+  });
+
+  const team = teams[0];
+  const teamId = team?.id;
+
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: teamId ? [`/api/categories/${teamId}`] : [],
+    enabled: !!teamId,
+  });
 
   const { data: students = [], isLoading } = useQuery<Student[]>({
     queryKey: ["/api/students"],
   });
+
+  const { data: studentCategories = [] } = useQuery<StudentCategory[]>({
+    queryKey: ["/api/student-categories"],
+  });
+
+  const filteredStudents = useMemo(() => {
+    if (selectedCategoryId === "all") {
+      return students;
+    }
+
+    const studentsInCategory = studentCategories
+      .filter(sc => sc.categoryId === selectedCategoryId)
+      .map(sc => sc.studentId);
+
+    return students.filter(student => studentsInCategory.includes(student.id));
+  }, [students, studentCategories, selectedCategoryId]);
 
   const deleteMutation = useMutation({
     mutationFn: async (studentId: string) => {
@@ -85,6 +115,25 @@ export default function MembersPage() {
         </p>
       </div>
 
+      {categories.length > 0 && (
+        <div className="flex items-center gap-4">
+          <Label>カテゴリでフィルタ:</Label>
+          <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+            <SelectTrigger className="w-64" data-testid="select-category-filter">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全て</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {students.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
@@ -104,7 +153,7 @@ export default function MembersPage() {
             </div>
             <div className="w-20"></div>
           </div>
-          {students.map((student) => (
+          {filteredStudents.map((student) => (
             <Card key={student.id} className="hover-elevate" data-testid={`card-member-${student.id}`}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">

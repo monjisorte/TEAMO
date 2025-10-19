@@ -1,13 +1,46 @@
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import type { Student } from "@shared/schema";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { Student, Category, StudentCategory, Team } from "@shared/schema";
 import { Users } from "lucide-react";
 
 export default function PlayerMembersPage() {
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
+
+  const { data: teams = [] } = useQuery<Team[]>({
+    queryKey: ["/api/teams"],
+  });
+
+  const team = teams[0];
+  const teamId = team?.id;
+
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: teamId ? [`/api/categories/${teamId}`] : [],
+    enabled: !!teamId,
+  });
+
   const { data: students = [], isLoading } = useQuery<Student[]>({
     queryKey: ["/api/students"],
   });
+
+  const { data: studentCategories = [] } = useQuery<StudentCategory[]>({
+    queryKey: ["/api/student-categories"],
+  });
+
+  const filteredStudents = useMemo(() => {
+    if (selectedCategoryId === "all") {
+      return students;
+    }
+
+    const studentsInCategory = studentCategories
+      .filter(sc => sc.categoryId === selectedCategoryId)
+      .map(sc => sc.studentId);
+
+    return students.filter(student => studentsInCategory.includes(student.id));
+  }, [students, studentCategories, selectedCategoryId]);
 
   if (isLoading) {
     return (
@@ -28,6 +61,25 @@ export default function PlayerMembersPage() {
         </p>
       </div>
 
+      {categories.length > 0 && (
+        <div className="flex items-center gap-4">
+          <Label>カテゴリでフィルタ:</Label>
+          <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+            <SelectTrigger className="w-64" data-testid="select-category-filter">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全て</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {students.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
@@ -37,7 +89,7 @@ export default function PlayerMembersPage() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {students.map((student) => (
+          {filteredStudents.map((student) => (
             <Card key={student.id} className="hover-elevate" data-testid={`card-member-${student.id}`}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">
