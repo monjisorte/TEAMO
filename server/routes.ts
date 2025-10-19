@@ -124,31 +124,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         let currentDate = new Date(startDate);
 
-        while (currentDate <= endDate) {
+        while (recurringSchedules.length < 100) {
           let nextDate: Date | null = null;
 
           if (recurrenceRule === "daily") {
             currentDate.setDate(currentDate.getDate() + interval);
             nextDate = new Date(currentDate);
           } else if (recurrenceRule === "weekly") {
-            // For weekly recurrence, use recurrenceDays to determine which days
-            const selectedDays = recurrenceDays ? JSON.parse(recurrenceDays) : [startDate.getDay()];
-            
             // Move to next week(s) based on interval
-            currentDate.setDate(currentDate.getDate() + 7 * interval);
-            
-            // Find the next matching day
-            let daysToAdd = 0;
-            const targetDay = selectedDays[0]; // Use first selected day for simplicity
-            const currentDay = currentDate.getDay();
-            
-            if (currentDay <= targetDay) {
-              daysToAdd = targetDay - currentDay;
-            } else {
-              daysToAdd = 7 - currentDay + targetDay;
-            }
-            
-            currentDate.setDate(currentDate.getDate() + daysToAdd);
+            currentDate.setDate(currentDate.getDate() + (7 * interval));
             nextDate = new Date(currentDate);
           } else if (recurrenceRule === "monthly") {
             currentDate.setMonth(currentDate.getMonth() + interval);
@@ -166,11 +150,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               parentScheduleId: newSchedule[0].id,
             });
           } else {
-            break;
-          }
-
-          // Safety limit: max 100 recurring schedules
-          if (recurringSchedules.length >= 100) {
             break;
           }
         }

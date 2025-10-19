@@ -33,7 +33,7 @@ export default function CategorySelection({ studentId, teamId, onCategoriesUpdat
       setSelectedCategories(categoryIds);
       onCategoriesUpdated?.(categoryIds);
     }
-  }, [studentCategories, onCategoriesUpdated]);
+  }, [studentCategories]);
 
   const handleToggle = (categoryId: string) => {
     setSelectedCategories((prev) =>
