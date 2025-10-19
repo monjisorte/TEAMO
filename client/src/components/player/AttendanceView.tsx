@@ -90,8 +90,9 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
   };
 
   // 未回答のスケジュールのみ表示（出欠登録がないもの）
+  // コーチ指定のスケジュール（studentCanRegister: false）は除外
   const unansweredSchedules = schedules.filter(schedule => {
-    return !getAttendanceForSchedule(schedule.id);
+    return !getAttendanceForSchedule(schedule.id) && schedule.studentCanRegister !== false;
   });
 
   const sortedSchedules = [...unansweredSchedules].sort((a, b) => {

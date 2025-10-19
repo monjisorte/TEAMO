@@ -381,35 +381,46 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
                 >
                   {attendance?.status || "未回答"}
                 </Badge>
+                {nextSchedule.studentCanRegister === false && (
+                  <Badge variant="secondary" className="text-xs">
+                    コーチ指定
+                  </Badge>
+                )}
               </div>
               
               {/* Attendance Buttons */}
-              <div className="flex gap-2">
-                <Button
-                  variant={attendance?.status === "○" ? "default" : "outline"}
-                  onClick={() => handleAttendanceChange(nextSchedule.id, "○")}
-                  disabled={saveAttendanceMutation.isPending}
-                  data-testid="button-next-attendance-yes"
-                >
-                  ○ 参加
-                </Button>
-                <Button
-                  variant={attendance?.status === "△" ? "default" : "outline"}
-                  onClick={() => handleAttendanceChange(nextSchedule.id, "△")}
-                  disabled={saveAttendanceMutation.isPending}
-                  data-testid="button-next-attendance-maybe"
-                >
-                  △ 未定
-                </Button>
-                <Button
-                  variant={attendance?.status === "×" ? "default" : "outline"}
-                  onClick={() => handleAttendanceChange(nextSchedule.id, "×")}
-                  disabled={saveAttendanceMutation.isPending}
-                  data-testid="button-next-attendance-no"
-                >
-                  × 欠席
-                </Button>
-              </div>
+              {nextSchedule.studentCanRegister !== false ? (
+                <div className="flex gap-2">
+                  <Button
+                    variant={attendance?.status === "○" ? "default" : "outline"}
+                    onClick={() => handleAttendanceChange(nextSchedule.id, "○")}
+                    disabled={saveAttendanceMutation.isPending}
+                    data-testid="button-next-attendance-yes"
+                  >
+                    ○ 参加
+                  </Button>
+                  <Button
+                    variant={attendance?.status === "△" ? "default" : "outline"}
+                    onClick={() => handleAttendanceChange(nextSchedule.id, "△")}
+                    disabled={saveAttendanceMutation.isPending}
+                    data-testid="button-next-attendance-maybe"
+                  >
+                    △ 未定
+                  </Button>
+                  <Button
+                    variant={attendance?.status === "×" ? "default" : "outline"}
+                    onClick={() => handleAttendanceChange(nextSchedule.id, "×")}
+                    disabled={saveAttendanceMutation.isPending}
+                    data-testid="button-next-attendance-no"
+                  >
+                    × 欠席
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  このイベントはコーチ指定のため、出欠の変更はできません
+                </p>
+              )}
             </div>
 
             <Separator />
@@ -754,38 +765,49 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
                       >
                         {getAttendanceForSchedule(selectedSchedule.id)?.status || "未回答"}
                       </Badge>
+                      {selectedSchedule.studentCanRegister === false && (
+                        <Badge variant="secondary" className="text-xs">
+                          コーチ指定
+                        </Badge>
+                      )}
                     </div>
                     
                     {/* Attendance Buttons */}
-                    <div className="flex gap-2">
-                      <Button
-                        variant={getAttendanceForSchedule(selectedSchedule.id)?.status === "○" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handleAttendanceChange(selectedSchedule.id, "○")}
-                        disabled={saveAttendanceMutation.isPending}
-                        data-testid="button-attendance-yes"
-                      >
-                        ○ 参加
-                      </Button>
-                      <Button
-                        variant={getAttendanceForSchedule(selectedSchedule.id)?.status === "△" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handleAttendanceChange(selectedSchedule.id, "△")}
-                        disabled={saveAttendanceMutation.isPending}
-                        data-testid="button-attendance-maybe"
-                      >
-                        △ 未定
-                      </Button>
-                      <Button
-                        variant={getAttendanceForSchedule(selectedSchedule.id)?.status === "×" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handleAttendanceChange(selectedSchedule.id, "×")}
-                        disabled={saveAttendanceMutation.isPending}
-                        data-testid="button-attendance-no"
-                      >
-                        × 欠席
-                      </Button>
-                    </div>
+                    {selectedSchedule.studentCanRegister !== false ? (
+                      <div className="flex gap-2">
+                        <Button
+                          variant={getAttendanceForSchedule(selectedSchedule.id)?.status === "○" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleAttendanceChange(selectedSchedule.id, "○")}
+                          disabled={saveAttendanceMutation.isPending}
+                          data-testid="button-attendance-yes"
+                        >
+                          ○ 参加
+                        </Button>
+                        <Button
+                          variant={getAttendanceForSchedule(selectedSchedule.id)?.status === "△" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleAttendanceChange(selectedSchedule.id, "△")}
+                          disabled={saveAttendanceMutation.isPending}
+                          data-testid="button-attendance-maybe"
+                        >
+                          △ 未定
+                        </Button>
+                        <Button
+                          variant={getAttendanceForSchedule(selectedSchedule.id)?.status === "×" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleAttendanceChange(selectedSchedule.id, "×")}
+                          disabled={saveAttendanceMutation.isPending}
+                          data-testid="button-attendance-no"
+                        >
+                          × 欠席
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        このイベントはコーチ指定のため、出欠の変更はできません
+                      </p>
+                    )}
                   </div>
 
                   <Separator />
