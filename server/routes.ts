@@ -1076,7 +1076,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
       
-      const allStudents = await db.select().from(students);
+      const { teamId } = req.query;
+      
+      let allStudents;
+      if (teamId) {
+        allStudents = await db.select().from(students).where(eq(students.teamId, teamId as string));
+      } else {
+        allStudents = await db.select().from(students);
+      }
+      
       res.json(allStudents);
     } catch (error) {
       console.error("Error fetching students:", error);

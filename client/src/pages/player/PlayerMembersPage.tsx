@@ -20,7 +20,8 @@ export default function PlayerMembersPage({ teamId }: PlayerMembersPageProps) {
   });
 
   const { data: students = [], isLoading } = useQuery<Student[]>({
-    queryKey: ["/api/students"],
+    queryKey: teamId ? [`/api/students?teamId=${teamId}`] : ["/api/students"],
+    enabled: !!teamId,
   });
 
   const { data: studentCategories = [] } = useQuery<StudentCategory[]>({

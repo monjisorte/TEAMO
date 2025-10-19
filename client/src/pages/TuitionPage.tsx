@@ -54,7 +54,8 @@ export default function TuitionPage() {
   }, [team]);
 
   const { data: students = [] } = useQuery<Student[]>({
-    queryKey: ["/api/students"],
+    queryKey: team?.id ? [`/api/students?teamId=${team.id}`] : ["/api/students"],
+    enabled: !!team?.id,
   });
 
   const { data: payments = [], isLoading } = useQuery<TuitionPayment[]>({
