@@ -9,6 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Student, TuitionPayment, Team } from "@shared/schema";
+import { Badge } from "@/components/ui/badge";
+import { RefreshCw } from "lucide-react";
 
 export default function TuitionPage() {
   const { toast } = useToast();
@@ -17,6 +19,13 @@ export default function TuitionPage() {
   
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [editingValues, setEditingValues] = useState<Record<string, {
+    baseAmount?: number;
+    discount?: number;
+    enrollmentOrAnnualFee?: number;
+    spotFee?: number;
+    amount?: number;
+  }>>({});
 
   const { data: teams = [] } = useQuery<Team[]>({
     queryKey: ["/api/teams"],
@@ -28,12 +37,46 @@ export default function TuitionPage() {
     queryKey: ["/api/students"],
   });
 
-  const { data: payments = [] } = useQuery<TuitionPayment[]>({
+  const { data: payments = [], isLoading } = useQuery<TuitionPayment[]>({
     queryKey: [`/api/tuition-payments?year=${selectedYear}&month=${selectedMonth}`],
   });
 
+  const autoGenerateMutation = useMutation({
+    mutationFn: async () => {
+      if (!team) throw new Error("Team not found");
+      return await apiRequest("POST", "/api/tuition-payments/auto-generate", {
+        teamId: team.id,
+      });
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/tuition-payments?year=${selectedYear}&month=${selectedMonth}`] 
+      });
+      toast({
+        title: "自動生成成功",
+        description: data.message || "月謝データを生成しました",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "エラー",
+        description: error.message || "月謝データの生成に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
   const updatePaymentMutation = useMutation({
-    mutationFn: async (data: { studentId: string; amount: number; isPaid: boolean; category?: string | null }) => {
+    mutationFn: async (data: { 
+      studentId: string; 
+      baseAmount?: number;
+      discount?: number;
+      enrollmentOrAnnualFee?: number;
+      spotFee?: number;
+      amount?: number; 
+      isPaid?: boolean; 
+      category?: string | null 
+    }) => {
       return await apiRequest("POST", "/api/tuition-payments", {
         ...data,
         year: selectedYear,
@@ -55,7 +98,7 @@ export default function TuitionPage() {
     return payments.find((p) => p.studentId === studentId);
   };
 
-  const getDefaultAmount = (student: Student) => {
+  const getDefaultBaseAmount = (student: Student) => {
     if (!team) return 0;
     if (student.playerType === "member") {
       return team.monthlyFeeMember || 0;
@@ -65,33 +108,111 @@ export default function TuitionPage() {
     return 0;
   };
 
-  const handleAmountChange = (studentId: string, amount: number) => {
+  const getDefaultEnrollmentOrAnnualFee = () => {
+    if (!team) return 0;
+    // 4月には年会費を自動設定
+    if (selectedMonth === 4) {
+      return team.annualFee || 0;
+    }
+    return 0;
+  };
+
+  const getEditingValue = (studentId: string, field: keyof typeof editingValues[string], defaultValue: number) => {
+    return editingValues[studentId]?.[field] ?? defaultValue;
+  };
+
+  const setEditingValue = (studentId: string, field: keyof typeof editingValues[string], value: number) => {
+    setEditingValues(prev => ({
+      ...prev,
+      [studentId]: {
+        ...prev[studentId],
+        [field]: value,
+      }
+    }));
+  };
+
+  const calculateTotal = (studentId: string) => {
     const payment = getPaymentForStudent(studentId);
+    const student = students.find(s => s.id === studentId);
+    
+    const baseAmount = getEditingValue(
+      studentId, 
+      'baseAmount', 
+      payment?.baseAmount ?? getDefaultBaseAmount(student!)
+    );
+    const discount = getEditingValue(studentId, 'discount', payment?.discount ?? 0);
+    const enrollmentOrAnnualFee = getEditingValue(
+      studentId, 
+      'enrollmentOrAnnualFee', 
+      payment?.enrollmentOrAnnualFee ?? getDefaultEnrollmentOrAnnualFee()
+    );
+    const spotFee = getEditingValue(studentId, 'spotFee', payment?.spotFee ?? 0);
+    
+    return baseAmount - discount + enrollmentOrAnnualFee + spotFee;
+  };
+
+  const handleFieldUpdate = (studentId: string, field: 'baseAmount' | 'discount' | 'enrollmentOrAnnualFee' | 'spotFee' | 'amount') => {
+    const payment = getPaymentForStudent(studentId);
+    const student = students.find(s => s.id === studentId);
+    const value = editingValues[studentId]?.[field];
+    
+    if (value === undefined) return;
+
+    // 他のフィールドの現在の値を取得
+    const baseAmount = field === 'baseAmount' ? value : (payment?.baseAmount ?? getDefaultBaseAmount(student!));
+    const discount = field === 'discount' ? value : (payment?.discount ?? 0);
+    const enrollmentOrAnnualFee = field === 'enrollmentOrAnnualFee' ? value : (payment?.enrollmentOrAnnualFee ?? getDefaultEnrollmentOrAnnualFee());
+    const spotFee = field === 'spotFee' ? value : (payment?.spotFee ?? 0);
+    
+    // 合計金額を計算（手動編集の場合は編集値を使用）
+    const amount = field === 'amount' ? value : (baseAmount - discount + enrollmentOrAnnualFee + spotFee);
+
     updatePaymentMutation.mutate({
       studentId,
+      baseAmount,
+      discount,
+      enrollmentOrAnnualFee,
+      spotFee,
       amount,
       isPaid: payment?.isPaid || false,
-      category: payment?.category || null,
+      category: payment?.category || (student?.playerType === "member" ? "team" : student?.playerType === "school" ? "school" : null),
+    });
+
+    // 編集値をクリア
+    setEditingValues(prev => {
+      const newValues = { ...prev };
+      delete newValues[studentId];
+      return newValues;
     });
   };
 
   const handlePaidToggle = (studentId: string, isPaid: boolean) => {
     const payment = getPaymentForStudent(studentId);
     const student = students.find((s) => s.id === studentId);
+    
     updatePaymentMutation.mutate({
       studentId,
-      amount: payment?.amount || getDefaultAmount(student!),
+      baseAmount: payment?.baseAmount ?? getDefaultBaseAmount(student!),
+      discount: payment?.discount ?? 0,
+      enrollmentOrAnnualFee: payment?.enrollmentOrAnnualFee ?? getDefaultEnrollmentOrAnnualFee(),
+      spotFee: payment?.spotFee ?? 0,
+      amount: payment?.amount ?? calculateTotal(studentId),
       isPaid,
-      category: payment?.category || null,
+      category: payment?.category || (student?.playerType === "member" ? "team" : student?.playerType === "school" ? "school" : null),
     });
   };
 
   const handleCategoryChange = (studentId: string, category: string | null) => {
     const payment = getPaymentForStudent(studentId);
     const student = students.find((s) => s.id === studentId);
+    
     updatePaymentMutation.mutate({
       studentId,
-      amount: payment?.amount || getDefaultAmount(student!),
+      baseAmount: payment?.baseAmount ?? getDefaultBaseAmount(student!),
+      discount: payment?.discount ?? 0,
+      enrollmentOrAnnualFee: payment?.enrollmentOrAnnualFee ?? getDefaultEnrollmentOrAnnualFee(),
+      spotFee: payment?.spotFee ?? 0,
+      amount: payment?.amount ?? calculateTotal(studentId),
       isPaid: payment?.isPaid || false,
       category,
     });
@@ -102,59 +223,70 @@ export default function TuitionPage() {
 
   const totalAmount = students.reduce((sum, student) => {
     const payment = getPaymentForStudent(student.id);
-    return sum + (payment?.amount || getDefaultAmount(student));
+    return sum + (payment?.amount ?? calculateTotal(student.id));
   }, 0);
 
   const paidAmount = payments
     .filter((p) => p.isPaid)
     .reduce((sum, p) => sum + p.amount, 0);
 
+  const unpaidAmount = totalAmount - paidAmount;
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          月謝管理
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          メンバーの月謝の支払い状況を管理します
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            月謝管理
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            メンバーの月謝の支払い状況を管理します
+          </p>
+        </div>
+        <Button
+          onClick={() => autoGenerateMutation.mutate()}
+          disabled={autoGenerateMutation.isPending || !team}
+          data-testid="button-auto-generate"
+        >
+          <RefreshCw className={`mr-2 h-4 w-4 ${autoGenerateMutation.isPending ? 'animate-spin' : ''}`} />
+          月謝データ自動生成
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              月謝総額
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">合計請求額</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">¥{totalAmount.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {selectedYear}年{selectedMonth}月
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              支払い済み
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">入金済み</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              ¥{paidAmount.toLocaleString()}
-            </div>
+            <div className="text-2xl font-bold text-green-600">¥{paidAmount.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {payments.filter(p => p.isPaid).length} / {students.length} 名
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              未払い
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">未収金</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              ¥{(totalAmount - paidAmount).toLocaleString()}
-            </div>
+            <div className="text-2xl font-bold text-orange-600">¥{unpaidAmount.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {payments.filter(p => !p.isPaid).length} 名未入金
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -162,39 +294,28 @@ export default function TuitionPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>月謝一覧</CardTitle>
-              <CardDescription>
-                月を選択して支払い状況を管理します
-              </CardDescription>
-            </div>
+            <CardTitle>月謝一覧</CardTitle>
             <div className="flex gap-2">
-              <Select
-                value={selectedYear.toString()}
-                onValueChange={(value) => setSelectedYear(parseInt(value))}
-              >
-                <SelectTrigger className="w-28" data-testid="select-year">
+              <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                <SelectTrigger className="w-[120px]" data-testid="select-year">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {years.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
+                    <SelectItem key={year} value={String(year)}>
                       {year}年
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select
-                value={selectedMonth.toString()}
-                onValueChange={(value) => setSelectedMonth(parseInt(value))}
-              >
-                <SelectTrigger className="w-24" data-testid="select-month">
+              <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+                <SelectTrigger className="w-[100px]" data-testid="select-month">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {months.map((month) => (
-                    <SelectItem key={month} value={month.toString()}>
+                    <SelectItem key={month} value={String(month)}>
                       {month}月
                     </SelectItem>
                   ))}
@@ -202,76 +323,124 @@ export default function TuitionPage() {
               </Select>
             </div>
           </div>
+          <CardDescription>
+            メンバーごとの月謝の詳細と支払い状況
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>名前</TableHead>
-                <TableHead>区分</TableHead>
-                <TableHead className="text-right">金額（円）</TableHead>
-                <TableHead className="text-center">支払い済み</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {students.map((student) => {
-                const payment = getPaymentForStudent(student.id);
-                const defaultAmount = getDefaultAmount(student);
-                const amount = payment?.amount || defaultAmount;
-                const isPaid = payment?.isPaid || false;
-                const category = payment?.category || null;
-
-                return (
-                  <TableRow key={student.id} data-testid={`row-student-${student.id}`}>
-                    <TableCell className="font-medium">{student.name}</TableCell>
-                    <TableCell>
-                      <Select
-                        value={category || "unselected"}
-                        onValueChange={(value) => 
-                          handleCategoryChange(student.id, value === "unselected" ? null : value)
-                        }
-                      >
-                        <SelectTrigger className="w-32" data-testid={`select-category-${student.id}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="unselected">(未選択)</SelectItem>
-                          <SelectItem value="team">チーム</SelectItem>
-                          <SelectItem value="school">スクール</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Input
-                        type="number"
-                        value={amount}
-                        onChange={(e) =>
-                          handleAmountChange(student.id, parseInt(e.target.value) || 0)
-                        }
-                        className="w-32 text-right ml-auto"
-                        data-testid={`input-amount-${student.id}`}
-                      />
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Checkbox
-                        checked={isPaid}
-                        onCheckedChange={(checked) =>
-                          handlePaidToggle(student.id, checked as boolean)
-                        }
-                        data-testid={`checkbox-paid-${student.id}`}
-                      />
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>名前</TableHead>
+                  <TableHead>区分</TableHead>
+                  <TableHead className="text-right">月謝</TableHead>
+                  <TableHead className="text-right">割引</TableHead>
+                  <TableHead className="text-right">入会/年会費</TableHead>
+                  <TableHead className="text-right">スポット</TableHead>
+                  <TableHead className="text-right">合計金額(円)</TableHead>
+                  <TableHead className="text-center">ステータス</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {students.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">
+                      メンバーが登録されていません
                     </TableCell>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                ) : (
+                  students.map((student) => {
+                    const payment = getPaymentForStudent(student.id);
+                    const baseAmount = payment?.baseAmount ?? getDefaultBaseAmount(student);
+                    const discount = payment?.discount ?? 0;
+                    const enrollmentOrAnnualFee = payment?.enrollmentOrAnnualFee ?? getDefaultEnrollmentOrAnnualFee();
+                    const spotFee = payment?.spotFee ?? 0;
+                    const amount = payment?.amount ?? calculateTotal(student.id);
 
-          {students.length === 0 && (
-            <div className="py-12 text-center text-muted-foreground">
-              登録されているメンバーがいません
-            </div>
-          )}
+                    return (
+                      <TableRow key={student.id}>
+                        <TableCell className="font-medium">{student.name}</TableCell>
+                        <TableCell>
+                          <Select
+                            value={payment?.category || (student.playerType === "member" ? "team" : student.playerType === "school" ? "school" : "unset")}
+                            onValueChange={(value) => handleCategoryChange(student.id, value === "unset" ? null : value)}
+                            data-testid={`select-category-${student.id}`}
+                          >
+                            <SelectTrigger className="w-[100px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="team">チーム</SelectItem>
+                              <SelectItem value="school">スクール</SelectItem>
+                              <SelectItem value="unset">(未選択)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Input
+                            type="number"
+                            value={getEditingValue(student.id, 'baseAmount', baseAmount)}
+                            onChange={(e) => setEditingValue(student.id, 'baseAmount', parseInt(e.target.value) || 0)}
+                            onBlur={() => handleFieldUpdate(student.id, 'baseAmount')}
+                            className="w-24 text-right"
+                            data-testid={`input-base-amount-${student.id}`}
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Input
+                            type="number"
+                            value={getEditingValue(student.id, 'discount', discount)}
+                            onChange={(e) => setEditingValue(student.id, 'discount', parseInt(e.target.value) || 0)}
+                            onBlur={() => handleFieldUpdate(student.id, 'discount')}
+                            className="w-24 text-right"
+                            data-testid={`input-discount-${student.id}`}
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Input
+                            type="number"
+                            value={getEditingValue(student.id, 'enrollmentOrAnnualFee', enrollmentOrAnnualFee)}
+                            onChange={(e) => setEditingValue(student.id, 'enrollmentOrAnnualFee', parseInt(e.target.value) || 0)}
+                            onBlur={() => handleFieldUpdate(student.id, 'enrollmentOrAnnualFee')}
+                            className="w-24 text-right"
+                            data-testid={`input-enrollment-fee-${student.id}`}
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Input
+                            type="number"
+                            value={getEditingValue(student.id, 'spotFee', spotFee)}
+                            onChange={(e) => setEditingValue(student.id, 'spotFee', parseInt(e.target.value) || 0)}
+                            onBlur={() => handleFieldUpdate(student.id, 'spotFee')}
+                            className="w-24 text-right"
+                            data-testid={`input-spot-fee-${student.id}`}
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Input
+                            type="number"
+                            value={getEditingValue(student.id, 'amount', amount)}
+                            onChange={(e) => setEditingValue(student.id, 'amount', parseInt(e.target.value) || 0)}
+                            onBlur={() => handleFieldUpdate(student.id, 'amount')}
+                            className="w-28 text-right font-semibold"
+                            data-testid={`input-total-amount-${student.id}`}
+                          />
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={payment?.isPaid || false}
+                            onCheckedChange={(checked) => handlePaidToggle(student.id, checked as boolean)}
+                            data-testid={`checkbox-paid-${student.id}`}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
