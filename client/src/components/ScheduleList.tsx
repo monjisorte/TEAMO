@@ -187,8 +187,11 @@ export function ScheduleList() {
 
   // スケジュール削除
   const deleteScheduleMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/schedules/${id}`);
+    mutationFn: async ({ id, deleteType }: { id: string; deleteType?: "this" | "all" }) => {
+      const url = deleteType 
+        ? `/api/schedules/${id}?deleteType=${deleteType}`
+        : `/api/schedules/${id}`;
+      await apiRequest("DELETE", url);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/schedules"] });
@@ -330,12 +333,13 @@ export function ScheduleList() {
   };
 
   const handleDeleteSchedule = (schedule: Schedule) => {
-    if (schedule.parentScheduleId) {
+    const isRecurringSchedule = schedule.recurrenceRule && schedule.recurrenceRule !== "none";
+    if (isRecurringSchedule) {
       setScheduleToDelete(schedule);
       setShowRecurringDeleteDialog(true);
     } else {
       if (confirm("このスケジュールを削除しますか？")) {
-        deleteScheduleMutation.mutate(schedule.id);
+        deleteScheduleMutation.mutate({ id: schedule.id });
       }
     }
   };
@@ -343,18 +347,10 @@ export function ScheduleList() {
   const handleDeleteRecurringSchedule = (deleteAll: boolean) => {
     if (!scheduleToDelete) return;
     
-    if (deleteAll) {
-      const parentId = scheduleToDelete.parentScheduleId;
-      const relatedSchedules = schedules.filter(s => 
-        s.parentScheduleId === parentId || s.id === parentId
-      );
-      
-      relatedSchedules.forEach(s => {
-        deleteScheduleMutation.mutate(s.id);
-      });
-    } else {
-      deleteScheduleMutation.mutate(scheduleToDelete.id);
-    }
+    deleteScheduleMutation.mutate({
+      id: scheduleToDelete.id,
+      deleteType: deleteAll ? "all" : "this"
+    });
     
     setShowRecurringDeleteDialog(false);
     setScheduleToDelete(null);
