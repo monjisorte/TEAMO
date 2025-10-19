@@ -186,8 +186,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const parentId = schedule[0].parentScheduleId || schedule[0].id;
 
+        // When updating all, exclude the date field to preserve individual dates
+        const { date, ...updateDataWithoutDate } = updateData;
+
         // Update all schedules in the series (including parent)
-        await db.update(schedules).set(updateData).where(
+        await db.update(schedules).set(updateDataWithoutDate).where(
           or(
             eq(schedules.id, parentId),
             eq(schedules.parentScheduleId, parentId)
