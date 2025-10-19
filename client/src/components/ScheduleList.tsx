@@ -276,7 +276,8 @@ export function ScheduleList() {
     };
 
     if (editingSchedule) {
-      if (editingSchedule.parentScheduleId) {
+      const isRecurringSchedule = editingSchedule.recurrenceRule && editingSchedule.recurrenceRule !== "none";
+      if (isRecurringSchedule) {
         setPendingScheduleData(scheduleData);
         setShowRecurringEditDialog(true);
       } else {
@@ -290,18 +291,15 @@ export function ScheduleList() {
   const handleUpdateRecurringSchedule = (updateAll: boolean) => {
     if (!editingSchedule || !pendingScheduleData) return;
     
-    if (updateAll) {
-      const parentId = editingSchedule.parentScheduleId;
-      const relatedSchedules = schedules.filter(s => 
-        s.parentScheduleId === parentId || s.id === parentId
-      );
-      
-      relatedSchedules.forEach(s => {
-        updateScheduleMutation.mutate({ id: s.id, data: pendingScheduleData });
-      });
-    } else {
-      updateScheduleMutation.mutate({ id: editingSchedule.id, data: pendingScheduleData });
-    }
+    const dataWithUpdateType = {
+      ...pendingScheduleData,
+      updateType: updateAll ? "all" : "this"
+    };
+    
+    updateScheduleMutation.mutate({ 
+      id: editingSchedule.id, 
+      data: dataWithUpdateType 
+    });
     
     setShowRecurringEditDialog(false);
     setPendingScheduleData(null);
