@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -144,11 +144,11 @@ export function ScheduleList() {
   });
 
   // 初回ロード時に全カテゴリを選択
-  useState(() => {
+  useEffect(() => {
     if (categories.length > 0 && selectedCategories.length === 0) {
       setSelectedCategories(categories.map(c => c.id));
     }
-  });
+  }, [categories]);
 
   // スケジュール作成
   const createScheduleMutation = useMutation({
@@ -397,13 +397,26 @@ export function ScheduleList() {
   };
 
   // フィルタリングされたスケジュール
-  const filteredSchedules = schedules.filter(schedule => {
-    // カテゴリが選択されていない場合は全て表示
-    if (selectedCategories.length === 0) return true;
-    
-    const scheduleCategoryIds = schedule.categoryIds || (schedule.categoryId ? [schedule.categoryId] : []);
-    return scheduleCategoryIds.some(catId => selectedCategories.includes(catId));
-  });
+  const filteredSchedules = schedules
+    .filter(schedule => {
+      // カテゴリが選択されていない場合は全て表示
+      if (selectedCategories.length === 0) return true;
+      
+      const scheduleCategoryIds = schedule.categoryIds || (schedule.categoryId ? [schedule.categoryId] : []);
+      return scheduleCategoryIds.some(catId => selectedCategories.includes(catId));
+    })
+    .sort((a, b) => {
+      // 日付順（昇順）にソート
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      if (dateA.getTime() !== dateB.getTime()) {
+        return dateA.getTime() - dateB.getTime();
+      }
+      // 同じ日付の場合は開始時刻でソート
+      const timeA = (a.startHour || 0) * 60 + (a.startMinute || 0);
+      const timeB = (b.startHour || 0) * 60 + (b.startMinute || 0);
+      return timeA - timeB;
+    });
 
   return (
     <div className="space-y-8">
