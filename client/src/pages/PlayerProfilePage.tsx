@@ -165,14 +165,24 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-          <CardTitle>基本情報</CardTitle>
+    <div className="p-8 space-y-8">
+      <div className="space-y-3">
+        <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+          プロフィール管理
+        </h1>
+        <p className="text-muted-foreground text-lg">
+          あなたの基本情報とカテゴリ設定を管理します
+        </p>
+      </div>
+
+      <Card className="border-0 shadow-xl">
+        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-6">
+          <CardTitle className="text-2xl font-bold">基本情報</CardTitle>
           {!isEditing && (
             <Button
               variant="outline"
               size="sm"
+              className="font-semibold"
               onClick={() => setIsEditing(true)}
               data-testid="button-edit-profile"
             >
@@ -180,19 +190,26 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
             </Button>
           )}
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-8 p-8">
           {/* Photo Upload */}
-          <div className="flex items-center gap-6">
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={photoPreview || undefined} />
-              <AvatarFallback>
-                <User className="h-12 w-12" />
-              </AvatarFallback>
-            </Avatar>
+          <div className="flex items-center gap-8">
+            <div className="relative">
+              <Avatar className="h-28 w-28 ring-4 ring-blue-50 shadow-lg">
+                <AvatarImage src={photoPreview || undefined} />
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600">
+                  <User className="h-14 w-14 text-white" />
+                </AvatarFallback>
+              </Avatar>
+              {isEditing && (
+                <div className="absolute -bottom-2 -right-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full p-2 shadow-lg">
+                  <Upload className="w-4 h-4 text-white" />
+                </div>
+              )}
+            </div>
             {isEditing && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <label htmlFor="photo-upload">
-                  <Button variant="outline" size="sm" asChild>
+                  <Button variant="outline" size="sm" asChild className="font-semibold">
                     <span className="cursor-pointer">
                       <Upload className="w-4 h-4 mr-2" />
                       写真を選択
@@ -207,7 +224,7 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
                   className="hidden"
                   data-testid="input-photo"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground font-medium">
                   JPG, PNG形式（最大5MB）
                 </p>
               </div>
@@ -299,11 +316,11 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>カテゴリ設定</CardTitle>
+      <Card className="border-0 shadow-xl">
+        <CardHeader className="pb-6">
+          <CardTitle className="text-2xl font-bold">カテゴリ設定</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-8 pt-0">
           <CategorySelection
             studentId={playerId}
             teamId={teamId}

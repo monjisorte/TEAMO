@@ -54,28 +54,32 @@ export function PlayerSidebar({ teamName }: PlayerSidebarProps) {
 
   return (
     <Sidebar>
-      <SidebarHeader className="p-4">
-        <div className="flex items-center gap-2">
-          <div className="rounded-lg bg-primary p-2">
-            <CalendarIcon className="h-5 w-5 text-primary-foreground" />
+      <SidebarHeader className="p-6">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 p-2.5 shadow-lg">
+            <CalendarIcon className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h2 className="font-semibold">{teamName}</h2>
-            <p className="text-xs text-muted-foreground">選手ポータル</p>
+            <h2 className="font-bold text-base bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              {teamName}
+            </h2>
+            <p className="text-xs text-muted-foreground font-medium">選手ポータル</p>
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="px-3">
         <SidebarGroup>
-          <SidebarGroupLabel>メニュー</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-2 mb-1">
+            メニュー
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={location === item.url}>
                     <Link href={item.url} data-testid={`link-player-${item.title}`}>
                       <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <span className="font-medium">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

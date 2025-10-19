@@ -81,7 +81,7 @@ export default function CategorySelection({ studentId, teamId, onCategoriesUpdat
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {!isEditing && (
         <div className="flex justify-end">
           <Button
@@ -89,6 +89,7 @@ export default function CategorySelection({ studentId, teamId, onCategoriesUpdat
             size="sm"
             onClick={() => setIsEditing(true)}
             data-testid="button-edit-categories"
+            className="font-semibold"
           >
             編集
           </Button>
@@ -99,21 +100,31 @@ export default function CategorySelection({ studentId, teamId, onCategoriesUpdat
         {allCategories.map((category) => (
           <Card 
             key={category.id} 
-            className={isEditing ? "cursor-pointer hover-elevate active-elevate-2" : ""}
+            className={`
+              border-2 transition-all duration-300
+              ${selectedCategories.includes(category.id) 
+                ? 'border-blue-500 bg-gradient-to-r from-blue-50 to-purple-50 shadow-lg' 
+                : 'border-gray-200 hover-elevate'
+              }
+              ${isEditing ? "cursor-pointer active-elevate-2" : ""}
+            `}
             onClick={isEditing ? () => handleToggle(category.id) : undefined}
             data-testid={`card-category-${category.id}`}
           >
-            <CardContent className="flex items-center space-x-3 p-4">
+            <CardContent className="flex items-center space-x-4 p-5">
               <Checkbox
                 checked={selectedCategories.includes(category.id)}
                 onCheckedChange={isEditing ? () => handleToggle(category.id) : undefined}
                 disabled={!isEditing}
                 data-testid={`checkbox-category-${category.id}`}
+                className="h-5 w-5"
               />
-              <div>
-                <h3 className="font-semibold">{category.name}</h3>
+              <div className="flex-1">
+                <h3 className={`font-bold text-base ${selectedCategories.includes(category.id) ? 'text-blue-700' : ''}`}>
+                  {category.name}
+                </h3>
                 {category.description && (
-                  <p className="text-sm text-muted-foreground">{category.description}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{category.description}</p>
                 )}
               </div>
             </CardContent>
@@ -122,11 +133,12 @@ export default function CategorySelection({ studentId, teamId, onCategoriesUpdat
       </div>
 
       {isEditing && (
-        <div className="flex gap-2">
+        <div className="flex gap-3 pt-2">
           <Button 
             onClick={handleSave} 
             disabled={isLoading || selectedCategories.length === 0}
             data-testid="button-save-categories"
+            className="flex-1 font-semibold"
           >
             {isLoading ? "保存中..." : "カテゴリを保存"}
           </Button>
@@ -135,6 +147,7 @@ export default function CategorySelection({ studentId, teamId, onCategoriesUpdat
             onClick={handleCancelEdit}
             disabled={isLoading}
             data-testid="button-cancel-edit-categories"
+            className="flex-1 font-semibold"
           >
             キャンセル
           </Button>

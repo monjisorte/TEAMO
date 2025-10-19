@@ -29,28 +29,34 @@ export default function PlayerCalendarPage({ playerId, teamId }: PlayerCalendarP
 
   if (!hasCategoriesSelected) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>カテゴリ選択</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            まず、閲覧したいカテゴリを選択してください。
+      <div className="p-8 space-y-6">
+        <div className="space-y-3">
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+            カテゴリ選択
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            閲覧したいカテゴリを選択してください
           </p>
-          <CategorySelection
-            studentId={playerId}
-            teamId={teamId}
-            onCategoriesUpdated={handleCategoriesUpdated}
-          />
-        </CardContent>
-      </Card>
+        </div>
+        <Card className="border-0 shadow-xl">
+          <CardContent className="p-8">
+            <CategorySelection
+              studentId={playerId}
+              teamId={teamId}
+              onCategoriesUpdated={handleCategoriesUpdated}
+            />
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <PlayerCalendar 
-      studentId={playerId}
-      selectedCategories={selectedCategories}
-    />
+    <div className="p-8">
+      <PlayerCalendar 
+        studentId={playerId}
+        selectedCategories={selectedCategories}
+      />
+    </div>
   );
 }
