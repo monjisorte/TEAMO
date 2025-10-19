@@ -67,8 +67,8 @@ export default function TeamInfoPage() {
       if (!team) throw new Error("No team found");
       return await apiRequest("PUT", `/api/teams/${team.id}`, data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
       toast({
         title: "保存成功",
         description: "チーム情報を更新しました",
