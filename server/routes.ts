@@ -117,32 +117,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If recurrence is enabled, generate additional schedules
       if (recurrenceRule && recurrenceRule !== "none") {
-        const startDate = new Date(scheduleData.date);
-        const endDate = recurrenceEndDate ? new Date(recurrenceEndDate) : new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000); // Default to 1 year
+        // Use Date object with UTC to avoid timezone issues
+        const startDate = new Date(scheduleData.date + 'T00:00:00Z');
+        const endDateLimit = recurrenceEndDate 
+          ? new Date(recurrenceEndDate + 'T00:00:00Z')
+          : new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000); // Default to 1 year
+        
         const interval = recurrenceInterval || 1;
         const recurringSchedules = [];
 
         let currentDate = new Date(startDate);
 
         while (recurringSchedules.length < 100) {
-          let nextDate: Date | null = null;
-
+          // Calculate next occurrence based on recurrence rule
           if (recurrenceRule === "daily") {
-            currentDate.setDate(currentDate.getDate() + interval);
-            nextDate = new Date(currentDate);
+            currentDate.setUTCDate(currentDate.getUTCDate() + interval);
           } else if (recurrenceRule === "weekly") {
-            // Move to next week(s) based on interval
-            currentDate.setDate(currentDate.getDate() + (7 * interval));
-            nextDate = new Date(currentDate);
+            currentDate.setUTCDate(currentDate.getUTCDate() + (7 * interval));
           } else if (recurrenceRule === "monthly") {
-            currentDate.setMonth(currentDate.getMonth() + interval);
-            nextDate = new Date(currentDate);
+            currentDate.setUTCMonth(currentDate.getUTCMonth() + interval);
           }
 
-          if (nextDate && nextDate <= endDate) {
+          // Check if we've exceeded the end date
+          if (currentDate <= endDateLimit) {
+            const year = currentDate.getUTCFullYear();
+            const month = String(currentDate.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(currentDate.getUTCDate()).padStart(2, '0');
+            const nextDateStr = `${year}-${month}-${day}`;
+            
             recurringSchedules.push({
               ...scheduleData,
-              date: nextDate.toISOString().split('T')[0],
+              date: nextDateStr,
               recurrenceRule,
               recurrenceInterval,
               recurrenceDays,
