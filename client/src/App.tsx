@@ -116,7 +116,7 @@ function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogou
                 {() => <PlayerAttendancePage playerId={player.id} teamId={player.teamId} />}
               </Route>
               <Route path="/members">
-                {() => <PlayerMembersPage />}
+                {() => <PlayerMembersPage teamId={player.teamId} />}
               </Route>
               <Route path="/information">
                 {() => <PlayerDocumentsPage teamId={player.teamId} />}

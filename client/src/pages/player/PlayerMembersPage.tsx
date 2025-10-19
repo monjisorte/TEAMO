@@ -4,18 +4,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Student, Category, StudentCategory, Team } from "@shared/schema";
+import type { Student, Category, StudentCategory } from "@shared/schema";
 import { Users } from "lucide-react";
 
-export default function PlayerMembersPage() {
+interface PlayerMembersPageProps {
+  teamId: string;
+}
+
+export default function PlayerMembersPage({ teamId }: PlayerMembersPageProps) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
-
-  const { data: teams = [] } = useQuery<Team[]>({
-    queryKey: ["/api/teams"],
-  });
-
-  const team = teams[0];
-  const teamId = team?.id;
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: teamId ? [`/api/categories/${teamId}`] : [],
