@@ -477,10 +477,10 @@ export function ScheduleList() {
                         {/* 左側: 日付表示 */}
                         <div className="flex flex-col items-center justify-center min-w-[100px] h-24 rounded-2xl bg-gradient-to-br from-primary to-purple-600 text-white">
                           <div className="text-3xl font-bold">
-                            {new Date(schedule.date).getDate()}
+                            {schedule.date.split('-')[2]}
                           </div>
                           <div className="text-sm opacity-90">
-                            {new Date(schedule.date).toLocaleDateString('ja-JP', { month: 'short', year: 'numeric' })}
+                            {schedule.date.substring(0, 4)}年{schedule.date.substring(5, 7)}月
                           </div>
                         </div>
 

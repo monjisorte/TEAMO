@@ -163,7 +163,11 @@ export function CalendarView({ schedules, categories, attendances, students, onS
   // 各日付のスケジュールを取得
   const getSchedulesForDate = (day: number, monthOffset: number) => {
     const targetDate = new Date(year, month + monthOffset, day);
-    const dateStr = targetDate.toISOString().split('T')[0];
+    // Use local timezone to avoid date shifting
+    const year_local = targetDate.getFullYear();
+    const month_local = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const day_local = String(targetDate.getDate()).padStart(2, '0');
+    const dateStr = `${year_local}-${month_local}-${day_local}`;
     return schedules.filter(s => s.date === dateStr);
   };
 
