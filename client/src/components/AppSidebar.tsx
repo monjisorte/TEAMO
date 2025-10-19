@@ -1,4 +1,4 @@
-import { Home, Calendar, MapPin, Tag, Users, Shield, FileText, DollarSign, Settings as SettingsIcon, Bell, UserPlus } from "lucide-react";
+import { Home, Calendar, MapPin, Tag, Users, FileText, DollarSign, Settings as SettingsIcon, Bell, UserPlus } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -38,11 +38,6 @@ const menuItems = [
     title: "コーチ",
     url: "/team/staffs",
     icon: Users,
-  },
-  {
-    title: "チーム管理",
-    url: "/team/setting",
-    icon: Shield,
   },
   {
     title: "共有資料",

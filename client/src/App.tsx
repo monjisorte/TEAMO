@@ -14,7 +14,6 @@ import VenuesPage from "@/pages/VenuesPage";
 import CategoriesPage from "@/pages/CategoriesPage";
 import CoachesPage from "@/pages/CoachesPage";
 import RegisterPage from "@/pages/RegisterPage";
-import TeamManagement from "@/pages/TeamManagement";
 import TeamInfoPage from "@/pages/TeamInfoPage";
 import DocumentsPage from "@/pages/DocumentsPage";
 import TuitionPage from "@/pages/TuitionPage";
@@ -261,7 +260,6 @@ function CoachRouter() {
       <Route path="/team/place" component={VenuesPage} />
       <Route path="/team/category" component={CategoriesPage} />
       <Route path="/team/staffs" component={CoachesPage} />
-      <Route path="/team/setting" component={TeamManagement} />
       <Route path="/team/information" component={DocumentsPage} />
       <Route path="/team/billing" component={TuitionPage} />
       <Route path="/team/information2" component={TeamInfoPage} />
