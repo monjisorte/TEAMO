@@ -1,13 +1,69 @@
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { Student } from "@shared/schema";
-import { Users } from "lucide-react";
+import { Users, Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function MembersPage() {
+  const { toast } = useToast();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+
   const { data: students = [], isLoading } = useQuery<Student[]>({
     queryKey: ["/api/students"],
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (studentId: string) => {
+      return await apiRequest("DELETE", `/api/students/${studentId}`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/students"] });
+      toast({
+        title: "退会完了",
+        description: "メンバーを退会させました",
+      });
+      setDeleteDialogOpen(false);
+      setSelectedStudent(null);
+      setDeleteConfirmation("");
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "退会処理に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteClick = (student: Student) => {
+    setSelectedStudent(student);
+    setDeleteConfirmation("");
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteConfirmation === "delete" && selectedStudent) {
+      deleteMutation.mutate(selectedStudent.id);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -66,12 +122,58 @@ export default function MembersPage() {
                       </p>
                     </div>
                   </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDeleteClick(student)}
+                    data-testid={`button-delete-${student.id}`}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    退会
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>本当に退会しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedStudent?.name}さんを退会させます。この操作は取り消せません。
+              <br />
+              <br />
+              実行するには、下の入力欄に <strong>delete</strong> と入力してください。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label htmlFor="delete-confirm">確認入力</Label>
+            <Input
+              id="delete-confirm"
+              value={deleteConfirmation}
+              onChange={(e) => setDeleteConfirmation(e.target.value)}
+              placeholder="delete と入力"
+              data-testid="input-delete-confirm"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">
+              キャンセル
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deleteConfirmation !== "delete" || deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover-elevate"
+              data-testid="button-confirm-delete"
+            >
+              {deleteMutation.isPending ? "退会処理中..." : "退会"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

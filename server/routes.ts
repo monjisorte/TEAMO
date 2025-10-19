@@ -1011,6 +1011,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/students/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Delete related data first
+      await db.delete(attendances).where(eq(attendances.studentId, id));
+      await db.delete(studentCategories).where(eq(studentCategories.studentId, id));
+
+      // Delete the student
+      await db.delete(students).where(eq(students.id, id));
+
+      res.status(200).json({ message: "Student deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting student:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Tuition Payments
   app.get("/api/tuition-payments", async (req, res) => {
     try {
