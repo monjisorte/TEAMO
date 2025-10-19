@@ -93,7 +93,17 @@ export default function MembersPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
+          <div className="flex items-center gap-4 px-4">
+            <div className="h-14 w-14"></div>
+            <div className="flex-1 grid grid-cols-4 gap-4">
+              <div className="text-sm font-semibold text-muted-foreground">名前</div>
+              <div className="text-sm font-semibold text-muted-foreground">生年月日</div>
+              <div className="text-sm font-semibold text-muted-foreground">学校名</div>
+              <div className="text-sm font-semibold text-muted-foreground">登録日</div>
+            </div>
+            <div className="w-20"></div>
+          </div>
           {students.map((student) => (
             <Card key={student.id} className="hover-elevate" data-testid={`card-member-${student.id}`}>
               <CardContent className="p-4">
@@ -104,7 +114,7 @@ export default function MembersPage() {
                       {student.name.slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1 grid grid-cols-3 gap-4 items-center">
+                  <div className="flex-1 grid grid-cols-4 gap-4 items-center">
                     <div>
                       <p className="font-medium" data-testid={`text-member-name-${student.id}`}>
                         {student.name}
@@ -120,6 +130,13 @@ export default function MembersPage() {
                     <div>
                       <p className="text-sm text-muted-foreground" data-testid={`text-school-${student.id}`}>
                         {student.schoolName || '未設定'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground" data-testid={`text-created-${student.id}`}>
+                        {student.createdAt 
+                          ? new Date(student.createdAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
+                          : '未設定'}
                       </p>
                     </div>
                   </div>
