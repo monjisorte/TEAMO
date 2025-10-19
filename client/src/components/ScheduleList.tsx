@@ -294,8 +294,12 @@ export function ScheduleList() {
   const handleUpdateRecurringSchedule = (updateAll: boolean) => {
     if (!editingSchedule || !pendingScheduleData) return;
     
+    // When updating all, exclude the date field to preserve individual dates
+    const { date, ...dataWithoutDate } = pendingScheduleData;
+    const dataToUpdate = updateAll ? dataWithoutDate : pendingScheduleData;
+    
     const dataWithUpdateType = {
-      ...pendingScheduleData,
+      ...dataToUpdate,
       updateType: updateAll ? "all" : "this"
     };
     
