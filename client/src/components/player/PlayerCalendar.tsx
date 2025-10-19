@@ -15,7 +15,7 @@ interface StudentCalendarProps {
   selectedCategories: string[];
 }
 
-type ViewMode = "month" | "week";
+type ViewMode = "month" | "week" | "next";
 
 export default function StudentCalendar({ studentId, selectedCategories }: StudentCalendarProps) {
   const { toast } = useToast();
@@ -233,6 +233,243 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
     );
   };
 
+  // 次回の予定を取得
+  const getNextSchedule = (): Schedule | null => {
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+    // 今日以降の予定をフィルタして時系列でソート
+    const upcomingSchedules = schedules
+      .filter(schedule => {
+        if (schedule.date > todayStr) return true;
+        if (schedule.date === todayStr) {
+          const scheduleMinutes = (schedule.startHour ?? 0) * 60 + (schedule.startMinute ?? 0);
+          return scheduleMinutes > nowMinutes;
+        }
+        return false;
+      })
+      .sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        const aMinutes = (a.startHour ?? 0) * 60 + (a.startMinute ?? 0);
+        const bMinutes = (b.startHour ?? 0) * 60 + (b.startMinute ?? 0);
+        return aMinutes - bMinutes;
+      });
+
+    return upcomingSchedules.length > 0 ? upcomingSchedules[0] : null;
+  };
+
+  // 次回表示
+  const renderNextView = () => {
+    const nextSchedule = getNextSchedule();
+
+    if (!nextSchedule) {
+      return (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <p className="text-muted-foreground text-lg">次回の予定はありません</p>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    const attendance = getAttendanceForSchedule(nextSchedule.id);
+    const scheduleAttendances = getAttendancesBySchedule(nextSchedule.id);
+    const confirmedAttendances = scheduleAttendances.filter(a => a.status === "○");
+    const maybeAttendances = scheduleAttendances.filter(a => a.status === "△");
+    const absentAttendances = scheduleAttendances.filter(a => a.status === "×");
+
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            {/* Schedule Title */}
+            <div>
+              <h3 className="text-3xl font-bold mb-2">{nextSchedule.title}</h3>
+              <Badge variant="outline" className="text-base">次回の予定</Badge>
+            </div>
+
+            <Separator />
+
+            {/* Schedule Details */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm font-semibold text-muted-foreground mb-1">日付</div>
+                  <div className="text-xl">
+                    {nextSchedule.date.substring(0, 4)}年{nextSchedule.date.substring(5, 7)}月{nextSchedule.date.substring(8, 10)}日
+                  </div>
+                </div>
+                
+                {(nextSchedule.startHour !== null && nextSchedule.startMinute !== null) && (
+                  <div>
+                    <div className="text-sm font-semibold text-muted-foreground mb-1">時間</div>
+                    <div className="text-xl">
+                      {String(nextSchedule.startHour).padStart(2, '0')}:{String(nextSchedule.startMinute).padStart(2, '0')}
+                      {nextSchedule.endHour !== null && nextSchedule.endMinute !== null && 
+                        ` - ${String(nextSchedule.endHour).padStart(2, '0')}:${String(nextSchedule.endMinute).padStart(2, '0')}`}
+                    </div>
+                  </div>
+                )}
+
+                {(nextSchedule.gatherHour !== null && nextSchedule.gatherMinute !== null) && (
+                  <div>
+                    <div className="text-sm font-semibold text-muted-foreground mb-1">集合時間</div>
+                    <div className="text-xl">
+                      {String(nextSchedule.gatherHour).padStart(2, '0')}:{String(nextSchedule.gatherMinute).padStart(2, '0')}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <div className="text-sm font-semibold text-muted-foreground mb-1">会場</div>
+                  <div className="text-xl">
+                    {nextSchedule.venue && nextSchedule.venue !== "未定" ? (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nextSchedule.venue)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline"
+                        data-testid="link-next-schedule-venue"
+                      >
+                        {nextSchedule.venue}
+                      </a>
+                    ) : (
+                      <span>{nextSchedule.venue || "未定"}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {nextSchedule.notes && (
+                <div>
+                  <div className="text-sm font-semibold text-muted-foreground mb-1">備考</div>
+                  <div className="text-base whitespace-pre-wrap">{nextSchedule.notes}</div>
+                </div>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Your Attendance */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold">あなたの出欠: </span>
+                <Badge 
+                  variant={
+                    attendance?.status === "○" ? "default" :
+                    attendance?.status === "△" ? "secondary" :
+                    "outline"
+                  }
+                  className="text-lg px-4 py-1"
+                >
+                  {attendance?.status || "未回答"}
+                </Badge>
+              </div>
+              
+              {/* Attendance Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  variant={attendance?.status === "○" ? "default" : "outline"}
+                  onClick={() => handleAttendanceChange(nextSchedule.id, "○")}
+                  disabled={saveAttendanceMutation.isPending}
+                  data-testid="button-next-attendance-yes"
+                >
+                  ○ 参加
+                </Button>
+                <Button
+                  variant={attendance?.status === "△" ? "default" : "outline"}
+                  onClick={() => handleAttendanceChange(nextSchedule.id, "△")}
+                  disabled={saveAttendanceMutation.isPending}
+                  data-testid="button-next-attendance-maybe"
+                >
+                  △ 未定
+                </Button>
+                <Button
+                  variant={attendance?.status === "×" ? "default" : "outline"}
+                  onClick={() => handleAttendanceChange(nextSchedule.id, "×")}
+                  disabled={saveAttendanceMutation.isPending}
+                  data-testid="button-next-attendance-no"
+                >
+                  × 欠席
+                </Button>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Participants */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-lg">参加者情報</h4>
+              
+              <div className="grid gap-3">
+                {/* Confirmed */}
+                {confirmedAttendances.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="default" className="bg-green-500">
+                        ○ 参加 ({confirmedAttendances.length}名)
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {confirmedAttendances.map(att => (
+                        <Badge key={att.id} variant="outline">
+                          {getStudentName(att.studentId)}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Maybe */}
+                {maybeAttendances.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="default" className="bg-yellow-500">
+                        △ 未定 ({maybeAttendances.length}名)
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {maybeAttendances.map(att => (
+                        <Badge key={att.id} variant="outline">
+                          {getStudentName(att.studentId)}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Absent */}
+                {absentAttendances.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="default" className="bg-red-500">
+                        × 欠席 ({absentAttendances.length}名)
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {absentAttendances.map(att => (
+                        <Badge key={att.id} variant="outline">
+                          {getStudentName(att.studentId)}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {scheduleAttendances.length === 0 && (
+                  <div className="text-sm text-muted-foreground text-center py-4">
+                    まだ出欠登録がありません
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   // 月表示
   const renderMonthView = () => {
     return (
@@ -413,10 +650,17 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
         >
           週
         </Button>
+        <Button
+          variant={viewMode === "next" ? "default" : "outline"}
+          onClick={() => setViewMode("next")}
+          data-testid="button-view-next"
+        >
+          次回
+        </Button>
       </div>
 
       {/* Calendar Display */}
-      {viewMode === "month" ? renderMonthView() : renderWeekView()}
+      {viewMode === "month" ? renderMonthView() : viewMode === "week" ? renderWeekView() : renderNextView()}
 
       {/* Schedule Details Dialog */}
       <Dialog open={!!selectedSchedule} onOpenChange={() => setSelectedSchedule(null)}>
