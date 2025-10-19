@@ -54,7 +54,15 @@ export default function TuitionPage() {
   }, [team]);
 
   const { data: students = [] } = useQuery<Student[]>({
-    queryKey: team?.id ? [`/api/students?teamId=${team.id}`] : ["/api/students"],
+    queryKey: ["/api/students", team?.id],
+    queryFn: async () => {
+      if (!team?.id) return [];
+      const res = await fetch(`/api/students?teamId=${team.id}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch students");
+      return res.json();
+    },
     enabled: !!team?.id,
   });
 

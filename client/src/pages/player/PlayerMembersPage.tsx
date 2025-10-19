@@ -20,7 +20,14 @@ export default function PlayerMembersPage({ teamId }: PlayerMembersPageProps) {
   });
 
   const { data: students = [], isLoading } = useQuery<Student[]>({
-    queryKey: teamId ? [`/api/students?teamId=${teamId}`] : ["/api/students"],
+    queryKey: ["/api/students", teamId],
+    queryFn: async () => {
+      const res = await fetch(`/api/students?teamId=${teamId}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch students");
+      return res.json();
+    },
     enabled: !!teamId,
   });
 
