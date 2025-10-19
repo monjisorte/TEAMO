@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { FolderPlus, FilePlus, Folder, FileText, Trash2, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import type { UploadResult } from "@uppy/core";
 import type { Folder as FolderType, SharedDocument } from "@shared/schema";
 
 export default function DocumentsPage() {
@@ -15,12 +17,42 @@ export default function DocumentsPage() {
   const [newFolderName, setNewFolderName] = useState("");
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
 
+  // Get teamId from localStorage
+  const coachData = JSON.parse(localStorage.getItem("coachData") || "{}");
+  const teamId = coachData.teamId;
+
   const { data: folders = [] } = useQuery<FolderType[]>({
-    queryKey: ["/api/folders", currentFolderId],
+    queryKey: ["/api/folders", currentFolderId, teamId],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (currentFolderId) {
+        params.append("parentFolderId", currentFolderId);
+      }
+      if (teamId) {
+        params.append("teamId", teamId);
+      }
+      const response = await fetch(`/api/folders?${params.toString()}`);
+      if (!response.ok) throw new Error("Failed to fetch folders");
+      return response.json();
+    },
+    enabled: !!teamId,
   });
 
   const { data: documents = [] } = useQuery<SharedDocument[]>({
-    queryKey: ["/api/documents", currentFolderId],
+    queryKey: ["/api/documents", currentFolderId, teamId],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (currentFolderId) {
+        params.append("folderId", currentFolderId);
+      }
+      if (teamId) {
+        params.append("teamId", teamId);
+      }
+      const response = await fetch(`/api/documents?${params.toString()}`);
+      if (!response.ok) throw new Error("Failed to fetch documents");
+      return response.json();
+    },
+    enabled: !!teamId,
   });
 
   const createFolderMutation = useMutation({
@@ -28,6 +60,7 @@ export default function DocumentsPage() {
       return await apiRequest("POST", "/api/folders", {
         name,
         parentFolderId: currentFolderId,
+        teamId,
       });
     },
     onSuccess: () => {
@@ -62,6 +95,61 @@ export default function DocumentsPage() {
   const handleCreateFolder = () => {
     if (newFolderName.trim()) {
       createFolderMutation.mutate(newFolderName.trim());
+    }
+  };
+
+  // File upload handlers
+  const handleGetUploadParameters = async () => {
+    const response = await fetch("/api/objects/upload", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error("Failed to get upload URL");
+    }
+    
+    const { uploadURL } = await response.json();
+    return {
+      method: "PUT" as const,
+      url: uploadURL,
+    };
+  };
+
+  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    try {
+      if (result.successful && result.successful.length > 0) {
+        const file = result.successful[0];
+        const uploadURL = file.uploadURL;
+        const fileName = file.name;
+        const fileSize = file.size?.toString();
+
+        // Save document to database
+        await apiRequest("POST", "/api/documents", {
+          title: fileName,
+          fileUrl: uploadURL,
+          fileName,
+          fileSize,
+          teamId,
+          folderId: currentFolderId,
+        });
+
+        queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+        
+        toast({
+          title: "アップロード成功",
+          description: "ファイルをアップロードしました",
+        });
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast({
+        title: "エラー",
+        description: "ファイルのアップロードに失敗しました",
+        variant: "destructive",
+      });
     }
   };
 
@@ -110,10 +198,15 @@ export default function DocumentsPage() {
             </DialogContent>
           </Dialog>
           
-          <Button variant="outline" data-testid="button-upload-file">
+          <ObjectUploader
+            maxNumberOfFiles={1}
+            maxFileSize={52428800}
+            onGetUploadParameters={handleGetUploadParameters}
+            onComplete={handleUploadComplete}
+          >
             <FilePlus className="w-4 h-4 mr-2" />
             ファイルアップロード
-          </Button>
+          </ObjectUploader>
         </div>
       </div>
 
@@ -171,6 +264,7 @@ export default function DocumentsPage() {
                     variant="ghost"
                     size="sm"
                     asChild
+                    data-testid={`button-download-document-${doc.id}`}
                   >
                     <a href={doc.fileUrl} download>
                       <Download className="w-4 h-4" />

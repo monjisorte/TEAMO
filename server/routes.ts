@@ -915,11 +915,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Folders Management
   app.get("/api/folders", async (req, res) => {
     try {
-      const { parentFolderId } = req.query;
+      const { parentFolderId, teamId } = req.query;
       
       let result;
-      if (parentFolderId) {
+      if (parentFolderId && teamId) {
+        result = await db.select().from(folders).where(and(
+          eq(folders.parentFolderId, parentFolderId as string),
+          eq(folders.teamId, teamId as string)
+        ));
+      } else if (parentFolderId) {
         result = await db.select().from(folders).where(eq(folders.parentFolderId, parentFolderId as string));
+      } else if (teamId) {
+        result = await db.select().from(folders).where(and(
+          isNull(folders.parentFolderId),
+          eq(folders.teamId, teamId as string)
+        ));
       } else {
         result = await db.select().from(folders).where(isNull(folders.parentFolderId));
       }
@@ -984,6 +994,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error) {
       console.error("Error fetching documents:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/documents", isAuthenticated, async (req, res) => {
+    try {
+      const { title, fileUrl, fileName, fileSize, teamId, folderId } = req.body;
+      
+      if (!title || !fileUrl || !teamId) {
+        return res.status(400).json({ error: "title, fileUrl, and teamId are required" });
+      }
+
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ error: "User not authenticated" });
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      
+      // Set ACL policy for the uploaded file (team-wide public visibility)
+      const normalizedPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        fileUrl,
+        {
+          owner: userId,
+          visibility: "public", // Team members can access
+        }
+      );
+
+      // Save document to database
+      const newDocument = await db.insert(sharedDocuments).values({
+        title,
+        teamId,
+        folderId: folderId || null,
+        fileUrl: normalizedPath,
+        fileName,
+        fileSize,
+      }).returning();
+
+      res.status(201).json(newDocument[0]);
+    } catch (error) {
+      console.error("Error creating document:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
