@@ -17,7 +17,6 @@ import RegisterPage from "@/pages/RegisterPage";
 import TeamInfoPage from "@/pages/TeamInfoPage";
 import DocumentsPage from "@/pages/DocumentsPage";
 import TuitionPage from "@/pages/TuitionPage";
-import InvitePage from "@/pages/InvitePage";
 import LineNotificationsPage from "@/pages/LineNotificationsPage";
 import PlayerLogin from "@/pages/PlayerLogin";
 import PlayerAttendancePage from "@/pages/PlayerAttendancePage";
@@ -270,7 +269,6 @@ function CoachRouter() {
       <Route path="/team/billing" component={TuitionPage} />
       <Route path="/team/information2" component={TeamInfoPage} />
       <Route path="/team/line" component={LineNotificationsPage} />
-      <Route path="/team/invite" component={InvitePage} />
       <Route component={NotFound} />
     </Switch>
   );
