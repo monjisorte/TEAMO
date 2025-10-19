@@ -337,8 +337,8 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
           <div className="space-y-6">
             {/* Schedule Title */}
             <div>
-              <h3 className="text-3xl font-bold mb-2">{nextSchedule.title}</h3>
-              <Badge variant="outline" className="text-base">次回の予定</Badge>
+              <h3 className="text-xl font-bold mb-2">{nextSchedule.title}</h3>
+              <Badge variant="outline" className="text-sm">次回の予定</Badge>
             </div>
 
             <Separator />
@@ -348,7 +348,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <div className="text-sm font-semibold text-muted-foreground mb-1">日付</div>
-                  <div className="text-xl">
+                  <div className="text-base">
                     {nextSchedule.date.substring(0, 4)}年{nextSchedule.date.substring(5, 7)}月{nextSchedule.date.substring(8, 10)}日
                   </div>
                 </div>
@@ -356,7 +356,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                 {(nextSchedule.startHour !== null && nextSchedule.startMinute !== null) && (
                   <div>
                     <div className="text-sm font-semibold text-muted-foreground mb-1">時間</div>
-                    <div className="text-xl">
+                    <div className="text-base">
                       {String(nextSchedule.startHour).padStart(2, '0')}:{String(nextSchedule.startMinute).padStart(2, '0')}
                       {nextSchedule.endHour !== null && nextSchedule.endMinute !== null && 
                         ` - ${String(nextSchedule.endHour).padStart(2, '0')}:${String(nextSchedule.endMinute).padStart(2, '0')}`}
@@ -367,7 +367,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                 {(nextSchedule.gatherHour !== null && nextSchedule.gatherMinute !== null) && (
                   <div>
                     <div className="text-sm font-semibold text-muted-foreground mb-1">集合時間</div>
-                    <div className="text-xl">
+                    <div className="text-base">
                       {String(nextSchedule.gatherHour).padStart(2, '0')}:{String(nextSchedule.gatherMinute).padStart(2, '0')}
                     </div>
                   </div>
@@ -375,7 +375,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
 
                 <div>
                   <div className="text-sm font-semibold text-muted-foreground mb-1">会場</div>
-                  <div className="text-xl">
+                  <div className="text-base">
                     {nextSchedule.venue && nextSchedule.venue !== "未定" ? (
                       <a
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nextSchedule.venue)}`}
@@ -413,7 +413,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                     attendance?.status === "△" ? "secondary" :
                     "outline"
                   }
-                  className="text-lg px-4 py-1"
+                  className="text-base px-3 py-1"
                 >
                   {attendance?.status || "未回答"}
                 </Badge>
@@ -463,7 +463,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
 
             {/* Participants */}
             <div className="space-y-3">
-              <h4 className="font-semibold text-lg">参加者情報</h4>
+              <h4 className="font-semibold text-base">参加者情報</h4>
               
               <div className="grid gap-3">
                 {/* Confirmed */}
