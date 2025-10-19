@@ -210,7 +210,11 @@ export const tuitionPayments = pgTable("tuition_payments", {
   year: integer("year").notNull(), // 2025
   month: integer("month").notNull(), // 1-12
   category: varchar("category"), // "team" | "school" | null (未選択)
-  amount: integer("amount").notNull(),
+  baseAmount: integer("base_amount").notNull().default(0), // 月謝（自動設定）
+  discount: integer("discount").notNull().default(0), // 割引
+  enrollmentOrAnnualFee: integer("enrollment_or_annual_fee").notNull().default(0), // 入会/年会費
+  spotFee: integer("spot_fee").notNull().default(0), // スポット
+  amount: integer("amount").notNull(), // 合計金額（手動編集可能）
   isPaid: boolean("is_paid").notNull().default(false),
   paidAt: timestamp("paid_at"),
   notes: text("notes"),
