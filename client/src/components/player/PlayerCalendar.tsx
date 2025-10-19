@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Schedule, Attendance, Student } from "@shared/schema";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface StudentCalendarProps {
   studentId: string;
@@ -16,6 +18,7 @@ interface StudentCalendarProps {
 type ViewMode = "month" | "week";
 
 export default function StudentCalendar({ studentId, selectedCategories }: StudentCalendarProps) {
+  const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
@@ -32,6 +35,44 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
   const { data: students = [] } = useQuery<Student[]>({
     queryKey: ["/api/students"],
   });
+
+  const saveAttendanceMutation = useMutation({
+    mutationFn: async ({ scheduleId, status }: { scheduleId: string; status: string }) => {
+      const existingAttendance = getAttendanceForSchedule(scheduleId);
+      
+      if (existingAttendance) {
+        return await apiRequest("PUT", `/api/attendances/${existingAttendance.id}`, {
+          status,
+          comment: existingAttendance.comment || "",
+        });
+      } else {
+        return await apiRequest("POST", "/api/attendances", {
+          scheduleId,
+          studentId,
+          status,
+          comment: "",
+        });
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/attendances"] });
+      toast({
+        title: "保存完了",
+        description: "出欠を登録しました",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "保存に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAttendanceChange = (scheduleId: string, status: string) => {
+    saveAttendanceMutation.mutate({ scheduleId, status });
+  };
 
   const getAttendanceForSchedule = (scheduleId: string, studentIdParam?: string) => {
     const targetStudentId = studentIdParam || studentId;
@@ -124,50 +165,59 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
                           today.getDate() === date.getDate();
 
           return (
-            <Card key={date.toISOString()} className={`border-0 shadow-lg ${isCurrentDay ? "border-2 border-primary" : ""}`}>
+            <Card key={index} className={isCurrentDay ? "border-primary border-2" : ""}>
               <CardContent className="p-4">
-                <div className="flex items-center gap-4 mb-3">
-                  <div className={`text-center min-w-[80px] ${
-                    index === 0 ? "text-red-600" : index === 6 ? "text-blue-600" : ""
-                  }`}>
-                    <div className="text-xs font-semibold opacity-70">{weekDays[index]}</div>
-                    <div className="text-2xl font-bold">{date.getDate()}</div>
-                    <div className="text-xs opacity-70">
-                      {date.getFullYear()}年{date.getMonth() + 1}月
+                <div className="flex items-start gap-4">
+                  {/* Day Header */}
+                  <div className="min-w-[80px]">
+                    <div className="text-xs text-muted-foreground">{weekDays[index]}</div>
+                    <div className={`text-2xl font-bold ${isCurrentDay ? "text-primary" : ""}`}>
+                      {date.getDate()}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {date.getMonth() + 1}月
                     </div>
                   </div>
-                  <div className="flex-1 grid gap-2">
+
+                  {/* Events */}
+                  <div className="flex-1 space-y-2">
                     {daySchedules.length === 0 ? (
-                      <div className="text-sm text-muted-foreground text-center py-4">予定なし</div>
+                      <div className="text-sm text-muted-foreground py-2">
+                        予定なし
+                      </div>
                     ) : (
                       daySchedules.map((schedule) => {
                         const attendance = getAttendanceForSchedule(schedule.id);
                         const startTime = schedule.startHour !== null && schedule.startMinute !== null
                           ? `${String(schedule.startHour).padStart(2, '0')}:${String(schedule.startMinute).padStart(2, '0')}`
-                          : "";
-                        
+                          : null;
+
                         return (
                           <div
                             key={schedule.id}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 cursor-pointer hover-elevate"
+                            className="p-3 rounded-lg bg-card border hover-elevate cursor-pointer"
                             onClick={() => setSelectedSchedule(schedule)}
-                            data-testid={`schedule-item-${schedule.id}`}
+                            data-testid={`week-schedule-${schedule.id}`}
                           >
-                            <Badge 
-                              variant={
-                                attendance?.status === "○" ? "default" : 
-                                attendance?.status === "△" ? "secondary" : 
-                                "outline"
-                              }
-                              className="min-w-[40px] justify-center text-base"
-                            >
-                              {attendance?.status || "-"}
-                            </Badge>
-                            <div className="flex-1">
-                              <div className="font-semibold">{schedule.title}</div>
-                              {startTime && (
-                                <div className="text-xs text-muted-foreground">{startTime}</div>
-                              )}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 flex-1">
+                                <Badge 
+                                  variant={
+                                    attendance?.status === "○" ? "default" :
+                                    attendance?.status === "△" ? "secondary" :
+                                    "outline"
+                                  }
+                                  className="text-lg px-2"
+                                >
+                                  {attendance?.status || "-"}
+                                </Badge>
+                                <div className="flex-1">
+                                  <div className="font-medium">{schedule.title}</div>
+                                  {startTime && (
+                                    <div className="text-sm text-muted-foreground">{startTime}</div>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         );
@@ -183,28 +233,25 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
     );
   };
 
+  // 月表示
   const renderMonthView = () => {
     return (
-      <div className="space-y-6">
-        {/* Calendar Grid */}
-        <Card className="border-0 shadow-lg">
+      <div>
+        <Card>
           <CardContent className="p-0">
-            {/* Week Days Header */}
-            <div className="grid grid-cols-7 border-b">
+            <div className="grid grid-cols-7">
+              {/* Week Day Headers */}
               {weekDays.map((day, index) => (
                 <div
-                  key={day}
-                  className={`p-3 text-center text-sm font-semibold ${
-                    index === 0 ? "text-red-600" : index === 6 ? "text-blue-600" : "text-muted-foreground"
+                  key={`header-${index}`}
+                  className={`p-3 text-center font-semibold border-b border-r ${
+                    index === 0 ? "text-red-500" : index === 6 ? "text-blue-500" : ""
                   }`}
                 >
                   {day}
                 </div>
               ))}
-            </div>
 
-            {/* Calendar Days */}
-            <div className="grid grid-cols-7">
               {/* Previous Month Days */}
               {prevMonthDays.map((day, index) => {
                 const daySchedules = getSchedulesForDate(year, month, day, -1);
@@ -237,28 +284,16 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
               {/* Current Month Days */}
               {currentMonthDays.map((day, index) => {
                 const daySchedules = getSchedulesForDate(year, month, day, 0);
-                const today = isToday(day, 0);
-                const dayOfWeek = (startingDayOfWeek + index) % 7;
-                
+                const isTodayCell = isToday(day, 0);
                 return (
                   <div
-                    key={`current-${day}`}
+                    key={`current-${index}`}
                     className={`min-h-[100px] p-2 border-b border-r ${
-                      today ? "bg-primary/5" : ""
-                    } ${daySchedules.length > 0 ? "cursor-pointer" : ""}`}
+                      isTodayCell ? "bg-primary/5 border-primary" : ""
+                    }`}
                     data-testid={`calendar-day-${day}`}
                   >
-                    <div
-                      className={`text-sm mb-1 font-semibold ${
-                        today
-                          ? "inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground"
-                          : dayOfWeek === 0
-                          ? "text-red-600"
-                          : dayOfWeek === 6
-                          ? "text-blue-600"
-                          : ""
-                      }`}
-                    >
+                    <div className={`text-sm mb-1 font-medium ${isTodayCell ? "text-primary" : ""}`}>
                       {day}
                     </div>
                     <div className="space-y-1">
@@ -266,12 +301,12 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
                         const attendance = getAttendanceForSchedule(schedule.id);
                         const startTime = schedule.startHour !== null && schedule.startMinute !== null
                           ? `${String(schedule.startHour).padStart(2, '0')}:${String(schedule.startMinute).padStart(2, '0')}`
-                          : "";
-                        
+                          : null;
+
                         return (
                           <div
                             key={schedule.id}
-                            className="text-xs p-1.5 rounded border bg-muted/10 cursor-pointer hover-elevate"
+                            className="text-xs p-1 rounded bg-primary/10 truncate cursor-pointer hover-elevate"
                             data-testid={`schedule-${schedule.id}`}
                             onClick={() => setSelectedSchedule(schedule)}
                           >
@@ -446,18 +481,51 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
                   <Separator />
 
                   {/* Your Attendance */}
-                  <div>
-                    <span className="text-sm font-semibold">あなたの出欠: </span>
-                    <Badge 
-                      variant={
-                        getAttendanceForSchedule(selectedSchedule.id)?.status === "○" ? "default" :
-                        getAttendanceForSchedule(selectedSchedule.id)?.status === "△" ? "secondary" :
-                        "outline"
-                      }
-                      className="text-base px-3"
-                    >
-                      {getAttendanceForSchedule(selectedSchedule.id)?.status || "未回答"}
-                    </Badge>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold">あなたの出欠: </span>
+                      <Badge 
+                        variant={
+                          getAttendanceForSchedule(selectedSchedule.id)?.status === "○" ? "default" :
+                          getAttendanceForSchedule(selectedSchedule.id)?.status === "△" ? "secondary" :
+                          "outline"
+                        }
+                        className="text-base px-3"
+                      >
+                        {getAttendanceForSchedule(selectedSchedule.id)?.status || "未回答"}
+                      </Badge>
+                    </div>
+                    
+                    {/* Attendance Buttons */}
+                    <div className="flex gap-2">
+                      <Button
+                        variant={getAttendanceForSchedule(selectedSchedule.id)?.status === "○" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleAttendanceChange(selectedSchedule.id, "○")}
+                        disabled={saveAttendanceMutation.isPending}
+                        data-testid="button-attendance-yes"
+                      >
+                        ○ 参加
+                      </Button>
+                      <Button
+                        variant={getAttendanceForSchedule(selectedSchedule.id)?.status === "△" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleAttendanceChange(selectedSchedule.id, "△")}
+                        disabled={saveAttendanceMutation.isPending}
+                        data-testid="button-attendance-maybe"
+                      >
+                        △ 未定
+                      </Button>
+                      <Button
+                        variant={getAttendanceForSchedule(selectedSchedule.id)?.status === "×" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleAttendanceChange(selectedSchedule.id, "×")}
+                        disabled={saveAttendanceMutation.isPending}
+                        data-testid="button-attendance-no"
+                      >
+                        × 欠席
+                      </Button>
+                    </div>
                   </div>
 
                   <Separator />
