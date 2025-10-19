@@ -1,30 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import type { Student, Category } from "@shared/schema";
+import type { Student } from "@shared/schema";
 import { Users } from "lucide-react";
 
 export default function PlayerMembersPage() {
   const { data: students = [], isLoading } = useQuery<Student[]>({
     queryKey: ["/api/students"],
   });
-
-  const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
-  });
-
-  const getCategoryName = (categoryId: string | null) => {
-    if (!categoryId) return "未設定";
-    const category = categories.find((c) => c.id === categoryId);
-    return category?.name || "未設定";
-  };
-
-  const getPlayerTypeName = (playerType: string | null) => {
-    if (playerType === "member") return "部活生";
-    if (playerType === "school") return "スクール生";
-    return "未設定";
-  };
 
   if (isLoading) {
     return (
@@ -53,46 +36,37 @@ export default function PlayerMembersPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="space-y-3">
           {students.map((student) => (
             <Card key={student.id} className="hover-elevate" data-testid={`card-member-${student.id}`}>
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-12 w-12">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-14 w-14">
                     <AvatarImage src={student.photoUrl || undefined} alt={student.name} />
                     <AvatarFallback>
                       {student.name.slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-lg truncate" data-testid={`text-member-name-${student.id}`}>
-                      {student.name}
-                    </CardTitle>
-                    <CardDescription className="truncate" data-testid={`text-member-email-${student.id}`}>
-                      {student.email}
-                    </CardDescription>
+                  <div className="flex-1 grid grid-cols-3 gap-4 items-center">
+                    <div>
+                      <p className="font-medium" data-testid={`text-member-name-${student.id}`}>
+                        {student.name}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground" data-testid={`text-birthdate-${student.id}`}>
+                        {student.birthDate 
+                          ? new Date(student.birthDate).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
+                          : '未設定'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground" data-testid={`text-school-${student.id}`}>
+                        {student.schoolName || '未設定'}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary" data-testid={`badge-category-${student.id}`}>
-                    {getCategoryName(student.categoryId)}
-                  </Badge>
-                  <Badge variant="outline" data-testid={`badge-player-type-${student.id}`}>
-                    {getPlayerTypeName(student.playerType)}
-                  </Badge>
-                </div>
-                {student.schoolName && (
-                  <p className="text-sm text-muted-foreground" data-testid={`text-school-${student.id}`}>
-                    {student.schoolName}
-                  </p>
-                )}
-                {student.birthDate && (
-                  <p className="text-sm text-muted-foreground" data-testid={`text-birthdate-${student.id}`}>
-                    生年月日: {new Date(student.birthDate).toLocaleDateString('ja-JP')}
-                  </p>
-                )}
               </CardContent>
             </Card>
           ))}
