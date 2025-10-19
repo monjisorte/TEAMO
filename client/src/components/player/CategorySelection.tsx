@@ -21,7 +21,7 @@ export default function CategorySelection({ studentId, teamId, onCategoriesUpdat
   const { toast} = useToast();
 
   const { data: allCategories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/categories", teamId],
+    queryKey: teamId ? [`/api/categories/${teamId}`] : [],
     enabled: !!teamId,
   });
 
