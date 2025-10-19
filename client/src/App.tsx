@@ -47,10 +47,19 @@ interface CoachData {
 
 function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogout: () => void }) {
   // Fetch latest player data from server
-  const { data: player, isLoading: playerLoading } = useQuery<PlayerData>({
+  const { data: player, isLoading: playerLoading, isError } = useQuery<PlayerData>({
     queryKey: [`/api/student/${playerId}`],
     enabled: !!playerId,
+    retry: false,
   });
+
+  // If player data fetch fails (404, etc.), log out
+  useEffect(() => {
+    if (isError) {
+      console.error("Failed to fetch player data, logging out");
+      onLogout();
+    }
+  }, [isError, onLogout]);
 
   // Fetch team info
   const { data: teams } = useQuery<Array<{ id: string; name: string }>>({
