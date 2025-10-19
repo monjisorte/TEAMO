@@ -5,19 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { Schedule, Attendance, Student } from "@shared/schema";
+import type { Schedule, Attendance, Student, Category } from "@shared/schema";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface StudentCalendarProps {
   studentId: string;
+  teamId: string;
   selectedCategories: string[];
 }
 
 type ViewMode = "month" | "week" | "next";
 
-export default function StudentCalendar({ studentId, selectedCategories }: StudentCalendarProps) {
+export default function StudentCalendar({ studentId, teamId, selectedCategories }: StudentCalendarProps) {
   const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("month");
@@ -34,6 +35,10 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
 
   const { data: students = [] } = useQuery<Student[]>({
     queryKey: ["/api/students"],
+  });
+
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: [`/api/categories/${teamId}`],
   });
 
   const saveAttendanceMutation = useMutation({
@@ -95,6 +100,34 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
   const getStudentName = (studentIdParam: string) => {
     const student = students.find(s => s.id === studentIdParam);
     return student?.name || "不明";
+  };
+
+  const getCategoryColor = (categoryId: string) => {
+    const index = categories.findIndex(c => c.id === categoryId);
+    const colors = [
+      "bg-blue-500/10 text-blue-600 border-blue-500/20",
+      "bg-purple-500/10 text-purple-600 border-purple-500/20",
+      "bg-green-500/10 text-green-600 border-green-500/20",
+      "bg-orange-500/10 text-orange-600 border-orange-500/20",
+      "bg-pink-500/10 text-pink-600 border-pink-500/20",
+      "bg-cyan-500/10 text-cyan-600 border-cyan-500/20",
+    ];
+    return colors[index % colors.length] || colors[0];
+  };
+
+  const getCategoryName = (categoryId: string) => {
+    const category = categories.find(c => c.id === categoryId);
+    return category?.name || "不明";
+  };
+
+  const getScheduleCategoryIds = (schedule: Schedule): string[] => {
+    if (schedule.categoryIds && schedule.categoryIds.length > 0) {
+      return schedule.categoryIds;
+    }
+    if (schedule.categoryId) {
+      return [schedule.categoryId];
+    }
+    return [];
   };
 
   const handlePrevious = () => {
@@ -207,11 +240,14 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
                         const startTime = schedule.startHour !== null && schedule.startMinute !== null
                           ? `${String(schedule.startHour).padStart(2, '0')}:${String(schedule.startMinute).padStart(2, '0')}`
                           : null;
+                        const categoryIds = getScheduleCategoryIds(schedule);
+                        const primaryCategoryId = categoryIds[0];
+                        const colorClasses = primaryCategoryId ? getCategoryColor(primaryCategoryId) : 'bg-muted/10 text-muted-foreground border-muted/20';
 
                         return (
                           <div
                             key={schedule.id}
-                            className="p-3 rounded-lg bg-card border hover-elevate cursor-pointer"
+                            className={`p-3 rounded-lg border-2 ${colorClasses} hover-elevate cursor-pointer`}
                             onClick={() => setSelectedSchedule(schedule)}
                             data-testid={`week-schedule-${schedule.id}`}
                           >
@@ -230,7 +266,7 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
                                 <div className="flex-1">
                                   <div className="font-medium">{schedule.title}</div>
                                   {startTime && (
-                                    <div className="text-sm text-muted-foreground">{startTime}</div>
+                                    <div className="text-sm opacity-75">{startTime}</div>
                                   )}
                                 </div>
                               </div>
@@ -529,10 +565,14 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
                     <div className="space-y-1">
                       {daySchedules.slice(0, 2).map((schedule) => {
                         const attendance = getAttendanceForSchedule(schedule.id);
+                        const categoryIds = getScheduleCategoryIds(schedule);
+                        const primaryCategoryId = categoryIds[0];
+                        const colorClasses = primaryCategoryId ? getCategoryColor(primaryCategoryId) : 'bg-muted/10 text-muted-foreground border-muted/20';
+                        
                         return (
                           <div
                             key={schedule.id}
-                            className="text-xs p-1 rounded bg-muted/30 truncate cursor-pointer"
+                            className={`text-xs p-1 rounded border ${colorClasses} truncate cursor-pointer opacity-50`}
                             onClick={() => setSelectedSchedule(schedule)}
                           >
                             <span className="font-semibold mr-1">{attendance?.status || "-"}</span>
@@ -566,11 +606,14 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
                         const startTime = schedule.startHour !== null && schedule.startMinute !== null
                           ? `${String(schedule.startHour).padStart(2, '0')}:${String(schedule.startMinute).padStart(2, '0')}`
                           : null;
+                        const categoryIds = getScheduleCategoryIds(schedule);
+                        const primaryCategoryId = categoryIds[0];
+                        const colorClasses = primaryCategoryId ? getCategoryColor(primaryCategoryId) : 'bg-muted/10 text-muted-foreground border-muted/20';
 
                         return (
                           <div
                             key={schedule.id}
-                            className="text-xs p-1 rounded bg-primary/10 truncate cursor-pointer hover-elevate"
+                            className={`text-xs p-1.5 rounded border ${colorClasses} cursor-pointer hover-elevate`}
                             data-testid={`schedule-${schedule.id}`}
                             onClick={() => setSelectedSchedule(schedule)}
                           >
@@ -579,7 +622,7 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
                               <span className="truncate flex-1">{schedule.title}</span>
                             </div>
                             {startTime && (
-                              <div className="text-[10px] opacity-80 mt-0.5">{startTime}</div>
+                              <div className="text-[10px] opacity-70 mt-0.5">{startTime}</div>
                             )}
                           </div>
                         );
@@ -607,10 +650,14 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
                     <div className="space-y-1">
                       {daySchedules.slice(0, 2).map((schedule) => {
                         const attendance = getAttendanceForSchedule(schedule.id);
+                        const categoryIds = getScheduleCategoryIds(schedule);
+                        const primaryCategoryId = categoryIds[0];
+                        const colorClasses = primaryCategoryId ? getCategoryColor(primaryCategoryId) : 'bg-muted/10 text-muted-foreground border-muted/20';
+                        
                         return (
                           <div
                             key={schedule.id}
-                            className="text-xs p-1 rounded bg-muted/30 truncate cursor-pointer"
+                            className={`text-xs p-1 rounded border ${colorClasses} truncate cursor-pointer opacity-50`}
                             onClick={() => setSelectedSchedule(schedule)}
                           >
                             <span className="font-semibold mr-1">{attendance?.status || "-"}</span>
@@ -662,28 +709,46 @@ export default function StudentCalendar({ studentId, selectedCategories }: Stude
       </div>
 
       {/* View Mode Selector */}
-      <div className="flex gap-2">
-        <Button
-          variant={viewMode === "month" ? "default" : "outline"}
-          onClick={() => setViewMode("month")}
-          data-testid="button-view-month"
-        >
-          月
-        </Button>
-        <Button
-          variant={viewMode === "week" ? "default" : "outline"}
-          onClick={() => setViewMode("week")}
-          data-testid="button-view-week"
-        >
-          週
-        </Button>
-        <Button
-          variant={viewMode === "next" ? "default" : "outline"}
-          onClick={() => setViewMode("next")}
-          data-testid="button-view-next"
-        >
-          次回
-        </Button>
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="flex gap-2">
+          <Button
+            variant={viewMode === "month" ? "default" : "outline"}
+            onClick={() => setViewMode("month")}
+            data-testid="button-view-month"
+          >
+            月
+          </Button>
+          <Button
+            variant={viewMode === "week" ? "default" : "outline"}
+            onClick={() => setViewMode("week")}
+            data-testid="button-view-week"
+          >
+            週
+          </Button>
+          <Button
+            variant={viewMode === "next" ? "default" : "outline"}
+            onClick={() => setViewMode("next")}
+            data-testid="button-view-next"
+          >
+            次回
+          </Button>
+        </div>
+        
+        {/* Category Legend */}
+        {categories.length > 0 && viewMode !== "next" && (
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-sm text-muted-foreground">カテゴリ:</span>
+            {categories.map((category) => (
+              <Badge
+                key={category.id}
+                variant="outline"
+                className={`rounded-full ${getCategoryColor(category.id)}`}
+              >
+                {category.name}
+              </Badge>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Calendar Display */}

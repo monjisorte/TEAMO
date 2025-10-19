@@ -55,6 +55,7 @@ export default function PlayerCalendarPage({ playerId, teamId }: PlayerCalendarP
     <div className="p-8">
       <PlayerCalendar 
         studentId={playerId}
+        teamId={teamId}
         selectedCategories={selectedCategories}
       />
     </div>

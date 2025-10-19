@@ -31,8 +31,16 @@ export default function CategorySelection({ studentId, teamId, onCategoriesUpdat
 
   useEffect(() => {
     const categoryIds = studentCategories.map((cat) => cat.id);
-    setSelectedCategories(categoryIds);
-    setOriginalCategories(categoryIds);
+    const categoryIdsStr = JSON.stringify([...categoryIds].sort());
+    
+    setSelectedCategories(prev => {
+      const prevStr = JSON.stringify([...prev].sort());
+      return prevStr === categoryIdsStr ? prev : categoryIds;
+    });
+    setOriginalCategories(prev => {
+      const prevStr = JSON.stringify([...prev].sort());
+      return prevStr === categoryIdsStr ? prev : categoryIds;
+    });
   }, [studentCategories]);
 
   const handleToggle = (categoryId: string) => {
