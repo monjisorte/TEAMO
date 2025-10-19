@@ -41,6 +41,7 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Fetch player profile
   const { data: player, isLoading } = useQuery<PlayerProfile>({
@@ -121,6 +122,7 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/student/${playerId}`] });
+      setIsEditing(false);
       toast({
         title: "保存完了",
         description: "プロフィールを更新しました",
@@ -139,6 +141,21 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
     updateProfileMutation.mutate(data);
   };
 
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    if (player) {
+      form.reset({
+        name: player.name || "",
+        schoolName: player.schoolName || "",
+        birthDate: player.birthDate || "",
+      });
+      if (player.photoUrl) {
+        setPhotoPreview(player.photoUrl);
+      }
+      setPhotoFile(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -150,8 +167,18 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
           <CardTitle>基本情報</CardTitle>
+          {!isEditing && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditing(true)}
+              data-testid="button-edit-profile"
+            >
+              編集
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Photo Upload */}
@@ -162,27 +189,29 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
                 <User className="h-12 w-12" />
               </AvatarFallback>
             </Avatar>
-            <div className="space-y-2">
-              <label htmlFor="photo-upload">
-                <Button variant="outline" size="sm" asChild>
-                  <span className="cursor-pointer">
-                    <Upload className="w-4 h-4 mr-2" />
-                    写真を選択
-                  </span>
-                </Button>
-              </label>
-              <input
-                id="photo-upload"
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                className="hidden"
-                data-testid="input-photo"
-              />
-              <p className="text-xs text-muted-foreground">
-                JPG, PNG形式（最大5MB）
-              </p>
-            </div>
+            {isEditing && (
+              <div className="space-y-2">
+                <label htmlFor="photo-upload">
+                  <Button variant="outline" size="sm" asChild>
+                    <span className="cursor-pointer">
+                      <Upload className="w-4 h-4 mr-2" />
+                      写真を選択
+                    </span>
+                  </Button>
+                </label>
+                <input
+                  id="photo-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                  data-testid="input-photo"
+                />
+                <p className="text-xs text-muted-foreground">
+                  JPG, PNG形式（最大5MB）
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Profile Form */}
@@ -198,6 +227,7 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
                       <Input 
                         placeholder="山田太郎" 
                         data-testid="input-name"
+                        disabled={!isEditing}
                         {...field} 
                       />
                     </FormControl>
@@ -216,6 +246,7 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
                       <Input 
                         placeholder="〇〇中学校" 
                         data-testid="input-school-name"
+                        disabled={!isEditing}
                         {...field} 
                       />
                     </FormControl>
@@ -234,6 +265,7 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
                       <Input 
                         type="date" 
                         data-testid="input-birth-date"
+                        disabled={!isEditing}
                         {...field} 
                       />
                     </FormControl>
@@ -242,13 +274,26 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
                 )}
               />
 
-              <Button 
-                type="submit" 
-                disabled={updateProfileMutation.isPending}
-                data-testid="button-save-profile"
-              >
-                {updateProfileMutation.isPending ? "保存中..." : "保存"}
-              </Button>
+              {isEditing && (
+                <div className="flex gap-2">
+                  <Button 
+                    type="submit" 
+                    disabled={updateProfileMutation.isPending}
+                    data-testid="button-save-profile"
+                  >
+                    {updateProfileMutation.isPending ? "保存中..." : "保存"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                    disabled={updateProfileMutation.isPending}
+                    data-testid="button-cancel-edit"
+                  >
+                    キャンセル
+                  </Button>
+                </div>
+              )}
             </form>
           </Form>
         </CardContent>
