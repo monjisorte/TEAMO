@@ -120,14 +120,18 @@ export default function DocumentsPage() {
 
   const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
     try {
+      console.log("Upload complete result:", result);
+      
       if (result.successful && result.successful.length > 0) {
         const file = result.successful[0];
         const uploadURL = file.uploadURL;
         const fileName = file.name;
         const fileSize = file.size?.toString();
 
+        console.log("Saving document:", { fileName, uploadURL, fileSize, teamId, folderId: currentFolderId });
+
         // Save document to database
-        await apiRequest("POST", "/api/documents", {
+        const response = await apiRequest("POST", "/api/documents", {
           title: fileName,
           fileUrl: uploadURL,
           fileName,
@@ -136,18 +140,27 @@ export default function DocumentsPage() {
           folderId: currentFolderId,
         });
 
+        console.log("Document saved response:", response);
+
         queryClient.invalidateQueries({ queryKey: ["/api/documents", currentFolderId, teamId] });
         
         toast({
           title: "アップロード成功",
           description: "ファイルをアップロードしました",
         });
+      } else {
+        console.error("No successful uploads:", result);
+        toast({
+          title: "エラー",
+          description: "ファイルのアップロードに失敗しました",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Upload error:", error);
       toast({
         title: "エラー",
-        description: "ファイルのアップロードに失敗しました",
+        description: `ファイルのアップロードに失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`,
         variant: "destructive",
       });
     }

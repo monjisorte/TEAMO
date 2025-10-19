@@ -54,10 +54,31 @@ export function ObjectUploader({
     })
       .use(AwsS3, {
         shouldUseMultipart: false,
-        getUploadParameters: onGetUploadParameters,
+        getUploadParameters: async (file) => {
+          console.log("Getting upload parameters for file:", file);
+          try {
+            const params = await onGetUploadParameters();
+            console.log("Upload parameters received:", params);
+            return params;
+          } catch (error) {
+            console.error("Error getting upload parameters:", error);
+            throw error;
+          }
+        },
+      })
+      .on("upload", () => {
+        console.log("Upload started");
+      })
+      .on("upload-success", (file, response) => {
+        console.log("Upload success:", file, response);
+      })
+      .on("upload-error", (file, error) => {
+        console.error("Upload error:", file, error);
       })
       .on("complete", (result) => {
+        console.log("Upload complete:", result);
         onComplete?.(result);
+        setShowModal(false);
       })
   );
 
