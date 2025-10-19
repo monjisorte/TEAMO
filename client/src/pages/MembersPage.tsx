@@ -34,8 +34,9 @@ export default function MembersPage() {
     mutationFn: async (studentId: string) => {
       return await apiRequest("DELETE", `/api/students/${studentId}`, {});
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/students"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/students"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/students"] });
       toast({
         title: "退会完了",
         description: "メンバーを退会させました",
