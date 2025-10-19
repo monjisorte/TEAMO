@@ -27,11 +27,23 @@ export default function TeamInfoPage() {
   const [isEditingBasicInfo, setIsEditingBasicInfo] = useState(false);
   const [isEditingFees, setIsEditingFees] = useState(false);
   
+  // Get coach's teamId from localStorage
+  const [teamId, setTeamId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedCoach = localStorage.getItem("coachData");
+    if (savedCoach) {
+      const coachData = JSON.parse(savedCoach);
+      setTeamId(coachData.teamId);
+    }
+  }, []);
+
   const { data: teams = [], isLoading } = useQuery<Team[]>({
     queryKey: ["/api/teams"],
   });
 
-  const team = teams[0];
+  // Find the correct team based on coach's teamId
+  const team = teams.find(t => t.id === teamId);
 
   const [formData, setFormData] = useState({
     ownerName: team?.ownerName || "",
@@ -131,7 +143,7 @@ export default function TeamInfoPage() {
     setIsEditingFees(false);
   };
 
-  if (isLoading) {
+  if (isLoading || !teamId) {
     return (
       <div className="flex items-center justify-center h-64">
         <p className="text-muted-foreground">読み込み中...</p>
