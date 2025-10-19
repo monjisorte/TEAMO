@@ -1003,6 +1003,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Students Management
   app.get("/api/students", async (req, res) => {
     try {
+      // Disable caching to ensure fresh data
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       const allStudents = await db.select().from(students);
       res.json(allStudents);
     } catch (error) {
