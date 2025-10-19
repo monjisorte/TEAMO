@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,9 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Student, TuitionPayment, Team } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Settings } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 export default function TuitionPage() {
   const { toast } = useToast();
@@ -26,12 +28,30 @@ export default function TuitionPage() {
     spotFee?: number;
     amount?: number;
   }>>({});
+  const [showSettings, setShowSettings] = useState(false);
+  const [teamSettings, setTeamSettings] = useState({
+    monthlyFeeMember: 0,
+    monthlyFeeSchool: 0,
+    annualFee: 0,
+    siblingDiscount: 0,
+  });
 
   const { data: teams = [] } = useQuery<Team[]>({
     queryKey: ["/api/teams"],
   });
 
   const team = teams[0];
+
+  useEffect(() => {
+    if (team) {
+      setTeamSettings({
+        monthlyFeeMember: team.monthlyFeeMember || 0,
+        monthlyFeeSchool: team.monthlyFeeSchool || 0,
+        annualFee: team.annualFee || 0,
+        siblingDiscount: team.siblingDiscount || 0,
+      });
+    }
+  }, [team]);
 
   const { data: students = [] } = useQuery<Student[]>({
     queryKey: ["/api/students"],
@@ -224,6 +244,35 @@ export default function TuitionPage() {
     },
   });
 
+  const updateTeamSettingsMutation = useMutation({
+    mutationFn: async (data: {
+      monthlyFeeMember: number;
+      monthlyFeeSchool: number;
+      annualFee: number;
+      siblingDiscount: number;
+    }) => {
+      if (!team) throw new Error("チームが見つかりません");
+      return await apiRequest("PUT", `/api/teams/${team.id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/teams"]
+      });
+      setShowSettings(false);
+      toast({
+        title: "設定を更新しました",
+        description: "月謝の基本設定を保存しました",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "エラー",
+        description: error.message || "設定の更新に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCategoryChange = async (studentId: string, category: string | null) => {
     const payment = getPaymentForStudent(studentId);
     const student = students.find((s) => s.id === studentId);
@@ -275,14 +324,91 @@ export default function TuitionPage() {
             メンバーの月謝の支払い状況を管理します
           </p>
         </div>
-        <Button
-          onClick={() => autoGenerateMutation.mutate()}
-          disabled={autoGenerateMutation.isPending || !team}
-          data-testid="button-auto-generate"
-        >
-          <RefreshCw className={`mr-2 h-4 w-4 ${autoGenerateMutation.isPending ? 'animate-spin' : ''}`} />
-          月謝データ自動生成
-        </Button>
+        <div className="flex gap-2">
+          <Dialog open={showSettings} onOpenChange={setShowSettings}>
+            <DialogTrigger asChild>
+              <Button variant="outline" data-testid="button-team-settings">
+                <Settings className="mr-2 h-4 w-4" />
+                月謝設定
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>月謝の基本設定</DialogTitle>
+                <DialogDescription>
+                  チーム生・スクール生の月謝、年会費、兄弟割引を設定します
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="monthlyFeeMember">チーム生の月謝 (円)</Label>
+                  <Input
+                    id="monthlyFeeMember"
+                    type="number"
+                    value={teamSettings.monthlyFeeMember}
+                    onChange={(e) => setTeamSettings(prev => ({ ...prev, monthlyFeeMember: Number(e.target.value) }))}
+                    data-testid="input-monthly-fee-member"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="monthlyFeeSchool">スクール生の月謝 (円)</Label>
+                  <Input
+                    id="monthlyFeeSchool"
+                    type="number"
+                    value={teamSettings.monthlyFeeSchool}
+                    onChange={(e) => setTeamSettings(prev => ({ ...prev, monthlyFeeSchool: Number(e.target.value) }))}
+                    data-testid="input-monthly-fee-school"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="annualFee">年会費 (円)</Label>
+                  <Input
+                    id="annualFee"
+                    type="number"
+                    value={teamSettings.annualFee}
+                    onChange={(e) => setTeamSettings(prev => ({ ...prev, annualFee: Number(e.target.value) }))}
+                    data-testid="input-annual-fee"
+                  />
+                  <p className="text-xs text-muted-foreground">毎年4月に自動的に追加されます</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="siblingDiscount">兄弟割引 (円)</Label>
+                  <Input
+                    id="siblingDiscount"
+                    type="number"
+                    value={teamSettings.siblingDiscount}
+                    onChange={(e) => setTeamSettings(prev => ({ ...prev, siblingDiscount: Number(e.target.value) }))}
+                    data-testid="input-sibling-discount"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSettings(false)}
+                  data-testid="button-cancel-settings"
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  onClick={() => updateTeamSettingsMutation.mutate(teamSettings)}
+                  disabled={updateTeamSettingsMutation.isPending}
+                  data-testid="button-save-settings"
+                >
+                  保存
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Button
+            onClick={() => autoGenerateMutation.mutate()}
+            disabled={autoGenerateMutation.isPending || !team}
+            data-testid="button-auto-generate"
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${autoGenerateMutation.isPending ? 'animate-spin' : ''}`} />
+            月謝データ自動生成
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
