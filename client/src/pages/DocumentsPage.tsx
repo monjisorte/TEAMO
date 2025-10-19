@@ -64,7 +64,7 @@ export default function DocumentsPage() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/folders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/folders", currentFolderId, teamId] });
       setNewFolderName("");
       setIsCreateFolderOpen(false);
       toast({
@@ -83,8 +83,8 @@ export default function DocumentsPage() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/folders"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/folders", currentFolderId, teamId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/documents", currentFolderId, teamId] });
       toast({
         title: "削除成功",
         description: "アイテムを削除しました",
@@ -136,7 +136,7 @@ export default function DocumentsPage() {
           folderId: currentFolderId,
         });
 
-        queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/documents", currentFolderId, teamId] });
         
         toast({
           title: "アップロード成功",
