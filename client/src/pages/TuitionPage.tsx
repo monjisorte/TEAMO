@@ -29,11 +29,11 @@ export default function TuitionPage() {
   });
 
   const { data: payments = [] } = useQuery<TuitionPayment[]>({
-    queryKey: ["/api/tuition-payments", selectedYear, selectedMonth],
+    queryKey: [`/api/tuition-payments?year=${selectedYear}&month=${selectedMonth}`],
   });
 
   const updatePaymentMutation = useMutation({
-    mutationFn: async (data: { studentId: string; amount: number; isPaid: boolean }) => {
+    mutationFn: async (data: { studentId: string; amount: number; isPaid: boolean; category?: string | null }) => {
       return await apiRequest("POST", "/api/tuition-payments", {
         ...data,
         year: selectedYear,
@@ -41,7 +41,9 @@ export default function TuitionPage() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tuition-payments"] });
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/tuition-payments?year=${selectedYear}&month=${selectedMonth}`] 
+      });
       toast({
         title: "更新成功",
         description: "月謝情報を更新しました",
@@ -69,6 +71,7 @@ export default function TuitionPage() {
       studentId,
       amount,
       isPaid: payment?.isPaid || false,
+      category: payment?.category || null,
     });
   };
 
@@ -79,6 +82,18 @@ export default function TuitionPage() {
       studentId,
       amount: payment?.amount || getDefaultAmount(student!),
       isPaid,
+      category: payment?.category || null,
+    });
+  };
+
+  const handleCategoryChange = (studentId: string, category: string | null) => {
+    const payment = getPaymentForStudent(studentId);
+    const student = students.find((s) => s.id === studentId);
+    updatePaymentMutation.mutate({
+      studentId,
+      amount: payment?.amount || getDefaultAmount(student!),
+      isPaid: payment?.isPaid || false,
+      category,
     });
   };
 
@@ -204,12 +219,27 @@ export default function TuitionPage() {
                 const defaultAmount = getDefaultAmount(student);
                 const amount = payment?.amount || defaultAmount;
                 const isPaid = payment?.isPaid || false;
+                const category = payment?.category || null;
 
                 return (
                   <TableRow key={student.id} data-testid={`row-student-${student.id}`}>
                     <TableCell className="font-medium">{student.name}</TableCell>
                     <TableCell>
-                      {student.playerType === "member" ? "部活生" : "スクール生"}
+                      <Select
+                        value={category || "unselected"}
+                        onValueChange={(value) => 
+                          handleCategoryChange(student.id, value === "unselected" ? null : value)
+                        }
+                      >
+                        <SelectTrigger className="w-32" data-testid={`select-category-${student.id}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="unselected">(未選択)</SelectItem>
+                          <SelectItem value="team">チーム</SelectItem>
+                          <SelectItem value="school">スクール</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell className="text-right">
                       <Input

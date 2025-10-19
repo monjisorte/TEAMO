@@ -1109,7 +1109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/tuition-payments", async (req, res) => {
     try {
-      const { studentId, amount, isPaid, year, month } = req.body;
+      const { studentId, amount, isPaid, year, month, category } = req.body;
 
       if (!studentId || !year || !month) {
         return res.status(400).json({ error: "studentId, year, and month are required" });
@@ -1137,6 +1137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .set({ 
             amount, 
             isPaid, 
+            category: category || null,
             paidAt: isPaid ? new Date() : null,
             updatedAt: new Date()
           })
@@ -1156,6 +1157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           month,
           amount,
           isPaid,
+          category: category || null,
           paidAt: isPaid ? new Date() : null,
         }).returning();
 

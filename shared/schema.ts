@@ -209,6 +209,7 @@ export const tuitionPayments = pgTable("tuition_payments", {
   teamId: varchar("team_id").notNull(),
   year: integer("year").notNull(), // 2025
   month: integer("month").notNull(), // 1-12
+  category: varchar("category"), // "team" | "school" | null (未選択)
   amount: integer("amount").notNull(),
   isPaid: boolean("is_paid").notNull().default(false),
   paidAt: timestamp("paid_at"),
