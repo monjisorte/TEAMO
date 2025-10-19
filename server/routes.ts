@@ -1120,7 +1120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/tuition-payments", async (req, res) => {
     try {
-      const { studentId, amount, isPaid, year, month, category } = req.body;
+      const { studentId, baseAmount, discount, enrollmentOrAnnualFee, spotFee, amount, isPaid, year, month, category } = req.body;
 
       if (!studentId || !year || !month) {
         return res.status(400).json({ error: "studentId, year, and month are required" });
@@ -1146,7 +1146,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Update existing record
         await db.update(tuitionPayments)
           .set({ 
-            amount, 
+            baseAmount: baseAmount ?? existing[0].baseAmount,
+            discount: discount ?? existing[0].discount,
+            enrollmentOrAnnualFee: enrollmentOrAnnualFee ?? existing[0].enrollmentOrAnnualFee,
+            spotFee: spotFee ?? existing[0].spotFee,
+            amount: amount ?? existing[0].amount,
             isPaid, 
             category: category || null,
             paidAt: isPaid ? new Date() : null,
@@ -1166,7 +1170,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           teamId: student[0].teamId,
           year,
           month,
-          amount,
+          baseAmount: baseAmount ?? 0,
+          discount: discount ?? 0,
+          enrollmentOrAnnualFee: enrollmentOrAnnualFee ?? 0,
+          spotFee: spotFee ?? 0,
+          amount: amount ?? 0,
           isPaid,
           category: category || null,
           paidAt: isPaid ? new Date() : null,
@@ -1176,6 +1184,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       console.error("Error updating tuition payment:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Auto-generate tuition payments for all students
+  app.post("/api/tuition-payments/auto-generate", async (req, res) => {
+    try {
+      const { teamId } = req.body;
+
+      if (!teamId) {
+        return res.status(400).json({ error: "teamId is required" });
+      }
+
+      // Get team details
+      const team = await db.select().from(teams).where(eq(teams.id, teamId)).limit(1);
+      if (team.length === 0) {
+        return res.status(404).json({ error: "Team not found" });
+      }
+
+      // Get all students for the team
+      const teamStudents = await db.select().from(students).where(eq(students.teamId, teamId));
+
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth() + 1;
+
+      let generatedCount = 0;
+
+      for (const student of teamStudents) {
+        // Get registration date (翌月から課金開始)
+        const registrationDate = new Date(student.createdAt);
+        let startYear = registrationDate.getFullYear();
+        let startMonth = registrationDate.getMonth() + 2; // 翌月から
+
+        if (startMonth > 12) {
+          startMonth = 1;
+          startYear++;
+        }
+
+        // Generate payments from registration month to current month
+        let year = startYear;
+        let month = startMonth;
+
+        while (year < currentYear || (year === currentYear && month <= currentMonth)) {
+          // Check if payment already exists
+          const existing = await db.select()
+            .from(tuitionPayments)
+            .where(and(
+              eq(tuitionPayments.studentId, student.id),
+              eq(tuitionPayments.year, year),
+              eq(tuitionPayments.month, month)
+            ))
+            .limit(1);
+
+          if (existing.length === 0) {
+            // Determine base amount based on student type
+            let baseAmount = 0;
+            if (student.playerType === "member") {
+              baseAmount = team[0].monthlyFeeMember || 0;
+            } else if (student.playerType === "school") {
+              baseAmount = team[0].monthlyFeeSchool || 0;
+            }
+
+            // Set annual fee for April
+            let enrollmentOrAnnualFee = 0;
+            if (month === 4) {
+              enrollmentOrAnnualFee = team[0].annualFee || 0;
+            }
+
+            const discount = 0;
+            const spotFee = 0;
+            const totalAmount = baseAmount - discount + enrollmentOrAnnualFee + spotFee;
+
+            // Create payment record
+            await db.insert(tuitionPayments).values({
+              studentId: student.id,
+              teamId,
+              year,
+              month,
+              baseAmount,
+              discount,
+              enrollmentOrAnnualFee,
+              spotFee,
+              amount: totalAmount,
+              isPaid: false,
+              category: student.playerType === "member" ? "team" : student.playerType === "school" ? "school" : null,
+            });
+
+            generatedCount++;
+          }
+
+          // Move to next month
+          month++;
+          if (month > 12) {
+            month = 1;
+            year++;
+          }
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        generatedCount,
+        message: `${generatedCount}件の月謝データを生成しました`
+      });
+    } catch (error) {
+      console.error("Error auto-generating tuition payments:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
