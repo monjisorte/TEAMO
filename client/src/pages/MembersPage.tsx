@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ChevronDown } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -80,41 +83,59 @@ export default function MembersPage({ teamId }: MembersPageProps) {
       .map(sc => sc.categoryId);
   };
 
-  // カテゴリー変更のmutation
-  const updateCategoryMutation = useMutation({
-    mutationFn: async ({ studentId, oldCategoryIds, newCategoryId }: { 
-      studentId: string; 
-      oldCategoryIds: string[]; 
-      newCategoryId: string;
-    }) => {
-      // Remove old category relationships
-      for (const oldCategoryId of oldCategoryIds) {
-        await apiRequest("DELETE", `/api/student-categories/${studentId}/${oldCategoryId}`, {});
-      }
-      
-      // Add new category relationship if not "none"
-      if (newCategoryId !== "none") {
-        await apiRequest("POST", "/api/student-categories", {
-          studentId,
-          categoryId: newCategoryId,
-        });
-      }
+  // カテゴリー追加のmutation
+  const addCategoryMutation = useMutation({
+    mutationFn: async ({ studentId, categoryId }: { studentId: string; categoryId: string }) => {
+      await apiRequest("POST", "/api/student-categories", {
+        studentId,
+        categoryId,
+      });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/student-categories"] });
       toast({
         title: "更新完了",
-        description: "カテゴリーを更新しました",
+        description: "カテゴリーを追加しました",
       });
     },
     onError: () => {
       toast({
         title: "エラー",
-        description: "カテゴリーの更新に失敗しました",
+        description: "カテゴリーの追加に失敗しました",
         variant: "destructive",
       });
     },
   });
+
+  // カテゴリー削除のmutation
+  const removeCategoryMutation = useMutation({
+    mutationFn: async ({ studentId, categoryId }: { studentId: string; categoryId: string }) => {
+      await apiRequest("DELETE", `/api/student-categories/${studentId}/${categoryId}`, {});
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/student-categories"] });
+      toast({
+        title: "更新完了",
+        description: "カテゴリーを削除しました",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "カテゴリーの削除に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // カテゴリーのチェック状態を切り替え
+  const handleCategoryToggle = (studentId: string, categoryId: string, isChecked: boolean) => {
+    if (isChecked) {
+      addCategoryMutation.mutate({ studentId, categoryId });
+    } else {
+      removeCategoryMutation.mutate({ studentId, categoryId });
+    }
+  };
 
   // ステータス変更のmutation
   const updatePlayerTypeMutation = useMutation({
@@ -227,101 +248,121 @@ export default function MembersPage({ teamId }: MembersPageProps) {
               data-testid={`card-member-${student.id}`}
             >
               <CardContent className="p-4">
-                <div className="flex items-start gap-4">
-                  <div className="relative w-16 shrink-0">
-                    <Avatar className="w-16 h-16 ring-2 ring-blue-50">
+                <div className="flex items-center gap-3">
+                  <div className="relative shrink-0">
+                    <Avatar className="w-12 h-12 ring-2 ring-blue-50">
                       <AvatarImage src={student.photoUrl || undefined} alt={student.name} />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-lg">
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold">
                         {student.name.slice(0, 2)}
                       </AvatarFallback>
                     </Avatar>
                   </div>
-                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 min-w-0">
-                    <div className="space-y-1.5">
-                      <div>
-                        <p className="text-xs text-muted-foreground">名前</p>
-                        <p className="text-sm font-bold" data-testid={`text-member-name-${student.id}`}>
-                          {student.name}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">背番号</p>
-                        <p className="text-sm" data-testid={`text-jersey-${student.id}`}>
-                          {student.jerseyNumber != null && student.jerseyNumber >= 0 ? student.jerseyNumber : '未設定'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">生年月日</p>
-                        <p className="text-sm" data-testid={`text-birthdate-${student.id}`}>
-                          {student.birthDate 
-                            ? new Date(student.birthDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
-                            : '未設定'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">学校名</p>
-                        <p className="text-sm truncate" data-testid={`text-school-${student.id}`}>
-                          {student.schoolName || '未設定'}
-                        </p>
-                      </div>
+                  <div className="flex-1 grid grid-cols-7 gap-2 items-center min-w-0">
+                    <div>
+                      <p className="text-xs text-muted-foreground">名前</p>
+                      <p className="text-sm font-bold truncate" data-testid={`text-member-name-${student.id}`}>
+                        {student.name}
+                      </p>
                     </div>
-                    <div className="space-y-1.5">
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">ステータス</p>
-                        <Select
-                          value={student.playerType || "none"}
-                          onValueChange={(value) => {
-                            const newValue = value === "none" ? "" : value;
-                            updatePlayerTypeMutation.mutate({ studentId: student.id, playerType: newValue });
-                          }}
-                          data-testid={`select-player-type-${student.id}`}
-                        >
-                          <SelectTrigger className="w-full text-xs h-8">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">未設定</SelectItem>
-                            <SelectItem value="team">チーム生</SelectItem>
-                            <SelectItem value="school">スクール生</SelectItem>
-                            <SelectItem value="inactive">休部</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">カテゴリー</p>
-                        <Select
-                          value={getStudentCategories(student.id)[0] || "none"}
-                          onValueChange={(value) => {
-                            const oldCategoryIds = getStudentCategories(student.id);
-                            updateCategoryMutation.mutate({ 
-                              studentId: student.id, 
-                              oldCategoryIds,
-                              newCategoryId: value,
-                            });
-                          }}
-                          data-testid={`select-category-${student.id}`}
-                        >
-                          <SelectTrigger className="w-full text-xs h-8">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">未設定</SelectItem>
-                            {categories.map((category) => (
-                              <SelectItem key={category.id} value={category.id}>
-                                {category.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">登録日</p>
-                        <p className="text-sm" data-testid={`text-created-${student.id}`}>
-                          {student.createdAt 
-                            ? new Date(student.createdAt).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
-                            : '未設定'}
-                        </p>
-                      </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">背番号</p>
+                      <p className="text-sm" data-testid={`text-jersey-${student.id}`}>
+                        {student.jerseyNumber != null && student.jerseyNumber >= 0 ? student.jerseyNumber : '未設定'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">生年月日</p>
+                      <p className="text-sm whitespace-nowrap" data-testid={`text-birthdate-${student.id}`}>
+                        {student.birthDate 
+                          ? new Date(student.birthDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/')
+                          : '未設定'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">学校名</p>
+                      <p className="text-sm truncate" data-testid={`text-school-${student.id}`}>
+                        {student.schoolName || '未設定'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">ステータス</p>
+                      <Select
+                        value={student.playerType || "none"}
+                        onValueChange={(value) => {
+                          const newValue = value === "none" ? "" : value;
+                          updatePlayerTypeMutation.mutate({ studentId: student.id, playerType: newValue });
+                        }}
+                        data-testid={`select-player-type-${student.id}`}
+                      >
+                        <SelectTrigger className="w-full text-xs h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">未設定</SelectItem>
+                          <SelectItem value="team">チーム生</SelectItem>
+                          <SelectItem value="school">スクール生</SelectItem>
+                          <SelectItem value="inactive">休部</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">カテゴリー</p>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full h-8 text-xs justify-between"
+                            data-testid={`button-category-${student.id}`}
+                          >
+                            {(() => {
+                              const studentCategoryIds = getStudentCategories(student.id);
+                              if (studentCategoryIds.length === 0) return "未設定";
+                              const selectedCategories = categories.filter(c => studentCategoryIds.includes(c.id));
+                              if (selectedCategories.length === 1) return selectedCategories[0].name;
+                              return `${selectedCategories.length}件選択`;
+                            })()}
+                            <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-56 p-3" align="start">
+                          <div className="space-y-2">
+                            {categories.map((category) => {
+                              const isChecked = getStudentCategories(student.id).includes(category.id);
+                              return (
+                                <div key={category.id} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`category-${student.id}-${category.id}`}
+                                    checked={isChecked}
+                                    onCheckedChange={(checked) => {
+                                      handleCategoryToggle(student.id, category.id, checked as boolean);
+                                    }}
+                                    data-testid={`checkbox-category-${student.id}-${category.id}`}
+                                  />
+                                  <label
+                                    htmlFor={`category-${student.id}-${category.id}`}
+                                    className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                  >
+                                    {category.name}
+                                  </label>
+                                </div>
+                              );
+                            })}
+                            {categories.length === 0 && (
+                              <p className="text-sm text-muted-foreground text-center py-2">
+                                カテゴリーがありません
+                              </p>
+                            )}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">登録日</p>
+                      <p className="text-sm whitespace-nowrap" data-testid={`text-created-${student.id}`}>
+                        {student.createdAt 
+                          ? new Date(student.createdAt).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
+                          : '未設定'}
+                      </p>
                     </div>
                   </div>
                   <Button
