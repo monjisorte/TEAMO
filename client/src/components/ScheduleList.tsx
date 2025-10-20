@@ -85,7 +85,14 @@ interface ScheduleFormData {
 
 export function ScheduleList() {
   const { toast } = useToast();
-  const [view, setView] = useState<"list" | "calendar">("list");
+  const [view, setView] = useState<"list" | "calendar" | "week">("list");
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - dayOfWeek);
+    return weekStart;
+  });
   const [selectedSchedule, setSelectedSchedule] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<"all" | "my">("my");
@@ -497,11 +504,15 @@ export function ScheduleList() {
         </Card>
       )}
 
-      <Tabs value={view} onValueChange={(v) => setView(v as "list" | "calendar")} className="w-full">
+      <Tabs value={view} onValueChange={(v) => setView(v as "list" | "calendar" | "week")} className="w-full">
         <TabsList>
           <TabsTrigger value="list" className="gap-2" data-testid="tab-list-view">
             <List className="h-4 w-4" />
             リスト
+          </TabsTrigger>
+          <TabsTrigger value="week" className="gap-2" data-testid="tab-week-view">
+            <Calendar className="h-4 w-4" />
+            週
           </TabsTrigger>
           <TabsTrigger value="calendar" className="gap-2" data-testid="tab-calendar-view">
             <CalendarDays className="h-4 w-4" />
@@ -645,6 +656,169 @@ export function ScheduleList() {
               })
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="week" className="mt-8">
+          {(() => {
+            const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
+            const weekDaysData = Array.from({ length: 7 }, (_, i) => {
+              const date = new Date(currentWeekStart);
+              date.setDate(currentWeekStart.getDate() + i);
+              return date;
+            });
+
+            const handlePrevWeek = () => {
+              const newDate = new Date(currentWeekStart);
+              newDate.setDate(currentWeekStart.getDate() - 7);
+              setCurrentWeekStart(newDate);
+            };
+
+            const handleNextWeek = () => {
+              const newDate = new Date(currentWeekStart);
+              newDate.setDate(currentWeekStart.getDate() + 7);
+              setCurrentWeekStart(newDate);
+            };
+
+            const weekEnd = new Date(currentWeekStart);
+            weekEnd.setDate(currentWeekStart.getDate() + 6);
+
+            return (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    <Button
+                      variant="outline"
+                      onClick={handlePrevWeek}
+                      data-testid="button-prev-week"
+                    >
+                      前の週
+                    </Button>
+                    <h2 className="text-lg md:text-xl font-semibold">
+                      {currentWeekStart.getMonth() + 1}月{currentWeekStart.getDate()}日 - {weekEnd.getMonth() + 1}月{weekEnd.getDate()}日
+                    </h2>
+                    <Button
+                      variant="outline"
+                      onClick={handleNextWeek}
+                      data-testid="button-next-week"
+                    >
+                      次の週
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {weekDaysData.map((date, index) => {
+                    const dateStr = date.toISOString().split("T")[0];
+                    const daySchedules = filteredSchedules.filter(s => s.date === dateStr);
+                    const isToday = new Date().toDateString() === date.toDateString();
+
+                    return (
+                      <Card key={index} className={`border-0 shadow-md ${isToday ? 'ring-2 ring-primary' : ''}`}>
+                        <CardContent className="p-4 md:p-6">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl ${isToday ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-muted'}`}>
+                              <span className="text-xs md:text-sm">{weekDays[index]}</span>
+                              <span className="text-lg md:text-2xl font-bold">{date.getDate()}</span>
+                            </div>
+                            <div>
+                              <h3 className="text-base md:text-lg font-semibold">
+                                {date.getMonth() + 1}月{date.getDate()}日（{weekDays[index]}）
+                              </h3>
+                              <p className="text-xs md:text-sm text-muted-foreground">
+                                {daySchedules.length}件のスケジュール
+                              </p>
+                            </div>
+                          </div>
+
+                          {daySchedules.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-4">
+                              スケジュールがありません
+                            </p>
+                          ) : (
+                            <div className="space-y-3">
+                              {daySchedules.map((schedule) => (
+                                <div
+                                  key={schedule.id}
+                                  className="p-4 rounded-lg border bg-card hover-elevate cursor-pointer"
+                                  onClick={() => setSelectedSchedule(schedule.id)}
+                                  data-testid={`schedule-item-${schedule.id}`}
+                                >
+                                  <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1 min-w-0">
+                                      <h4 className="font-semibold text-sm md:text-base mb-2">
+                                        {schedule.title}
+                                      </h4>
+                                      <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm text-muted-foreground mb-2">
+                                        <span className="flex items-center gap-1">
+                                          <Clock className="h-3 w-3 md:h-4 md:w-4" />
+                                          {formatTime(schedule.startHour, schedule.startMinute)} - {formatTime(schedule.endHour, schedule.endMinute)}
+                                        </span>
+                                        {schedule.venue && (
+                                          <span className="flex items-center gap-1">
+                                            <MapPin className="h-3 w-3 md:h-4 md:w-4" />
+                                            {schedule.venue}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="flex flex-wrap gap-2">
+                                        {(schedule.categoryIds || (schedule.categoryId ? [schedule.categoryId] : [])).map((catId) => {
+                                          const category = categories.find(c => c.id === catId);
+                                          return category ? (
+                                            <Badge key={catId} variant="secondary" className="text-xs">
+                                              {category.name}
+                                            </Badge>
+                                          ) : null;
+                                        })}
+                                        {schedule.parentScheduleId && (
+                                          <Badge variant="outline" className="text-xs">
+                                            <Repeat className="h-3 w-3 mr-1" />
+                                            繰り返し
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleEditSchedule(schedule);
+                                        }}
+                                        data-testid={`button-edit-schedule-${schedule.id}`}
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (schedule.parentScheduleId) {
+                                            setScheduleToDelete(schedule);
+                                            setShowRecurringDeleteDialog(true);
+                                          } else {
+                                            handleDeleteSchedule(schedule.id, "this");
+                                          }
+                                        }}
+                                        data-testid={`button-delete-schedule-${schedule.id}`}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
         </TabsContent>
 
         <TabsContent value="calendar" className="mt-8">
