@@ -141,9 +141,9 @@ export function Dashboard() {
   const getAttendanceCount = (scheduleId: string) => {
     const scheduleAttendances = attendances.filter(a => a.scheduleId === scheduleId);
     return {
-      present: scheduleAttendances.filter(a => a.status === "present").length,
-      maybe: scheduleAttendances.filter(a => a.status === "maybe").length,
-      absent: scheduleAttendances.filter(a => a.status === "absent").length,
+      present: scheduleAttendances.filter(a => a.status === "○").length,
+      maybe: scheduleAttendances.filter(a => a.status === "△").length,
+      absent: scheduleAttendances.filter(a => a.status === "×").length,
     };
   };
 
