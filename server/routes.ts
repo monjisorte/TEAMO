@@ -291,14 +291,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // Create new attendance
         console.log("Creating new attendance...");
-        const newAttendance = await db.insert(attendances).values({
+        const result = await db.insert(attendances).values({
           studentId,
           scheduleId,
           status,
           comment: comment || null,
         }).returning();
-        console.log("Created new attendance:", newAttendance[0]);
-        res.status(200).json(newAttendance[0]);
+        
+        console.log("Insert result:", result);
+        
+        if (result && result.length > 0) {
+          console.log("Created new attendance:", result[0]);
+          res.status(200).json(result[0]);
+        } else {
+          console.error("No result returned from insert");
+          // Fetch the created attendance
+          const created = await db.select()
+            .from(attendances)
+            .where(and(
+              eq(attendances.studentId, studentId),
+              eq(attendances.scheduleId, scheduleId)
+            ))
+            .limit(1);
+          console.log("Fetched after insert:", created);
+          res.status(200).json(created[0] || { success: true });
+        }
       }
     } catch (error) {
       console.error("Error creating/updating attendance:", error);
