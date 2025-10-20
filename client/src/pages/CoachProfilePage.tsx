@@ -275,6 +275,19 @@ export default function CoachProfilePage() {
             onSubmit={profileForm.handleSubmit((data) => updateProfileMutation.mutate(data))}
             className="space-y-6"
           >
+            <div className="space-y-2">
+              <Label htmlFor="email">メールアドレス</Label>
+              <Input
+                id="email"
+                type="email"
+                value={coach?.email || ""}
+                disabled
+                className="bg-muted"
+                data-testid="input-email"
+              />
+              <p className="text-xs text-muted-foreground">メールアドレスは変更できません</p>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="lastName">性</Label>
