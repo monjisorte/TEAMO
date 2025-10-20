@@ -200,19 +200,19 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                   </Avatar>
                   <div className="flex-1 grid grid-cols-5 gap-4 items-center">
                     <div>
-                      <p className="font-medium" data-testid={`text-member-name-${student.id}`}>
-                        {student.name}
+                      <p className="font-medium text-sm" data-testid={`text-member-name-${student.id}`}>
+                        {student.name} ({student.jerseyNumber != null && student.jerseyNumber >= 0 ? student.jerseyNumber : ''})
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground" data-testid={`text-birthdate-${student.id}`}>
+                      <p className="text-xs text-muted-foreground" data-testid={`text-birthdate-${student.id}`}>
                         {student.birthDate 
-                          ? new Date(student.birthDate).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
+                          ? new Date(student.birthDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/')
                           : '未設定'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground" data-testid={`text-school-${student.id}`}>
+                      <p className="text-xs text-muted-foreground truncate" data-testid={`text-school-${student.id}`}>
                         {student.schoolName || '未設定'}
                       </p>
                     </div>
@@ -225,7 +225,7 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                         }}
                         data-testid={`select-player-type-${student.id}`}
                       >
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger className="w-full text-xs h-8">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -237,21 +237,20 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                       </Select>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground" data-testid={`text-created-${student.id}`}>
+                      <p className="text-xs text-muted-foreground" data-testid={`text-created-${student.id}`}>
                         {student.createdAt 
-                          ? new Date(student.createdAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
+                          ? new Date(student.createdAt).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/')
                           : '未設定'}
                       </p>
                     </div>
                   </div>
                   <Button
                     variant="destructive"
-                    size="sm"
+                    size="icon"
                     onClick={() => handleDeleteClick(student)}
                     data-testid={`button-delete-${student.id}`}
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    退会
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </CardContent>
