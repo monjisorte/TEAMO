@@ -116,9 +116,9 @@ export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">選手ポータル</CardTitle>
+          <CardTitle className="text-2xl text-center">TEAMO</CardTitle>
           <CardDescription className="text-center">
-            チームのスケジュールと出欠管理
+            選手ポータル
           </CardDescription>
         </CardHeader>
         <CardContent>

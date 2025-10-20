@@ -74,7 +74,7 @@ export function PlayerSidebar({ teamName }: PlayerSidebarProps) {
             <h2 className="font-bold text-base md:text-base bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               {teamName}
             </h2>
-            <p className="text-xs text-muted-foreground font-medium">選手ポータル</p>
+            <p className="text-xs text-muted-foreground font-medium">TEAMO</p>
           </div>
         </div>
       </SidebarHeader>
