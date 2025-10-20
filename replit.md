@@ -50,6 +50,8 @@ Preferred communication style: Simple, everyday language.
 *   `/api/documents` - GET/POST/DELETE document management (supports teamId and folderId filters)
 *   `/api/objects/upload` - POST to get presigned upload URL for object storage
 *   `/objects/:objectPath` - GET to download files from object storage (with ACL check)
+*   `/api/admin/register` - POST admin registration (only if no admins exist)
+*   `/api/admin/setup-needed` - GET check if initial admin setup is needed
 *   `/api/admin/login` - POST admin authentication
 *   `/api/admin/stats` - GET system-wide dashboard statistics (total teams count)
 *   `/api/admin/teams` - GET all teams with statistics (coach count, member count, event count)

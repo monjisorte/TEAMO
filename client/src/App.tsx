@@ -30,6 +30,7 @@ import CoachLogin from "@/pages/CoachLogin";
 import MembersPage from "@/pages/MembersPage";
 import CoachProfilePage from "@/pages/CoachProfilePage";
 import AdminLogin from "@/pages/AdminLogin";
+import AdminSetup from "@/pages/AdminSetup";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminTeams from "@/pages/admin/AdminTeams";
 import { PlayerSidebar } from "@/components/PlayerSidebar";
@@ -420,6 +421,9 @@ function App() {
           </Route>
           <Route path="/team/:rest*">
             {() => <CoachPortal />}
+          </Route>
+          <Route path="/admins/setup">
+            {() => <AdminSetup />}
           </Route>
           <Route path="/admins/login">
             {() => <AdminPortal />}
