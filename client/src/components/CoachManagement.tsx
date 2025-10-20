@@ -193,13 +193,12 @@ export function CoachManagement() {
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">コーチ管理</h1>
-          <p className="text-muted-foreground mt-2 text-lg">チームのコーチを登録・管理</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button className="h-12 px-6 rounded-xl text-base" data-testid="button-add-coach">
               <Plus className="h-5 w-5 mr-2" />
-              コーチを追加
+              追加
             </Button>
           </DialogTrigger>
           <DialogContent>

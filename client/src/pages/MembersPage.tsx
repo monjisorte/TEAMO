@@ -208,14 +208,10 @@ export default function MembersPage({ teamId }: MembersPageProps) {
         <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
           メンバー一覧
         </h1>
-        <p className="text-muted-foreground mt-2">
-          チームに所属するメンバーの一覧です
-        </p>
       </div>
 
       {categories.length > 0 && (
         <div className="flex items-center gap-4">
-          <Label>カテゴリでフィルタ:</Label>
           <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
             <SelectTrigger className="w-64" data-testid="select-category-filter">
               <SelectValue />
@@ -271,7 +267,7 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                           {student.jerseyNumber != null && student.jerseyNumber >= 0 ? student.jerseyNumber : '未設定'}
                         </p>
                       </div>
-                      <div className="col-span-2 md:col-span-1">
+                      <div>
                         <p className="text-xs text-muted-foreground mb-0.5">生年月日</p>
                         <p className="text-sm md:text-base" data-testid={`text-birthdate-${student.id}`}>
                           {student.birthDate 
@@ -279,7 +275,7 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                             : '未設定'}
                         </p>
                       </div>
-                      <div className="col-span-2 md:col-span-1">
+                      <div>
                         <p className="text-xs text-muted-foreground mb-0.5">学校名</p>
                         <p className="text-sm md:text-base truncate" data-testid={`text-school-${student.id}`}>
                           {student.schoolName || '未設定'}

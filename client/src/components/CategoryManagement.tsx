@@ -106,14 +106,13 @@ export function CategoryManagement() {
     <div className="space-y-8 pb-16 md:pb-24">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">カテゴリ管理</h1>
-          <p className="text-muted-foreground mt-2 text-lg">学年やグループ分けを登録</p>
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">カテゴリー管理</h1>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="h-12 px-6 rounded-xl text-base" data-testid="button-add-category">
               <Plus className="h-5 w-5 mr-2" />
-              カテゴリを追加
+              追加
             </Button>
           </DialogTrigger>
           <DialogContent>
