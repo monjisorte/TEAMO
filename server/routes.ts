@@ -172,6 +172,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Log activity
+      const userId = req.user?.claims?.sub;
+      if (userId && newSchedule[0].teamId) {
+        try {
+          await db.insert(activityLogs).values({
+            teamId: newSchedule[0].teamId,
+            activityType: "schedule_created",
+            actorId: userId,
+            actorType: "coach",
+            targetType: "schedule",
+            targetId: newSchedule[0].id,
+            targetName: newSchedule[0].title,
+            description: `新しく「${newSchedule[0].title}」が登録されました`,
+          });
+        } catch (logError) {
+          console.error("Error logging activity:", logError);
+        }
+      }
+
       res.status(201).json({
         schedule: newSchedule[0],
         count: createdSchedules.length,
@@ -188,14 +207,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { updateType, ...updateData } = req.body; // updateType: "this" | "all"
 
-      if (updateType === "all") {
-        // Get the schedule to find its parent or use itself as parent
-        const schedule = await db.select().from(schedules).where(eq(schedules.id, id)).limit(1);
-        if (schedule.length === 0) {
-          return res.status(404).json({ error: "Schedule not found" });
-        }
+      // Get the original schedule for comparison
+      const originalSchedule = await db.select().from(schedules).where(eq(schedules.id, id)).limit(1);
+      if (originalSchedule.length === 0) {
+        return res.status(404).json({ error: "Schedule not found" });
+      }
 
-        const parentId = schedule[0].parentScheduleId || schedule[0].id;
+      if (updateType === "all") {
+        const parentId = originalSchedule[0].parentScheduleId || originalSchedule[0].id;
 
         // When updating all, exclude the date field to preserve individual dates
         const { date, ...updateDataWithoutDate } = updateData;
@@ -213,6 +232,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updated = await db.select().from(schedules).where(eq(schedules.id, id)).limit(1);
+
+      // Log activity
+      const userId = req.user?.claims?.sub;
+      if (userId && updated[0].teamId) {
+        try {
+          let changeDescription = "";
+          if (updateData.startHour !== undefined || updateData.startMinute !== undefined) {
+            changeDescription = "の開始時間が変更されました";
+          } else if (updateData.venue !== undefined) {
+            changeDescription = "の会場が変更されました";
+          } else if (updateData.title !== undefined) {
+            changeDescription = "が更新されました";
+          } else {
+            changeDescription = "が更新されました";
+          }
+
+          await db.insert(activityLogs).values({
+            teamId: updated[0].teamId,
+            activityType: "schedule_updated",
+            actorId: userId,
+            actorType: "coach",
+            targetType: "schedule",
+            targetId: updated[0].id,
+            targetName: updated[0].title,
+            description: `「${updated[0].title}」${changeDescription}`,
+          });
+        } catch (logError) {
+          console.error("Error logging activity:", logError);
+        }
+      }
+
       res.json(updated[0]);
     } catch (error) {
       console.error("Error updating schedule:", error);
@@ -225,13 +275,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { deleteType } = req.query; // deleteType: "this" | "all"
 
-      if (deleteType === "all") {
-        // Get the schedule to find its parent or use itself as parent
-        const schedule = await db.select().from(schedules).where(eq(schedules.id, id)).limit(1);
-        if (schedule.length === 0) {
-          return res.status(404).json({ error: "Schedule not found" });
-        }
+      // Get the schedule before deleting for logging
+      const schedule = await db.select().from(schedules).where(eq(schedules.id, id)).limit(1);
+      if (schedule.length === 0) {
+        return res.status(404).json({ error: "Schedule not found" });
+      }
 
+      if (deleteType === "all") {
         const parentId = schedule[0].parentScheduleId || schedule[0].id;
 
         // Delete all schedules in the series (including parent)
@@ -244,6 +294,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // Delete only this schedule
         await db.delete(schedules).where(eq(schedules.id, id));
+      }
+
+      // Log activity
+      const userId = req.user?.claims?.sub;
+      if (userId && schedule[0].teamId) {
+        try {
+          await db.insert(activityLogs).values({
+            teamId: schedule[0].teamId,
+            activityType: "schedule_deleted",
+            actorId: userId,
+            actorType: "coach",
+            targetType: "schedule",
+            targetId: schedule[0].id,
+            targetName: schedule[0].title,
+            description: `「${schedule[0].title}」が削除されました`,
+          });
+        } catch (logError) {
+          console.error("Error logging activity:", logError);
+        }
       }
 
       res.status(200).json({ success: true });
