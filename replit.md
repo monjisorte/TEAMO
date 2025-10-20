@@ -35,6 +35,8 @@ Preferred communication style: Simple, everyday language.
 *   `/api/venues/:venueId` - PUT venue editing (name and address)
 *   `/api/students` - GET student data
 *   `/api/student/:studentId` - PATCH student profile update (supports name, schoolName, birthDate, photoUrl, playerType, jerseyNumber)
+*   `/api/student-categories` - POST add student to category
+*   `/api/student-categories/:studentId/:categoryId` - DELETE remove student from category
 *   `/api/student/:studentId/email` - PUT student email change with current password verification
 *   `/api/student/:studentId/password` - PUT student password change with current password verification
 *   `/api/coaches` - GET/POST/DELETE coach management

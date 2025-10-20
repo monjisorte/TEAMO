@@ -925,6 +925,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add student to category
+  app.post("/api/student-categories", async (req, res) => {
+    try {
+      const { studentId, categoryId } = req.body;
+
+      if (!studentId || !categoryId) {
+        return res.status(400).json({ error: "studentId and categoryId are required" });
+      }
+
+      // Check if relationship already exists
+      const existing = await db.select()
+        .from(studentCategories)
+        .where(
+          and(
+            eq(studentCategories.studentId, studentId),
+            eq(studentCategories.categoryId, categoryId)
+          )
+        )
+        .limit(1);
+
+      if (existing.length > 0) {
+        return res.json(existing[0]);
+      }
+
+      const newRelation = await db.insert(studentCategories).values({
+        studentId,
+        categoryId,
+      }).returning();
+
+      res.json(newRelation[0]);
+    } catch (error) {
+      console.error("Error adding student to category:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Remove student from category
+  app.delete("/api/student-categories/:studentId/:categoryId", async (req, res) => {
+    try {
+      const { studentId, categoryId } = req.params;
+
+      await db.delete(studentCategories)
+        .where(
+          and(
+            eq(studentCategories.studentId, studentId),
+            eq(studentCategories.categoryId, categoryId)
+          )
+        );
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing student from category:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Student Category Selection
   app.get("/api/student/:studentId/categories", async (req, res) => {
     try {

@@ -73,6 +73,49 @@ export default function MembersPage({ teamId }: MembersPageProps) {
     return students.filter(student => studentsInCategory.includes(student.id));
   }, [students, studentCategories, selectedCategoryId]);
 
+  // Get categories for a specific student
+  const getStudentCategories = (studentId: string) => {
+    return studentCategories
+      .filter(sc => sc.studentId === studentId)
+      .map(sc => sc.categoryId);
+  };
+
+  // カテゴリー変更のmutation
+  const updateCategoryMutation = useMutation({
+    mutationFn: async ({ studentId, oldCategoryIds, newCategoryId }: { 
+      studentId: string; 
+      oldCategoryIds: string[]; 
+      newCategoryId: string;
+    }) => {
+      // Remove old category relationships
+      for (const oldCategoryId of oldCategoryIds) {
+        await apiRequest("DELETE", `/api/student-categories/${studentId}/${oldCategoryId}`, {});
+      }
+      
+      // Add new category relationship if not "none"
+      if (newCategoryId !== "none") {
+        await apiRequest("POST", "/api/student-categories", {
+          studentId,
+          categoryId: newCategoryId,
+        });
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/student-categories"] });
+      toast({
+        title: "更新完了",
+        description: "カテゴリーを更新しました",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "カテゴリーの更新に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
   // ステータス変更のmutation
   const updatePlayerTypeMutation = useMutation({
     mutationFn: async ({ studentId, playerType }: { studentId: string; playerType: string }) => {
@@ -193,50 +236,92 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                       </AvatarFallback>
                     </Avatar>
                   </div>
-                  <div className="flex-1 space-y-1.5 min-w-0">
-                    <div>
-                      <p className="text-sm font-bold" data-testid={`text-member-name-${student.id}`}>
-                        {student.name} {student.jerseyNumber != null && student.jerseyNumber >= 0 ? `(${student.jerseyNumber})` : ''}
-                      </p>
+                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 min-w-0">
+                    <div className="space-y-1.5">
+                      <div>
+                        <p className="text-xs text-muted-foreground">名前</p>
+                        <p className="text-sm font-bold" data-testid={`text-member-name-${student.id}`}>
+                          {student.name}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">背番号</p>
+                        <p className="text-sm" data-testid={`text-jersey-${student.id}`}>
+                          {student.jerseyNumber != null && student.jerseyNumber >= 0 ? student.jerseyNumber : '未設定'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">生年月日</p>
+                        <p className="text-sm" data-testid={`text-birthdate-${student.id}`}>
+                          {student.birthDate 
+                            ? new Date(student.birthDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
+                            : '未設定'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">学校名</p>
+                        <p className="text-sm truncate" data-testid={`text-school-${student.id}`}>
+                          {student.schoolName || '未設定'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground" data-testid={`text-birthdate-${student.id}`}>
-                        {student.birthDate 
-                          ? new Date(student.birthDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
-                          : '未設定'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground truncate" data-testid={`text-school-${student.id}`}>
-                        {student.schoolName || '未設定'}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Select
-                        value={student.playerType || "none"}
-                        onValueChange={(value) => {
-                          const newValue = value === "none" ? "" : value;
-                          updatePlayerTypeMutation.mutate({ studentId: student.id, playerType: newValue });
-                        }}
-                        data-testid={`select-player-type-${student.id}`}
-                      >
-                        <SelectTrigger className="w-32 text-xs h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">未設定</SelectItem>
-                          <SelectItem value="team">チーム生</SelectItem>
-                          <SelectItem value="school">スクール生</SelectItem>
-                          <SelectItem value="inactive">休部</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground" data-testid={`text-created-${student.id}`}>
-                        登録日: {student.createdAt 
-                          ? new Date(student.createdAt).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
-                          : '未設定'}
-                      </p>
+                    <div className="space-y-1.5">
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">ステータス</p>
+                        <Select
+                          value={student.playerType || "none"}
+                          onValueChange={(value) => {
+                            const newValue = value === "none" ? "" : value;
+                            updatePlayerTypeMutation.mutate({ studentId: student.id, playerType: newValue });
+                          }}
+                          data-testid={`select-player-type-${student.id}`}
+                        >
+                          <SelectTrigger className="w-full text-xs h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">未設定</SelectItem>
+                            <SelectItem value="team">チーム生</SelectItem>
+                            <SelectItem value="school">スクール生</SelectItem>
+                            <SelectItem value="inactive">休部</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">カテゴリー</p>
+                        <Select
+                          value={getStudentCategories(student.id)[0] || "none"}
+                          onValueChange={(value) => {
+                            const oldCategoryIds = getStudentCategories(student.id);
+                            updateCategoryMutation.mutate({ 
+                              studentId: student.id, 
+                              oldCategoryIds,
+                              newCategoryId: value,
+                            });
+                          }}
+                          data-testid={`select-category-${student.id}`}
+                        >
+                          <SelectTrigger className="w-full text-xs h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">未設定</SelectItem>
+                            {categories.map((category) => (
+                              <SelectItem key={category.id} value={category.id}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">登録日</p>
+                        <p className="text-sm" data-testid={`text-created-${student.id}`}>
+                          {student.createdAt 
+                            ? new Date(student.createdAt).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
+                            : '未設定'}
+                        </p>
+                      </div>
                     </div>
                   </div>
                   <Button

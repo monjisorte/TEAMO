@@ -134,6 +134,11 @@ export default function PlayerMembersPage({ teamId }: PlayerMembersPageProps) {
                       </p>
                     </div>
                     <div>
+                      <p className="text-xs md:text-sm font-medium" data-testid={`text-jersey-${student.id}`}>
+                        背番号　<span className="text-xs md:text-sm">{student.jerseyNumber != null && student.jerseyNumber >= 0 ? student.jerseyNumber : '未設定'}</span>
+                      </p>
+                    </div>
+                    <div>
                       <p className="text-xs md:text-sm font-medium" data-testid={`text-birthdate-${student.id}`}>
                         生年月日　<span className="text-xs md:text-sm">{student.birthDate 
                           ? new Date(student.birthDate).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
