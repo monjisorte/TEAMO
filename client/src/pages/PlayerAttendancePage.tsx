@@ -31,17 +31,17 @@ export default function PlayerAttendancePage({ playerId, teamId }: PlayerAttenda
 
   if (!hasCategoriesSelected) {
     return (
-      <div className="p-8 space-y-6">
-        <div className="space-y-3">
-          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+      <div className="p-1 space-y-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
             カテゴリ選択
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-sm">
             閲覧したいカテゴリを選択してください
           </p>
         </div>
         <Card className="border-0 shadow-xl">
-          <CardContent className="p-8">
+          <CardContent className="p-3">
             <CategorySelection
               studentId={playerId}
               teamId={teamId}
@@ -54,7 +54,7 @@ export default function PlayerAttendancePage({ playerId, teamId }: PlayerAttenda
   }
 
   return (
-    <div className="p-8">
+    <div className="p-1">
       <AttendanceView 
         studentId={playerId} 
         selectedCategories={selectedCategories}

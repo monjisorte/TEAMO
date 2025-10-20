@@ -119,7 +119,7 @@ function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogou
               </Button>
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-2 md:p-8">
+          <main className="flex-1 overflow-auto p-1 md:p-8">
             <Switch>
               <Route path="/attendance">
                 {() => <PlayerAttendancePage playerId={player.id} teamId={player.teamId} />}
@@ -237,7 +237,7 @@ function CoachPortalContent({ coachId, onLogout }: { coachId: string; onLogout: 
               </Button>
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-2 md:p-8">
+          <main className="flex-1 overflow-auto p-1 md:p-8">
             <CoachRouter teamId={coach.teamId} />
           </main>
         </div>
