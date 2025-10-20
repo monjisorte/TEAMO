@@ -67,9 +67,6 @@ export default function SharedDocuments({ teamId }: SharedDocumentsProps) {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             共有資料
           </h1>
-          <p className="text-muted-foreground mt-2">
-            チームの共有ドキュメントとファイルを閲覧できます
-          </p>
         </div>
       </div>
 

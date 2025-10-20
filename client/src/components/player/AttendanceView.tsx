@@ -130,7 +130,7 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
       .filter((name): name is string => !!name);
   };
 
-  // 自分の所属カテゴリのスケジュールで、未回答かつコーチ指定でないもののみ表示
+  // 自分の所属カテゴリのスケジュールで、未回答かつコーチ指定でないもの、かつ開始前のもののみ表示
   const unansweredSchedules = schedules.filter(schedule => {
     // コーチ指定のスケジュールは除外
     if (schedule.studentCanRegister === false) {
@@ -139,6 +139,13 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
     
     // 未回答のものだけ
     if (getAttendanceForSchedule(schedule.id)) {
+      return false;
+    }
+    
+    // 開始済みのスケジュールは除外
+    const now = new Date();
+    const scheduleDateTime = new Date(`${schedule.date}T${schedule.startTime}`);
+    if (scheduleDateTime <= now) {
       return false;
     }
     

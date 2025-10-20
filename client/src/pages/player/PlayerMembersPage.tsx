@@ -71,16 +71,12 @@ export default function PlayerMembersPage({ teamId }: PlayerMembersPageProps) {
         <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
           メンバー一覧
         </h1>
-        <p className="text-muted-foreground text-sm">
-          チームに所属するメンバーの一覧です
-        </p>
       </div>
 
       {categories.length > 0 && (
         <Card className="border-0 shadow-lg">
           <CardContent className="p-3">
             <div className="flex items-center gap-2">
-              <Label className="text-xs font-semibold shrink-0">カテゴリでフィルタ:</Label>
               <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
                 <SelectTrigger className="h-9 border-2" data-testid="select-category-filter">
                   <SelectValue />
