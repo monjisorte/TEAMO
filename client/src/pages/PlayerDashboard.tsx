@@ -2,12 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Calendar as CalendarIcon, CheckSquare, FileText, Mail } from "lucide-react";
+import { LogOut, Calendar as CalendarIcon, CheckSquare, FileText } from "lucide-react";
 import CategorySelection from "@/components/player/CategorySelection";
 import AttendanceView from "@/components/player/AttendanceView";
 import PlayerCalendar from "@/components/player/PlayerCalendar";
 import SharedDocuments from "@/components/player/SharedDocuments";
-import ContactForm from "@/components/player/ContactForm";
 
 interface PlayerDashboardProps {
   player: { id: string; name: string; email: string; teamId: string };
@@ -56,13 +55,14 @@ export default function PlayerDashboard({ player, onLogout }: PlayerDashboardPro
               </p>
               <CategorySelection
                 studentId={player.id}
+                teamId={player.teamId}
                 onCategoriesUpdated={handleCategoriesUpdated}
               />
             </CardContent>
           </Card>
         ) : (
           <Tabs defaultValue="attendance">
-            <TabsList className="grid w-full grid-cols-5 mb-6">
+            <TabsList className="grid w-full grid-cols-4 mb-6">
               <TabsTrigger value="attendance" data-testid="tab-attendance">
                 <CheckSquare className="w-4 h-4 mr-2" />
                 出欠管理
@@ -74,10 +74,6 @@ export default function PlayerDashboard({ player, onLogout }: PlayerDashboardPro
               <TabsTrigger value="documents" data-testid="tab-documents">
                 <FileText className="w-4 h-4 mr-2" />
                 共有資料
-              </TabsTrigger>
-              <TabsTrigger value="contact" data-testid="tab-contact">
-                <Mail className="w-4 h-4 mr-2" />
-                問い合わせ
               </TabsTrigger>
               <TabsTrigger value="settings" data-testid="tab-settings">
                 カテゴリ設定
@@ -94,20 +90,13 @@ export default function PlayerDashboard({ player, onLogout }: PlayerDashboardPro
             <TabsContent value="calendar">
               <PlayerCalendar 
                 studentId={player.id}
+                teamId={player.teamId}
                 selectedCategories={selectedCategories}
               />
             </TabsContent>
 
             <TabsContent value="documents">
               <SharedDocuments teamId={player.teamId} />
-            </TabsContent>
-
-            <TabsContent value="contact">
-              <ContactForm 
-                teamId={player.teamId}
-                studentName={player.name}
-                studentEmail={player.email}
-              />
             </TabsContent>
 
             <TabsContent value="settings">
@@ -118,6 +107,7 @@ export default function PlayerDashboard({ player, onLogout }: PlayerDashboardPro
                 <CardContent>
                   <CategorySelection
                     studentId={player.id}
+                    teamId={player.teamId}
                     onCategoriesUpdated={handleCategoriesUpdated}
                   />
                 </CardContent>
