@@ -176,38 +176,33 @@ export default function MembersPage({ teamId }: MembersPageProps) {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
-          <div className="flex items-center gap-4 px-4">
-            <div className="h-14 w-14"></div>
-            <div className="flex-1 grid grid-cols-5 gap-4">
-              <div className="text-sm font-semibold text-muted-foreground">名前</div>
-              <div className="text-sm font-semibold text-muted-foreground">生年月日</div>
-              <div className="text-sm font-semibold text-muted-foreground">学校名</div>
-              <div className="text-sm font-semibold text-muted-foreground">ステータス</div>
-              <div className="text-sm font-semibold text-muted-foreground">登録日</div>
-            </div>
-            <div className="w-20"></div>
-          </div>
+        <div className="grid gap-3">
           {filteredStudents.map((student) => (
-            <Card key={student.id} className="hover-elevate" data-testid={`card-member-${student.id}`}>
+            <Card 
+              key={student.id} 
+              className="hover-elevate border-0 shadow-lg transition-all duration-300" 
+              data-testid={`card-member-${student.id}`}
+            >
               <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-14 w-14">
-                    <AvatarImage src={student.photoUrl || undefined} alt={student.name} />
-                    <AvatarFallback>
-                      {student.name.slice(0, 2)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 grid grid-cols-5 gap-4 items-center">
+                <div className="flex items-start gap-4">
+                  <div className="relative w-16 shrink-0">
+                    <Avatar className="w-16 h-16 ring-2 ring-blue-50">
+                      <AvatarImage src={student.photoUrl || undefined} alt={student.name} />
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-lg">
+                        {student.name.slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                  <div className="flex-1 space-y-1.5 min-w-0">
                     <div>
-                      <p className="font-medium text-sm" data-testid={`text-member-name-${student.id}`}>
-                        {student.name} ({student.jerseyNumber != null && student.jerseyNumber >= 0 ? student.jerseyNumber : ''})
+                      <p className="text-sm font-bold" data-testid={`text-member-name-${student.id}`}>
+                        {student.name} {student.jerseyNumber != null && student.jerseyNumber >= 0 ? `(${student.jerseyNumber})` : ''}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground" data-testid={`text-birthdate-${student.id}`}>
                         {student.birthDate 
-                          ? new Date(student.birthDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/')
+                          ? new Date(student.birthDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
                           : '未設定'}
                       </p>
                     </div>
@@ -216,7 +211,7 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                         {student.schoolName || '未設定'}
                       </p>
                     </div>
-                    <div>
+                    <div className="flex items-center gap-2">
                       <Select
                         value={student.playerType || "none"}
                         onValueChange={(value) => {
@@ -225,7 +220,7 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                         }}
                         data-testid={`select-player-type-${student.id}`}
                       >
-                        <SelectTrigger className="w-full text-xs h-8">
+                        <SelectTrigger className="w-32 text-xs h-8">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -238,19 +233,20 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground" data-testid={`text-created-${student.id}`}>
-                        {student.createdAt 
-                          ? new Date(student.createdAt).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/')
+                        登録日: {student.createdAt 
+                          ? new Date(student.createdAt).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
                           : '未設定'}
                       </p>
                     </div>
                   </div>
                   <Button
-                    variant="destructive"
+                    variant="ghost"
                     size="icon"
+                    className="shrink-0 text-destructive hover:text-destructive"
                     onClick={() => handleDeleteClick(student)}
                     data-testid={`button-delete-${student.id}`}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-5 h-5" />
                   </Button>
                 </div>
               </CardContent>

@@ -203,7 +203,10 @@ export function Dashboard() {
           <CardContent className="space-y-4">
             <Button 
               className="w-full justify-start gap-3 h-14 text-base rounded-xl" 
-              onClick={() => setLocation("/team/schedule")}
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                setLocation("/team/schedule");
+              }}
               data-testid="button-add-schedule"
             >
               <Plus className="h-5 w-5" />

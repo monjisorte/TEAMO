@@ -234,27 +234,28 @@ export default function DocumentsPage() {
         </Button>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {folders.map((folder) => (
           <Card
             key={folder.id}
-            className="cursor-pointer hover-elevate active-elevate-2"
+            className="cursor-pointer hover-elevate active-elevate-2 border-0 shadow-lg"
             onClick={() => setCurrentFolderId(folder.id)}
             data-testid={`card-folder-${folder.id}`}
           >
-            <CardContent className="flex flex-col items-center justify-center p-6 space-y-2">
-              <Folder className="w-12 h-12 text-blue-500" />
-              <p className="font-semibold text-center">{folder.name}</p>
+            <CardContent className="flex items-center gap-3 p-3 relative">
+              <Folder className="w-8 h-8 text-blue-500 shrink-0" />
+              <p className="font-semibold text-sm flex-1 truncate">{folder.name}</p>
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
+                className="absolute top-1 right-1 h-6 w-6"
                 onClick={(e) => {
                   e.stopPropagation();
                   deleteItemMutation.mutate({ type: "folder", id: folder.id });
                 }}
                 data-testid={`button-delete-folder-${folder.id}`}
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3 h-3" />
               </Button>
             </CardContent>
           </Card>
@@ -263,44 +264,48 @@ export default function DocumentsPage() {
         {documents.map((doc) => (
           <Card
             key={doc.id}
-            className="hover-elevate cursor-pointer"
+            className="hover-elevate cursor-pointer border-0 shadow-lg"
             data-testid={`card-document-${doc.id}`}
           >
-            <CardContent className="flex flex-col items-center justify-center p-6 space-y-2">
+            <CardContent className="p-3 relative">
               <div 
-                className="flex flex-col items-center space-y-2 w-full"
+                className="flex items-start gap-3"
                 onClick={() => setPreviewDocument(doc)}
               >
-                <FileText className="w-12 h-12 text-green-500" />
-                <p className="font-semibold text-center text-sm">{doc.title}</p>
-                {doc.fileName && (
-                  <p className="text-xs text-muted-foreground">{doc.fileName}</p>
-                )}
+                <FileText className="w-8 h-8 text-green-500 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm truncate">{doc.title}</p>
+                  {doc.fileName && (
+                    <p className="text-xs text-muted-foreground truncate">{doc.fileName}</p>
+                  )}
+                </div>
               </div>
-              <div className="flex gap-1">
+              <div className="flex gap-1 mt-2 justify-end">
                 {doc.fileUrl && (
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="icon"
+                    className="h-6 w-6"
                     asChild
                     onClick={(e) => e.stopPropagation()}
                     data-testid={`button-download-document-${doc.id}`}
                   >
                     <a href={doc.fileUrl} download>
-                      <Download className="w-4 h-4" />
+                      <Download className="w-3 h-3" />
                     </a>
                   </Button>
                 )}
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
+                  className="h-6 w-6"
                   onClick={(e) => {
                     e.stopPropagation();
                     deleteItemMutation.mutate({ type: "document", id: doc.id });
                   }}
                   data-testid={`button-delete-document-${doc.id}`}
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3 h-3" />
                 </Button>
               </div>
             </CardContent>

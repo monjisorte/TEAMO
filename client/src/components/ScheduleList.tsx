@@ -487,19 +487,19 @@ export function ScheduleList() {
                 return (
                   <Card key={schedule.id} className="border-0 shadow-lg hover-elevate transition-all" data-testid={`schedule-card-${schedule.id}`}>
                     <CardContent className="p-6">
-                      <div className="flex gap-6">
+                      <div className="flex gap-4">
                         {/* 左側: 日付表示 */}
-                        <div className="flex flex-col items-center justify-center min-w-[100px] h-24 rounded-2xl bg-gradient-to-br from-primary to-purple-600 text-white">
-                          <div className="text-3xl font-bold">
+                        <div className="flex flex-col items-center justify-center min-w-[70px] h-20 rounded-xl bg-gradient-to-br from-primary to-purple-600 text-white shrink-0">
+                          <div className="text-2xl font-bold">
                             {schedule.date.split('-')[2]}
                           </div>
-                          <div className="text-sm opacity-90">
-                            {schedule.date.substring(0, 4)}年{schedule.date.substring(5, 7)}月
+                          <div className="text-xs opacity-90">
+                            {schedule.date.substring(5, 7)}月
                           </div>
                         </div>
 
                         {/* 右側: 詳細情報 */}
-                        <div className="flex-1 space-y-4">
+                        <div className="flex-1 space-y-3 min-w-0">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1">
                               <h3 className="text-2xl font-bold mb-2">{schedule.title}</h3>

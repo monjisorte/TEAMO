@@ -314,14 +314,9 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                           }}
                         >
                           <div className="font-medium truncate">{schedule.title}</div>
-                          <div className="flex items-center justify-between gap-1 mt-0.5 overflow-hidden">
-                            {startTime && (
-                              <div className="text-[10px] opacity-80 shrink-0">{startTime}</div>
-                            )}
-                            <div className="flex items-center gap-0.5 text-[10px] shrink-0">
-                              <Users className="h-2.5 w-2.5" />
-                              <span>{attendanceCount}</span>
-                            </div>
+                          <div className="flex items-center gap-0.5 text-[10px] mt-0.5">
+                            <Users className="h-2.5 w-2.5" />
+                            <span>{attendanceCount}</span>
                           </div>
                         </div>
                       );
