@@ -162,7 +162,7 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       {sortedSchedules.map((schedule) => {
         const currentStatus = getCurrentStatus(schedule.id);
         const currentComment = getCurrentComment(schedule.id);

@@ -119,33 +119,30 @@ export default function PlayerMembersPage({ teamId }: PlayerMembersPageProps) {
               <CardContent className="p-3">
                 <div className="flex items-start gap-3">
                   <div className="relative shrink-0">
-                    <Avatar className="h-12 w-12 ring-2 ring-blue-50">
+                    <Avatar className="h-18 w-18 ring-2 ring-blue-50">
                       <AvatarImage src={student.photoUrl || undefined} alt={student.name} />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-sm">
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-base">
                         {student.name.slice(0, 2)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full border-2 border-white" />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full border-2 border-white" />
                   </div>
                   <div className="flex-1 space-y-1.5">
                     <div>
-                      <p className="text-xs font-semibold text-muted-foreground">名前</p>
-                      <p className="font-bold text-base" data-testid={`text-member-name-${student.id}`}>
-                        {student.name}
+                      <p className="text-xs font-medium" data-testid={`text-member-name-${student.id}`}>
+                        名前　<span className="font-bold">{student.name}</span>
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-muted-foreground">生年月日</p>
                       <p className="text-xs font-medium" data-testid={`text-birthdate-${student.id}`}>
-                        {student.birthDate 
+                        生年月日　{student.birthDate 
                           ? new Date(student.birthDate).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
                           : '未設定'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-muted-foreground">学校名</p>
                       <p className="text-xs font-medium" data-testid={`text-school-${student.id}`}>
-                        {student.schoolName || '未設定'}
+                        学校名　{student.schoolName || '未設定'}
                       </p>
                     </div>
                   </div>

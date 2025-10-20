@@ -91,9 +91,9 @@ export default function SharedDocuments({ teamId }: SharedDocumentsProps) {
             onClick={() => setCurrentFolderId(folder.id)}
             data-testid={`card-folder-${folder.id}`}
           >
-            <CardContent className="flex flex-col items-center justify-center p-6 space-y-2">
-              <Folder className="w-12 h-12 text-blue-500" />
-              <p className="font-semibold text-center">{folder.name}</p>
+            <CardContent className="flex items-center gap-3 p-3">
+              <Folder className="w-8 h-8 text-blue-500 shrink-0" />
+              <p className="font-semibold text-sm">{folder.name}</p>
             </CardContent>
           </Card>
         ))}

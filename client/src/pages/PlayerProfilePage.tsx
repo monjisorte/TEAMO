@@ -319,19 +319,19 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
   }
 
   return (
-    <div className="p-8 space-y-8">
-      <div className="space-y-3">
-        <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+    <div className="p-1 space-y-4">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
           プロフィール管理
         </h1>
-        <p className="text-muted-foreground text-lg">
+        <p className="text-muted-foreground text-sm">
           あなたの基本情報とカテゴリ設定を管理します
         </p>
       </div>
 
       <Card className="border-0 shadow-xl">
-        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-6">
-          <CardTitle className="text-2xl font-bold">基本情報</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
+          <CardTitle className="text-xl font-bold">基本情報</CardTitle>
           {!isEditing && (
             <Button
               variant="outline"
@@ -344,28 +344,28 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
             </Button>
           )}
         </CardHeader>
-        <CardContent className="space-y-8 p-8">
+        <CardContent className="space-y-3 p-3">
           {/* Photo Upload */}
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4">
             <div className="relative">
-              <Avatar className="h-28 w-28 ring-4 ring-blue-50 shadow-lg">
+              <Avatar className="h-20 w-20 ring-2 ring-blue-50 shadow-lg">
                 <AvatarImage src={photoPreview || undefined} />
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600">
-                  <User className="h-14 w-14 text-white" />
+                  <User className="h-10 w-10 text-white" />
                 </AvatarFallback>
               </Avatar>
               {isEditing && (
-                <div className="absolute -bottom-2 -right-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full p-2 shadow-lg">
-                  <Upload className="w-4 h-4 text-white" />
+                <div className="absolute -bottom-1 -right-1 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full p-1.5 shadow-lg">
+                  <Upload className="w-3 h-3 text-white" />
                 </div>
               )}
             </div>
             {isEditing && (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <label htmlFor="photo-upload">
                   <Button variant="outline" size="sm" asChild className="font-semibold">
                     <span className="cursor-pointer">
-                      <Upload className="w-4 h-4 mr-2" />
+                      <Upload className="w-3 h-3 mr-2" />
                       写真を選択
                     </span>
                   </Button>
@@ -491,10 +491,10 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
       </Card>
 
       <Card className="border-0 shadow-xl">
-        <CardHeader className="pb-6">
-          <CardTitle className="text-2xl font-bold">カテゴリ設定</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-xl font-bold">カテゴリ設定</CardTitle>
         </CardHeader>
-        <CardContent className="p-8 pt-0">
+        <CardContent className="p-3 pt-0">
           <CategorySelection
             studentId={playerId}
             teamId={teamId}
@@ -505,16 +505,16 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
 
       {/* Email Change Card */}
       <Card className="border-0 shadow-xl">
-        <CardHeader className="pb-6">
+        <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
             <Mail className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-2xl font-bold">メールアドレス変更</CardTitle>
+            <CardTitle className="text-xl font-bold">メールアドレス変更</CardTitle>
           </div>
           <CardDescription>
             現在のパスワードを入力して、メールアドレスを変更できます
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-8 pt-0">
+        <CardContent className="p-3 pt-0">
           <Form {...emailForm}>
             <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-4">
               <FormField
@@ -569,16 +569,16 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
 
       {/* Password Change Card */}
       <Card className="border-0 shadow-xl">
-        <CardHeader className="pb-6">
+        <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
             <Lock className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-2xl font-bold">パスワード変更</CardTitle>
+            <CardTitle className="text-xl font-bold">パスワード変更</CardTitle>
           </div>
           <CardDescription>
             現在のパスワードと新しいパスワードを入力してください
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-8 pt-0">
+        <CardContent className="p-3 pt-0">
           <Form {...passwordForm}>
             <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
               <FormField
