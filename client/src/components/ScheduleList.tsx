@@ -276,6 +276,7 @@ export function ScheduleList() {
       recurrenceEndDate: formData.recurrenceRule !== "none" && formData.recurrenceEndDate 
         ? formData.recurrenceEndDate 
         : null,
+      teamId: teamId, // Add teamId to schedule data
     };
 
     if (editingSchedule) {
