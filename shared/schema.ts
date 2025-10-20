@@ -81,6 +81,10 @@ export const students = pgTable("students", {
   playerType: text("player_type"),
   jerseyNumber: integer("jersey_number"),
   siblingDiscountStatus: text("sibling_discount_status"), // "あり" or null
+  lastName: text("last_name"), // 姓
+  firstName: text("first_name"), // 名
+  lastNameKana: text("last_name_kana"), // 姓 かな
+  firstNameKana: text("first_name_kana"), // 名 かな
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
