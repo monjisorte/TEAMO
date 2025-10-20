@@ -387,6 +387,12 @@ export function Dashboard() {
             ) : (
               activityLogs.map((log) => {
                 const timeAgo = getTimeAgo(new Date(log.createdAt));
+                const logCategoryIds = log.categoryIds || [];
+                const categoryNames = logCategoryIds.map(catId => {
+                  const category = categories.find(c => c.id === catId);
+                  return category?.name || "";
+                }).filter(name => name !== "");
+                
                 return (
                   <div 
                     key={log.id} 
@@ -394,7 +400,14 @@ export function Dashboard() {
                     data-testid={`activity-log-${log.id}`}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm">{log.description}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm">{log.description}</p>
+                        {categoryNames.length > 0 && categoryNames.map((name, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-xs">
+                            {name}
+                          </Badge>
+                        ))}
+                      </div>
                       <p className="text-xs text-muted-foreground mt-1">{timeAgo}</p>
                     </div>
                   </div>

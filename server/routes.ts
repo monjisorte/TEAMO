@@ -183,6 +183,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const formattedDate = `${month}月${day}日`;
           const eventNameWithDate = `${formattedDate} ${newSchedule[0].title}`;
 
+          // Get category IDs
+          const categoryIds = newSchedule[0].categoryIds || (newSchedule[0].categoryId ? [newSchedule[0].categoryId] : []);
+
           await db.insert(activityLogs).values({
             teamId: newSchedule[0].teamId,
             activityType: "schedule_created",
@@ -192,6 +195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             targetId: newSchedule[0].id,
             targetName: newSchedule[0].title,
             description: `新しく「${eventNameWithDate}」が登録されました`,
+            categoryIds: categoryIds,
           });
         } catch (logError) {
           console.error("Error logging activity:", logError);
@@ -262,6 +266,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             changeDescription = "が更新されました";
           }
 
+          // Get category IDs
+          const categoryIds = updated[0].categoryIds || (updated[0].categoryId ? [updated[0].categoryId] : []);
+
           await db.insert(activityLogs).values({
             teamId: updated[0].teamId,
             activityType: "schedule_updated",
@@ -271,6 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             targetId: updated[0].id,
             targetName: updated[0].title,
             description: `「${eventNameWithDate}」${changeDescription}`,
+            categoryIds: categoryIds,
           });
         } catch (logError) {
           console.error("Error logging activity:", logError);
@@ -321,6 +329,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const formattedDate = `${month}月${day}日`;
           const eventNameWithDate = `${formattedDate} ${schedule[0].title}`;
 
+          // Get category IDs
+          const categoryIds = schedule[0].categoryIds || (schedule[0].categoryId ? [schedule[0].categoryId] : []);
+
           await db.insert(activityLogs).values({
             teamId: schedule[0].teamId,
             activityType: "schedule_deleted",
@@ -330,6 +341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             targetId: schedule[0].id,
             targetName: schedule[0].title,
             description: `「${eventNameWithDate}」が削除されました`,
+            categoryIds: categoryIds,
           });
         } catch (logError) {
           console.error("Error logging activity:", logError);

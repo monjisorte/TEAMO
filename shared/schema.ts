@@ -262,6 +262,7 @@ export const activityLogs = pgTable("activity_logs", {
   targetId: varchar("target_id"), // ID of the target entity
   targetName: text("target_name"), // Name of target for display
   description: text("description"), // Human-readable description
+  categoryIds: text("category_ids").array(), // Category IDs for schedules
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
