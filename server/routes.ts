@@ -1606,7 +1606,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/coach/:coachId", async (req, res) => {
     try {
       const { coachId } = req.params;
-      const { lastName, firstName, lastNameKana, firstNameKana, photoUrl, bio } = req.body;
+      const { lastName, firstName, lastNameKana, firstNameKana, photoUrl, bio, position } = req.body;
 
       const updateData: any = {};
       if (lastName !== undefined) updateData.lastName = lastName;
@@ -1615,6 +1615,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (firstNameKana !== undefined) updateData.firstNameKana = firstNameKana;
       if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
       if (bio !== undefined) updateData.bio = bio;
+      if (position !== undefined) updateData.position = position;
 
       const updated = await db.update(coaches)
         .set(updateData)

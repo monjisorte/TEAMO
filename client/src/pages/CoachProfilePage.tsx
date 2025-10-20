@@ -19,6 +19,7 @@ const profileSchema = z.object({
   firstName: z.string().optional(),
   lastNameKana: z.string().optional(),
   firstNameKana: z.string().optional(),
+  position: z.string().optional(),
   bio: z.string().optional(),
 });
 
@@ -61,6 +62,7 @@ export default function CoachProfilePage() {
       firstName: coach?.firstName || "",
       lastNameKana: coach?.lastNameKana || "",
       firstNameKana: coach?.firstNameKana || "",
+      position: coach?.position || "",
       bio: coach?.bio || "",
     },
   });
@@ -368,6 +370,16 @@ export default function CoachProfilePage() {
                   data-testid="input-firstNameKana"
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="position">役職</Label>
+              <Input
+                id="position"
+                {...profileForm.register("position")}
+                placeholder="代表、ヘッドコーチ、U-8担当など"
+                data-testid="input-position"
+              />
             </div>
 
             <div className="space-y-2">

@@ -92,7 +92,8 @@ export const coaches = pgTable("coaches", {
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   teamId: varchar("team_id").notNull(),
-  role: text("role").default("coach"), // "owner", "coach", "assistant"
+  role: text("role").default("coach"), // "owner", "coach", "assistant" - 権限管理用
+  position: text("position"), // 役職名（代表、ヘッドコーチ、U-8担当など）
   lastName: text("last_name"), // 性
   firstName: text("first_name"), // 名
   lastNameKana: text("last_name_kana"), // 性 かな
