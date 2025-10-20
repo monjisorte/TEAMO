@@ -1,4 +1,4 @@
-import { CheckSquare, Calendar as CalendarIcon, FileText, Mail, User, UsersRound } from "lucide-react";
+import { CheckSquare, Calendar as CalendarIcon, FileText, Mail, User, UsersRound, Users } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -27,6 +27,11 @@ const menuItems = [
     title: "メンバー",
     url: "/members",
     icon: UsersRound,
+  },
+  {
+    title: "コーチ",
+    url: "/coaches",
+    icon: Users,
   },
   {
     title: "共有資料",
