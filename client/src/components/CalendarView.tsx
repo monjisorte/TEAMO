@@ -295,11 +295,6 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                   </div>
                   <div className="space-y-1">
                     {daySchedules.slice(0, 3).map((schedule) => {
-                      const startTime = schedule.startHour !== null && schedule.startMinute !== null
-                        ? `${String(schedule.startHour).padStart(2, '0')}:${String(schedule.startMinute).padStart(2, '0')}`
-                        : "";
-                      const attendanceCount = getAttendanceCount(schedule.id);
-                      
                       const categoryIds = getScheduleCategoryIds(schedule);
                       const primaryCategoryId = categoryIds[0];
                       
@@ -314,10 +309,6 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                           }}
                         >
                           <div className="font-medium truncate">{schedule.title}</div>
-                          <div className="flex items-center gap-0.5 text-[10px] mt-0.5">
-                            <Users className="h-2.5 w-2.5" />
-                            <span>{attendanceCount}</span>
-                          </div>
                         </div>
                       );
                     })}
