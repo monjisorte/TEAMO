@@ -51,6 +51,56 @@ export function ObjectUploader({
         maxFileSize,
       },
       autoProceed: false,
+      locale: {
+        strings: {
+          dropHereOr: 'ここにファイルをドロップするか、%{browse}',
+          browse: 'ファイルを選択',
+          uploadComplete: 'アップロード完了',
+          uploadPaused: 'アップロード一時停止',
+          resumeUpload: 'アップロード再開',
+          pauseUpload: 'アップロード一時停止',
+          retryUpload: '再試行',
+          cancelUpload: 'キャンセル',
+          xFilesSelected: {
+            0: '%{smart_count} 個のファイルを選択',
+            1: '%{smart_count} 個のファイルを選択',
+          },
+          uploadingXFiles: {
+            0: '%{smart_count} 個のファイルをアップロード中',
+            1: '%{smart_count} 個のファイルをアップロード中',
+          },
+          processingXFiles: {
+            0: '%{smart_count} 個のファイルを処理中',
+            1: '%{smart_count} 個のファイルを処理中',
+          },
+          uploading: 'アップロード中',
+          complete: '完了',
+          uploadFailed: 'アップロード失敗',
+          paused: '一時停止',
+          retry: '再試行',
+          cancel: 'キャンセル',
+          done: '完了',
+          filesUploadedOfTotal: {
+            0: '%{complete} / %{smart_count} ファイル',
+            1: '%{complete} / %{smart_count} ファイル',
+          },
+          dataUploadedOfTotal: '%{complete} / %{total}',
+          xTimeLeft: '残り %{time}',
+          uploadXFiles: {
+            0: '%{smart_count} 個のファイルをアップロード',
+            1: '%{smart_count} 個のファイルをアップロード',
+          },
+          uploadXNewFiles: {
+            0: '+%{smart_count} 個のファイルをアップロード',
+            1: '+%{smart_count} 個のファイルをアップロード',
+          },
+          addMore: 'さらに追加',
+          addMoreFiles: 'さらにファイルを追加',
+          removeFile: 'ファイルを削除',
+          editFile: 'ファイルを編集',
+        },
+        pluralize: (n: number) => (n === 1 ? 0 : 1),
+      },
     })
       .use(AwsS3, {
         shouldUseMultipart: false,
