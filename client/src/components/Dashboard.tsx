@@ -396,10 +396,10 @@ export function Dashboard() {
                 return (
                   <div 
                     key={log.id} 
-                    className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 hover-elevate"
+                    className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 hover-elevate flex-wrap"
                     data-testid={`activity-log-${log.id}`}
                   >
-                    <p className="text-sm flex-1 min-w-0 truncate">{log.description}</p>
+                    <p className="text-sm flex-1 min-w-0">{log.description}</p>
                     {categoryNames.length > 0 && (
                       <div className="flex gap-1 shrink-0">
                         {categoryNames.map((name, idx) => (
