@@ -27,6 +27,15 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
   const [visibleCategories, setVisibleCategories] = useState<string[]>([]);
   const [editingComment, setEditingComment] = useState<string>("");
 
+  const { data: schedules = [] } = useQuery<Schedule[]>({
+    queryKey: [`/api/student/${studentId}/schedules`],
+    enabled: selectedCategories.length > 0,
+  });
+
+  const { data: attendances = [] } = useQuery<Attendance[]>({
+    queryKey: ["/api/attendances"],
+  });
+
   // ダイアログを開いたときに既存のコメントをセット
   useEffect(() => {
     if (selectedSchedule) {
@@ -36,15 +45,6 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
       setEditingComment("");
     }
   }, [selectedSchedule?.id, attendances, studentId]);
-
-  const { data: schedules = [] } = useQuery<Schedule[]>({
-    queryKey: [`/api/student/${studentId}/schedules`],
-    enabled: selectedCategories.length > 0,
-  });
-
-  const { data: attendances = [] } = useQuery<Attendance[]>({
-    queryKey: ["/api/attendances"],
-  });
 
   const { data: students = [] } = useQuery<Student[]>({
     queryKey: ["/api/students"],

@@ -60,8 +60,8 @@ export function Dashboard() {
     enabled: showMembersDialog && !!teamId,
   });
 
-  // カテゴリ順にソートした生徒リスト（カテゴリ未設定の生徒は除外）
-  const teamStudents = students.filter(s => s.teamId === teamId && s.categoryId);
+  // カテゴリ順にソートした生徒リスト
+  const teamStudents = students.filter(s => s.teamId === teamId);
   const sortedStudents = [...teamStudents].sort((a, b) => 
     (a.categoryId || "").localeCompare(b.categoryId || "") || a.name.localeCompare(b.name)
   );
