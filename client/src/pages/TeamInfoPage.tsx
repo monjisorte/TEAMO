@@ -205,7 +205,7 @@ export default function TeamInfoPage() {
               </div>
 
               <div>
-                <Label htmlFor="address">住所</Label>
+                <Label htmlFor="address">住所(主な練習拠点)</Label>
                 <Input
                   id="address"
                   value={formData.address}
@@ -264,7 +264,7 @@ export default function TeamInfoPage() {
               </div>
 
               <div>
-                <Label className="text-muted-foreground text-xs">住所</Label>
+                <Label className="text-muted-foreground text-xs">住所(主な練習拠点)</Label>
                 <p className="text-sm font-medium" data-testid="text-address">
                   {team.address || "未設定"}
                 </p>
