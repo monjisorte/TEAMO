@@ -189,7 +189,7 @@ export function CoachManagement() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-16 md:pb-24">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">コーチ管理</h1>
