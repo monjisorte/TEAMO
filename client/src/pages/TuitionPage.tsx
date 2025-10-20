@@ -149,11 +149,12 @@ export default function TuitionPage() {
 
   const getDefaultBaseAmount = (student: Student) => {
     if (!team) return 0;
-    if (student.playerType === "member") {
+    if (student.playerType === "team") {
       return team.monthlyFeeMember || 0;
     } else if (student.playerType === "school") {
       return team.monthlyFeeSchool || 0;
     }
+    // 休部や未設定の場合は0
     return 0;
   };
 
@@ -224,7 +225,7 @@ export default function TuitionPage() {
       spotFee,
       amount,
       isPaid: payment?.isPaid || false,
-      category: payment?.category || (student?.playerType === "member" ? "team" : student?.playerType === "school" ? "school" : null),
+      category: payment?.category || (student?.playerType === "team" ? "team" : student?.playerType === "school" ? "school" : null),
     });
 
     // 編集値をクリア
@@ -247,7 +248,7 @@ export default function TuitionPage() {
       spotFee: payment?.spotFee ?? 0,
       amount: payment?.amount ?? calculateTotal(studentId),
       isPaid,
-      category: payment?.category || (student?.playerType === "member" ? "team" : student?.playerType === "school" ? "school" : null),
+      category: payment?.category || (student?.playerType === "team" ? "team" : student?.playerType === "school" ? "school" : null),
     });
   };
 
@@ -293,12 +294,13 @@ export default function TuitionPage() {
     },
   });
 
-  const handleCategoryChange = async (studentId: string, category: string | null) => {
+  const handleCategoryChange = async (studentId: string, playerType: string | null) => {
     const payment = getPaymentForStudent(studentId);
     const student = students.find((s) => s.id === studentId);
     
-    // categoryに基づいてplayerTypeを更新
-    const playerType = category === "team" ? "member" : category === "school" ? "school" : null;
+    // playerTypeをそのまま使用（team, school, inactive, null）
+    // categoryは月謝計算用に変換（休部の場合はnull扱い）
+    const category = playerType === "inactive" ? null : playerType;
     
     // まず月謝データを更新
     updatePaymentMutation.mutate({
@@ -315,7 +317,7 @@ export default function TuitionPage() {
     // 次にstudentのplayerTypeも更新（区分を保存）
     updateStudentPlayerTypeMutation.mutate({
       studentId,
-      playerType,
+      playerType: playerType || "",
     });
   };
 
@@ -533,7 +535,7 @@ export default function TuitionPage() {
                         <div>
                           <div className="text-xs font-medium text-muted-foreground mb-1.5">区分</div>
                           <Select
-                            value={payment?.category || (student.playerType === "member" ? "team" : student.playerType === "school" ? "school" : "unset")}
+                            value={student.playerType || "unset"}
                             onValueChange={(value) => handleCategoryChange(student.id, value === "unset" ? null : value)}
                             data-testid={`select-category-${student.id}`}
                           >
@@ -541,9 +543,10 @@ export default function TuitionPage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="team">チーム</SelectItem>
-                              <SelectItem value="school">スクール</SelectItem>
-                              <SelectItem value="unset">(未選択)</SelectItem>
+                              <SelectItem value="unset">未設定</SelectItem>
+                              <SelectItem value="team">チーム生</SelectItem>
+                              <SelectItem value="school">スクール生</SelectItem>
+                              <SelectItem value="inactive">休部</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
