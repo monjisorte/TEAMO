@@ -144,7 +144,8 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
     
     // 開始済みのスケジュールは除外
     const now = new Date();
-    const scheduleDateTime = new Date(`${schedule.date}T${schedule.startTime}`);
+    const [year, month, day] = schedule.date.split('-').map(Number);
+    const scheduleDateTime = new Date(year, month - 1, day, schedule.startHour || 0, schedule.startMinute || 0);
     if (scheduleDateTime <= now) {
       return false;
     }
