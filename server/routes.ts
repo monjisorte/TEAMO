@@ -101,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/schedules", async (req, res) => {
+  app.post("/api/schedules", isAuthenticated, async (req, res) => {
     try {
       const { recurrenceRule, recurrenceInterval, recurrenceDays, recurrenceEndDate, ...scheduleData } = req.body;
       
@@ -202,7 +202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/schedules/:id", async (req, res) => {
+  app.put("/api/schedules/:id", isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
       const { updateType, ...updateData } = req.body; // updateType: "this" | "all"
@@ -270,7 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/schedules/:id", async (req, res) => {
+  app.delete("/api/schedules/:id", isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
       const { deleteType } = req.query; // deleteType: "this" | "all"
