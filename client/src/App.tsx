@@ -190,7 +190,7 @@ function PlayerPortal() {
   const handleLogout = () => {
     localStorage.removeItem("playerData");
     setPlayerId(null);
-    setLocation("/login");
+    window.location.href = "https://teamo.cloud";
   };
 
   if (!playerId) {
