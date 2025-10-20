@@ -36,15 +36,25 @@ export default function PlayerMembersPage({ teamId }: PlayerMembersPageProps) {
   });
 
   const filteredStudents = useMemo(() => {
+    let filtered: Student[];
+    
     if (selectedCategoryId === "all") {
-      return students;
+      filtered = students;
+    } else {
+      const studentsInCategory = studentCategories
+        .filter(sc => sc.categoryId === selectedCategoryId)
+        .map(sc => sc.studentId);
+
+      filtered = students.filter(student => studentsInCategory.includes(student.id));
     }
 
-    const studentsInCategory = studentCategories
-      .filter(sc => sc.categoryId === selectedCategoryId)
-      .map(sc => sc.studentId);
-
-    return students.filter(student => studentsInCategory.includes(student.id));
+    // 生年月日順にソート（年上が上）
+    return filtered.sort((a, b) => {
+      if (!a.birthDate && !b.birthDate) return 0;
+      if (!a.birthDate) return 1; // 未設定は下に
+      if (!b.birthDate) return -1; // 未設定は下に
+      return new Date(a.birthDate).getTime() - new Date(b.birthDate).getTime();
+    });
   }, [students, studentCategories, selectedCategoryId]);
 
   if (isLoading) {
