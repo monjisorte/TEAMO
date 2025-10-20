@@ -8,8 +8,8 @@ import {
 } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { db } from "./db";
-import { teams, students, coaches, studentCategories, attendances, schedules, categories, sharedDocuments, folders, tuitionPayments, venues } from "@shared/schema";
-import { eq, and, inArray, isNull, or } from "drizzle-orm";
+import { teams, students, coaches, studentCategories, attendances, schedules, categories, sharedDocuments, folders, tuitionPayments, venues, admins } from "@shared/schema";
+import { eq, and, inArray, isNull, or, count, sql as drizzleSql } from "drizzle-orm";
 import { generateTeamCode, hashPassword, verifyPassword } from "./utils";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1762,6 +1762,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(coachesData);
     } catch (error) {
       console.error("Error fetching team coaches:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ==================== Admin Routes ====================
+  
+  // Admin login
+  app.post("/api/admin/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({ error: "メールアドレスとパスワードが必要です" });
+      }
+
+      const admin = await db.select().from(admins).where(eq(admins.email, email)).limit(1);
+      
+      if (admin.length === 0) {
+        return res.status(401).json({ error: "メールアドレスまたはパスワードが正しくありません" });
+      }
+
+      const isValid = await verifyPassword(password, admin[0].password);
+      if (!isValid) {
+        return res.status(401).json({ error: "メールアドレスまたはパスワードが正しくありません" });
+      }
+
+      const { password: _, ...adminData } = admin[0];
+      res.json(adminData);
+    } catch (error) {
+      console.error("Error during admin login:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get admin dashboard stats
+  app.get("/api/admin/stats", async (req, res) => {
+    try {
+      const teamCount = await db.select({ count: count() }).from(teams);
+      
+      res.json({
+        totalTeams: teamCount[0]?.count || 0,
+      });
+    } catch (error) {
+      console.error("Error fetching admin stats:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get all teams with statistics
+  app.get("/api/admin/teams", async (req, res) => {
+    try {
+      const allTeams = await db.select().from(teams);
+      
+      const teamsWithStats = await Promise.all(
+        allTeams.map(async (team) => {
+          const coachCount = await db.select({ count: count() })
+            .from(coaches)
+            .where(eq(coaches.teamId, team.id));
+          
+          const memberCount = await db.select({ count: count() })
+            .from(students)
+            .where(eq(students.teamId, team.id));
+          
+          const eventCount = await db.select({ count: count() })
+            .from(schedules)
+            .where(eq(schedules.teamId, team.id));
+          
+          return {
+            ...team,
+            coachCount: coachCount[0]?.count || 0,
+            memberCount: memberCount[0]?.count || 0,
+            eventCount: eventCount[0]?.count || 0,
+          };
+        })
+      );
+      
+      res.json(teamsWithStats);
+    } catch (error) {
+      console.error("Error fetching admin teams:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get team details with coaches and members
+  app.get("/api/admin/teams/:teamId", async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      
+      const team = await db.select().from(teams).where(eq(teams.id, teamId)).limit(1);
+      
+      if (team.length === 0) {
+        return res.status(404).json({ error: "Team not found" });
+      }
+      
+      const teamCoaches = await db.select().from(coaches).where(eq(coaches.teamId, teamId));
+      const teamMembers = await db.select().from(students).where(eq(students.teamId, teamId));
+      
+      // Don't send passwords
+      const coachesData = teamCoaches.map(({ password, ...coach }) => coach);
+      const membersData = teamMembers.map(({ password, ...member }) => member);
+      
+      res.json({
+        ...team[0],
+        coaches: coachesData,
+        members: membersData,
+      });
+    } catch (error) {
+      console.error("Error fetching team details:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });

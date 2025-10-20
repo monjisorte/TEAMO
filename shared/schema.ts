@@ -233,3 +233,15 @@ export const tuitionPayments = pgTable("tuition_payments", {
 export const insertTuitionPaymentSchema = createInsertSchema(tuitionPayments).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertTuitionPayment = z.infer<typeof insertTuitionPaymentSchema>;
 export type TuitionPayment = typeof tuitionPayments.$inferSelect;
+
+export const admins = pgTable("admins", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertAdminSchema = createInsertSchema(admins).omit({ id: true, createdAt: true });
+export type InsertAdmin = z.infer<typeof insertAdminSchema>;
+export type Admin = typeof admins.$inferSelect;
