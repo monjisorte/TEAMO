@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Schedule, Student, Category, Attendance, ScheduleFile } from "@shared/schema";
+import type { Schedule, Student, Category, Attendance, ScheduleFile, ActivityLog } from "@shared/schema";
 
 interface DashboardStats {
   upcomingEvents: number;
@@ -84,6 +84,17 @@ export function Dashboard() {
     enabled: showScheduleDialog && !!teamId,
   });
 
+  // Fetch activity logs
+  const { data: activityLogs = [] } = useQuery<ActivityLog[]>({
+    queryKey: ["/api/activity-logs", teamId],
+    queryFn: async () => {
+      const response = await fetch(`/api/activity-logs/${teamId}?limit=10`);
+      if (!response.ok) throw new Error("Failed to fetch activity logs");
+      return response.json();
+    },
+    enabled: !!teamId,
+  });
+
   // カテゴリ順にソートした生徒リスト
   const teamStudents = students.filter(s => s.teamId === teamId);
   const sortedStudents = [...teamStudents].sort((a, b) => 
@@ -94,6 +105,20 @@ export function Dashboard() {
     if (!categoryId) return "";
     const category = categories.find(c => c.id === categoryId);
     return category?.name || "";
+  };
+
+  const getTimeAgo = (date: Date) => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return "たった今";
+    if (diffMins < 60) return `${diffMins}分前`;
+    if (diffHours < 24) return `${diffHours}時間前`;
+    if (diffDays < 7) return `${diffDays}日前`;
+    return date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
   };
 
   const getCategoryNames = (categoryIds: string[] | null | undefined, categoryId: string | null | undefined) => {
@@ -354,10 +379,28 @@ export function Dashboard() {
           <CardHeader className="pb-6">
             <CardTitle className="text-xl">タイムライン</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-center text-muted-foreground py-8">
-              更新履歴がここに表示されます
-            </div>
+          <CardContent className="space-y-3">
+            {activityLogs.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                更新履歴がここに表示されます
+              </div>
+            ) : (
+              activityLogs.map((log) => {
+                const timeAgo = getTimeAgo(new Date(log.createdAt));
+                return (
+                  <div 
+                    key={log.id} 
+                    className="flex items-start gap-3 p-3 rounded-xl bg-muted/30 hover-elevate"
+                    data-testid={`activity-log-${log.id}`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm">{log.description}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{timeAgo}</p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </CardContent>
         </Card>
       </div>
