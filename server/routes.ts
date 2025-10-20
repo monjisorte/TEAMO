@@ -47,6 +47,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ uploadURL });
   });
 
+  app.post("/api/objects/upload-public", isAuthenticated, async (req, res) => {
+    const objectStorageService = new ObjectStorageService();
+    const uploadURL = await objectStorageService.getPublicUploadURL();
+    res.json({ uploadURL });
+  });
+
   app.put("/api/schedule-files", isAuthenticated, async (req, res) => {
     if (!req.body.scheduleId || !req.body.files) {
       return res.status(400).json({ error: "scheduleId and files are required" });

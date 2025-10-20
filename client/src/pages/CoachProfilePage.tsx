@@ -169,7 +169,7 @@ export default function CoachProfilePage() {
       let photoUrl = coach?.photoUrl;
       
       if (photoFile) {
-        const uploadRes = await fetch("/api/objects/upload", {
+        const uploadRes = await fetch("/api/objects/upload-public", {
           method: "POST",
           credentials: "include",
         });
