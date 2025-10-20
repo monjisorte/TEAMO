@@ -46,9 +46,10 @@ export function CoachManagement() {
   const [newCoach, setNewCoach] = useState({ name: "", email: "", password: "" });
   const [newPassword, setNewPassword] = useState("");
 
-  // Get teamId from localStorage
+  // Get teamId and current coach role from localStorage
   const coachData = localStorage.getItem("coachData");
   const teamId = coachData ? JSON.parse(coachData).teamId : null;
+  const currentCoachRole = coachData ? JSON.parse(coachData).role : null;
 
   // Fetch coaches
   const { data: coaches = [], isLoading } = useQuery<Coach[]>({
@@ -280,17 +281,19 @@ export function CoachManagement() {
               </div>
             </CardHeader>
             <CardContent className="flex gap-3">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex-1 rounded-xl" 
-                onClick={() => handlePasswordClick(coach)}
-                data-testid={`button-set-password-${coach.id}`}
-              >
-                <Key className="h-4 w-4 mr-2" />
-                パスワード設定
-              </Button>
-              {coach.role !== "owner" && (
+              {currentCoachRole === "owner" && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1 rounded-xl" 
+                  onClick={() => handlePasswordClick(coach)}
+                  data-testid={`button-set-password-${coach.id}`}
+                >
+                  <Key className="h-4 w-4 mr-2" />
+                  パスワード設定
+                </Button>
+              )}
+              {coach.role !== "owner" && currentCoachRole === "owner" && (
                 <Button
                   variant="outline"
                   size="sm"
