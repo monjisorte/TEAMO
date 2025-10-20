@@ -1583,6 +1583,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/coach/:coachId/email", async (req, res) => {
+    try {
+      const { coachId } = req.params;
+      const { newEmail, currentPassword } = req.body;
+
+      if (!newEmail || !currentPassword) {
+        return res.status(400).json({ error: "New email and current password are required" });
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(newEmail)) {
+        return res.status(400).json({ error: "無効なメールアドレス形式です" });
+      }
+
+      // Get current coach
+      const coach = await db.select().from(coaches).where(eq(coaches.id, coachId)).limit(1);
+      
+      if (coach.length === 0) {
+        return res.status(404).json({ error: "Coach not found" });
+      }
+
+      // Verify current password
+      const isValid = await verifyPassword(currentPassword, coach[0].password);
+      if (!isValid) {
+        return res.status(401).json({ error: "現在のパスワードが正しくありません" });
+      }
+
+      // Check if email is already in use by another coach
+      const existingCoach = await db.select().from(coaches)
+        .where(eq(coaches.email, newEmail))
+        .limit(1);
+      
+      if (existingCoach.length > 0 && existingCoach[0].id !== coachId) {
+        return res.status(409).json({ error: "このメールアドレスは既に使用されています" });
+      }
+
+      // Update email
+      await db.update(coaches)
+        .set({ email: newEmail })
+        .where(eq(coaches.id, coachId));
+
+      res.json({ success: true, message: "メールアドレスを変更しました" });
+    } catch (error) {
+      console.error("Error changing email:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Get team coaches (for student view)
   app.get("/api/team/:teamId/coaches", async (req, res) => {
     try {

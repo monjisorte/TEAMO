@@ -35,6 +35,13 @@ const passwordSchema = z.object({
 
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
+const emailSchema = z.object({
+  newEmail: z.string().email("有効なメールアドレスを入力してください"),
+  currentPassword: z.string().min(1, "パスワードを入力してください"),
+});
+
+type EmailFormData = z.infer<typeof emailSchema>;
+
 export default function CoachProfilePage() {
   const { toast } = useToast();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -64,6 +71,14 @@ export default function CoachProfilePage() {
       currentPassword: "",
       newPassword: "",
       confirmPassword: "",
+    },
+  });
+
+  const emailForm = useForm<EmailFormData>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: {
+      newEmail: "",
+      currentPassword: "",
     },
   });
 
@@ -194,6 +209,31 @@ export default function CoachProfilePage() {
       toast({
         title: "エラー",
         description: error.message || "パスワード変更に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const changeEmailMutation = useMutation({
+    mutationFn: async (data: EmailFormData) => {
+      const res = await apiRequest("PUT", `/api/coach/${coachId}/email`, {
+        newEmail: data.newEmail,
+        currentPassword: data.currentPassword,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      emailForm.reset();
+      toast({
+        title: "メールアドレスを変更しました",
+        description: "次回ログインから新しいメールアドレスを使用してください",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/coach", coachId] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "エラー",
+        description: error.message || "メールアドレス変更に失敗しました",
         variant: "destructive",
       });
     },
@@ -349,6 +389,63 @@ export default function CoachProfilePage() {
             >
               {updateProfileMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               保存する
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Email Change */}
+      <Card>
+        <CardHeader>
+          <CardTitle>メールアドレス変更</CardTitle>
+          <CardDescription>
+            ログイン時に使用するメールアドレスを変更します（現在: {coach?.email}）
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={emailForm.handleSubmit((data) => changeEmailMutation.mutate(data))}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="newEmail">新しいメールアドレス</Label>
+              <Input
+                id="newEmail"
+                type="email"
+                {...emailForm.register("newEmail")}
+                placeholder="new-email@example.com"
+                data-testid="input-newEmail"
+              />
+              {emailForm.formState.errors.newEmail && (
+                <p className="text-sm text-destructive">
+                  {emailForm.formState.errors.newEmail.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="emailCurrentPassword">現在のパスワード（確認用）</Label>
+              <Input
+                id="emailCurrentPassword"
+                type="password"
+                {...emailForm.register("currentPassword")}
+                data-testid="input-emailCurrentPassword"
+              />
+              {emailForm.formState.errors.currentPassword && (
+                <p className="text-sm text-destructive">
+                  {emailForm.formState.errors.currentPassword.message}
+                </p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              disabled={changeEmailMutation.isPending}
+              className="w-full"
+              data-testid="button-change-email"
+            >
+              {changeEmailMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              メールアドレスを変更する
             </Button>
           </form>
         </CardContent>
