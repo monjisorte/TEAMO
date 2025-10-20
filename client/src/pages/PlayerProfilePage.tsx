@@ -324,9 +324,6 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
         <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
           プロフィール管理
         </h1>
-        <p className="text-muted-foreground text-sm">
-          あなたの基本情報とカテゴリ設定を管理します
-        </p>
       </div>
 
       <Card className="border-0 shadow-xl">
@@ -510,9 +507,6 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
             <Mail className="h-5 w-5 text-blue-600" />
             <CardTitle className="text-xl font-bold">メールアドレス変更</CardTitle>
           </div>
-          <CardDescription>
-            現在のパスワードを入力して、メールアドレスを変更できます
-          </CardDescription>
         </CardHeader>
         <CardContent className="p-3 pt-0">
           <Form {...emailForm}>
@@ -574,9 +568,6 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
             <Lock className="h-5 w-5 text-blue-600" />
             <CardTitle className="text-xl font-bold">パスワード変更</CardTitle>
           </div>
-          <CardDescription>
-            現在のパスワードと新しいパスワードを入力してください
-          </CardDescription>
         </CardHeader>
         <CardContent className="p-3 pt-0">
           <Form {...passwordForm}>
