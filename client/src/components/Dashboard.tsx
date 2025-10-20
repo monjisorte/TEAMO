@@ -72,10 +72,10 @@ export function Dashboard() {
     enabled: !!teamId,
   });
 
-  // Fetch attendances for schedule dialog
+  // Fetch attendances (always needed for dashboard)
   const { data: attendances = [] } = useQuery<Attendance[]>({
     queryKey: ["/api/attendances"],
-    enabled: showScheduleDialog && !!teamId,
+    enabled: !!teamId,
   });
 
   // Fetch schedule files for schedule dialog
@@ -110,6 +110,16 @@ export function Dashboard() {
     if (playerType === "school") return "スクール生";
     if (playerType === "inactive") return "休部";
     return "未設定";
+  };
+
+  // 参加者数を取得
+  const getAttendanceCount = (scheduleId: string) => {
+    const scheduleAttendances = attendances.filter(a => a.scheduleId === scheduleId);
+    return {
+      present: scheduleAttendances.filter(a => a.status === "present").length,
+      maybe: scheduleAttendances.filter(a => a.status === "maybe").length,
+      absent: scheduleAttendances.filter(a => a.status === "absent").length,
+    };
   };
 
   // 同じ日のスケジュールを取得
@@ -275,6 +285,7 @@ export function Dashboard() {
                     : "時刻未定";
                   
                   const categoryNames = getCategoryNames(schedule.categoryIds, schedule.categoryId);
+                  const attendance = getAttendanceCount(schedule.id);
                   
                   return (
                     <div
@@ -306,15 +317,31 @@ export function Dashboard() {
                             <span className="truncate">{schedule.venue || "未定"}</span>
                           </div>
                         </div>
-                        {categoryNames.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {categoryNames.map((name, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-xs">
-                                {name}
-                              </Badge>
-                            ))}
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                          {categoryNames.length > 0 && (
+                            <>
+                              {categoryNames.map((name, idx) => (
+                                <Badge key={idx} variant="secondary" className="text-xs">
+                                  {name}
+                                </Badge>
+                              ))}
+                            </>
+                          )}
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="flex items-center gap-1">
+                              <span className="text-green-600 dark:text-green-400">○</span>
+                              <span>{attendance.present}</span>
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <span className="text-yellow-600 dark:text-yellow-400">△</span>
+                              <span>{attendance.maybe}</span>
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <span className="text-red-600 dark:text-red-400">×</span>
+                              <span>{attendance.absent}</span>
+                            </span>
                           </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                   );
