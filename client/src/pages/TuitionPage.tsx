@@ -36,11 +36,15 @@ export default function TuitionPage() {
     siblingDiscount: 0,
   });
 
+  const coachData = localStorage.getItem("coachData");
+  const teamId = coachData ? JSON.parse(coachData).teamId : null;
+
   const { data: teams = [] } = useQuery<Team[]>({
     queryKey: ["/api/teams"],
+    enabled: !!teamId,
   });
 
-  const team = teams[0];
+  const team = teams.find(t => t.id === teamId);
 
   useEffect(() => {
     if (team) {
