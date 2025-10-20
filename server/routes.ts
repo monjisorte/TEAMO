@@ -795,24 +795,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Student Schedules (filtered by selected categories)
+  // Student Schedules (all schedules in the student's team)
   app.get("/api/student/:studentId/schedules", async (req, res) => {
     try {
       const { studentId } = req.params;
       
-      // Get student's selected categories
-      const studentCats = await db.select()
-        .from(studentCategories)
-        .where(eq(studentCategories.studentId, studentId));
+      // Get student to find their team
+      const student = await db.select()
+        .from(students)
+        .where(eq(students.id, studentId))
+        .limit(1);
       
-      if (studentCats.length === 0) {
+      if (student.length === 0) {
         return res.json([]);
       }
 
-      const categoryIds = studentCats.map(sc => sc.categoryId);
+      const teamId = student[0].teamId;
+      
+      // Get all schedules for the team
       const scheds = await db.select()
         .from(schedules)
-        .where(inArray(schedules.categoryId, categoryIds));
+        .where(eq(schedules.teamId, teamId));
 
       res.json(scheds);
     } catch (error) {
