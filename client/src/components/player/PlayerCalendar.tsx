@@ -245,7 +245,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
     });
 
     return (
-      <div className="space-y-4">
+      <div className="space-y-2">
         {weekDaysData.map((date, index) => {
           const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
           const daySchedules = filteredSchedules.filter(s => s.date === dateStr);
@@ -256,12 +256,12 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
 
           return (
             <Card key={index} className={isCurrentDay ? "border-primary border-2" : ""}>
-              <CardContent className="p-4">
-                <div className="flex items-start gap-4">
+              <CardContent className="p-3">
+                <div className="flex items-start gap-2">
                   {/* Day Header */}
-                  <div className="min-w-[80px]">
+                  <div className="min-w-[50px]">
                     <div className="text-xs text-muted-foreground">{weekDays[index]}</div>
-                    <div className={`text-2xl font-bold ${isCurrentDay ? "text-primary" : ""}`}>
+                    <div className={`text-xl font-bold ${isCurrentDay ? "text-primary" : ""}`}>
                       {date.getDate()}
                     </div>
                     <div className="text-xs text-muted-foreground">
@@ -270,7 +270,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                   </div>
 
                   {/* Events */}
-                  <div className="flex-1 space-y-2">
+                  <div className="flex-1 space-y-1.5">
                     {daySchedules.length === 0 ? (
                       <div className="text-sm text-muted-foreground py-2">
                         予定なし
@@ -295,54 +295,44 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                         return (
                           <div
                             key={schedule.id}
-                            className={`p-3 rounded-lg border-2 ${colorClasses} hover-elevate cursor-pointer`}
+                            className={`p-2 rounded-md border ${colorClasses} hover-elevate cursor-pointer`}
                             onClick={() => setSelectedSchedule(schedule)}
                             data-testid={`week-schedule-${schedule.id}`}
                           >
-                            <div className="space-y-1.5">
-                              <div className="flex items-center gap-2">
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-1.5">
                                 <Badge 
                                   variant={
                                     attendance?.status === "○" ? "default" :
                                     attendance?.status === "△" ? "secondary" :
                                     "outline"
                                   }
-                                  className="text-lg px-2"
+                                  className="text-sm px-1.5 py-0 h-5"
                                 >
                                   {attendance?.status || "-"}
                                 </Badge>
-                                <div className="font-medium flex-1">{schedule.title}</div>
+                                <div className="font-medium text-sm flex-1">{schedule.title}</div>
                               </div>
                               
                               {/* Comment */}
                               {attendance?.comment && (
-                                <div className="text-sm text-muted-foreground">
+                                <div className="text-xs text-muted-foreground">
                                   {attendance.comment}
                                 </div>
                               )}
                               
-                              {/* Time and Location Info */}
-                              <div className="text-sm opacity-80 space-y-0.5">
+                              {/* Time and Location Info - 1行表示 */}
+                              <div className="text-xs opacity-80 flex items-center gap-2 flex-wrap">
                                 {startTime && (
-                                  <div className="flex items-center gap-1">
-                                    <span className="font-medium">時間:</span>
-                                    <span>
-                                      {startTime}
-                                      {endTime && ` - ${endTime}`}
-                                    </span>
-                                  </div>
+                                  <span>
+                                    {startTime}{endTime && `-${endTime}`}
+                                  </span>
                                 )}
                                 {gatherTime && (
-                                  <div className="flex items-center gap-1">
-                                    <span className="font-medium">集合:</span>
-                                    <span>{gatherTime}</span>
-                                  </div>
+                                  <span>集合:{gatherTime}</span>
                                 )}
                                 {schedule.venue && (
-                                  <div className="flex items-center gap-1">
-                                    <span className="font-medium">場所:</span>
-                                    <span>{schedule.venue}</span>
-                                  </div>
+                                  <span>{schedule.venue}</span>
                                 )}
                               </div>
                             </div>
@@ -408,87 +398,70 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
 
     return (
       <Card>
-        <CardContent className="p-6">
-          <div className="space-y-6">
+        <CardContent className="p-4">
+          <div className="space-y-3">
             {/* Schedule Title */}
             <div>
-              <h3 className="text-xl font-bold mb-2">{nextSchedule.title}</h3>
-              <Badge variant="outline" className="text-sm">次回の予定</Badge>
+              <h3 className="text-lg font-bold mb-1">{nextSchedule.title}</h3>
+              <Badge variant="outline" className="text-xs">次回の予定</Badge>
             </div>
 
             <Separator />
 
-            {/* Schedule Details */}
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div className="text-sm font-semibold text-muted-foreground mb-1">日付</div>
-                  <div className="text-base">
-                    {nextSchedule.date.substring(0, 4)}年{nextSchedule.date.substring(5, 7)}月{nextSchedule.date.substring(8, 10)}日
-                  </div>
-                </div>
+            {/* Schedule Details - 1列表示 */}
+            <div className="space-y-2">
+              <div className="text-sm flex items-center gap-2 flex-wrap">
+                <span className="font-semibold">
+                  {nextSchedule.date.substring(0, 4)}/{nextSchedule.date.substring(5, 7)}/{nextSchedule.date.substring(8, 10)}
+                </span>
                 
                 {(nextSchedule.startHour !== null && nextSchedule.startMinute !== null) && (
-                  <div>
-                    <div className="text-sm font-semibold text-muted-foreground mb-1">時間</div>
-                    <div className="text-base">
-                      {String(nextSchedule.startHour).padStart(2, '0')}:{String(nextSchedule.startMinute).padStart(2, '0')}
-                      {nextSchedule.endHour !== null && nextSchedule.endMinute !== null && 
-                        ` - ${String(nextSchedule.endHour).padStart(2, '0')}:${String(nextSchedule.endMinute).padStart(2, '0')}`}
-                    </div>
-                  </div>
+                  <span>
+                    {String(nextSchedule.startHour).padStart(2, '0')}:{String(nextSchedule.startMinute).padStart(2, '0')}
+                    {nextSchedule.endHour !== null && nextSchedule.endMinute !== null && 
+                      `-${String(nextSchedule.endHour).padStart(2, '0')}:${String(nextSchedule.endMinute).padStart(2, '0')}`}
+                  </span>
                 )}
 
                 {(nextSchedule.gatherHour !== null && nextSchedule.gatherMinute !== null) && (
-                  <div>
-                    <div className="text-sm font-semibold text-muted-foreground mb-1">集合時間</div>
-                    <div className="text-base">
-                      {String(nextSchedule.gatherHour).padStart(2, '0')}:{String(nextSchedule.gatherMinute).padStart(2, '0')}
-                    </div>
-                  </div>
+                  <span className="text-muted-foreground">
+                    集合:{String(nextSchedule.gatherHour).padStart(2, '0')}:{String(nextSchedule.gatherMinute).padStart(2, '0')}
+                  </span>
                 )}
 
-                <div>
-                  <div className="text-sm font-semibold text-muted-foreground mb-1">会場</div>
-                  <div className="text-base">
-                    {nextSchedule.venue && nextSchedule.venue !== "未定" ? (
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nextSchedule.venue)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary underline"
-                        data-testid="link-next-schedule-venue"
-                      >
-                        {nextSchedule.venue}
-                      </a>
-                    ) : (
-                      <span>{nextSchedule.venue || "未定"}</span>
-                    )}
-                  </div>
-                </div>
+                {nextSchedule.venue && nextSchedule.venue !== "未定" ? (
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nextSchedule.venue)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline"
+                    data-testid="link-next-schedule-venue"
+                  >
+                    {nextSchedule.venue}
+                  </a>
+                ) : (
+                  <span>{nextSchedule.venue || "未定"}</span>
+                )}
               </div>
 
               {nextSchedule.notes && (
-                <div>
-                  <div className="text-sm font-semibold text-muted-foreground mb-1">備考</div>
-                  <div className="text-base whitespace-pre-wrap">{nextSchedule.notes}</div>
-                </div>
+                <div className="text-sm whitespace-pre-wrap text-muted-foreground">{nextSchedule.notes}</div>
               )}
             </div>
 
             <Separator />
 
             {/* Your Attendance */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold">あなたの出欠: </span>
+                <span className="text-xs font-semibold">あなたの出欠: </span>
                 <Badge 
                   variant={
                     attendance?.status === "○" ? "default" :
                     attendance?.status === "△" ? "secondary" :
                     "outline"
                   }
-                  className="text-base px-3 py-1"
+                  className="text-sm px-2 py-0 h-5"
                 >
                   {attendance?.status || "未回答"}
                 </Badge>
@@ -502,9 +475,10 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
               {/* Attendance Buttons */}
               {nextSchedule.studentCanRegister !== false ? (
                 <>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1.5">
                     <Button
                       variant={attendance?.status === "○" ? "default" : "outline"}
+                      size="sm"
                       onClick={() => handleAttendanceChange(nextSchedule.id, "○", editingComment)}
                       disabled={saveAttendanceMutation.isPending}
                       data-testid="button-next-attendance-yes"
@@ -513,6 +487,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                     </Button>
                     <Button
                       variant={attendance?.status === "△" ? "default" : "outline"}
+                      size="sm"
                       onClick={() => handleAttendanceChange(nextSchedule.id, "△", editingComment)}
                       disabled={saveAttendanceMutation.isPending}
                       data-testid="button-next-attendance-maybe"
@@ -521,6 +496,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                     </Button>
                     <Button
                       variant={attendance?.status === "×" ? "default" : "outline"}
+                      size="sm"
                       onClick={() => handleAttendanceChange(nextSchedule.id, "×", editingComment)}
                       disabled={saveAttendanceMutation.isPending}
                       data-testid="button-next-attendance-no"
@@ -531,19 +507,19 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                   
                   {/* Comment Field */}
                   <div>
-                    <label className="text-sm font-semibold mb-2 block">コメント（任意）</label>
+                    <label className="text-xs font-semibold mb-1 block">コメント（任意）</label>
                     <Textarea
                       placeholder="遅刻・早退の理由などがあれば入力してください..."
                       value={editingComment}
                       onChange={(e) => setEditingComment(e.target.value)}
                       data-testid="textarea-next-comment"
-                      rows={3}
-                      className="resize-none"
+                      rows={2}
+                      className="resize-none text-sm"
                     />
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   このイベントはコーチ指定のため、出欠の変更はできません
                 </p>
               )}
