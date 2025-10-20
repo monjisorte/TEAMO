@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Student, TuitionPayment, Team } from "@shared/schema";
-import { RefreshCw, Settings } from "lucide-react";
+import { RefreshCw, Settings, ChevronDown } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function TuitionPage() {
   const { toast } = useToast();
@@ -140,6 +141,27 @@ export default function TuitionPage() {
       toast({
         title: "更新成功",
         description: "月謝情報を更新しました",
+      });
+    },
+  });
+
+  // 兄弟割引ステータス変更のmutation
+  const updateSiblingDiscountMutation = useMutation({
+    mutationFn: async ({ studentId, siblingDiscountStatus }: { studentId: string; siblingDiscountStatus: string | null }) => {
+      return await apiRequest("PATCH", `/api/student/${studentId}`, { siblingDiscountStatus });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/students"] });
+      toast({
+        title: "更新完了",
+        description: "兄弟割引ステータスを更新しました",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "兄弟割引ステータスの更新に失敗しました",
+        variant: "destructive",
       });
     },
   });
@@ -630,9 +652,23 @@ export default function TuitionPage() {
                         </div>
                         <div>
                           <div className="text-xs font-medium text-muted-foreground mb-1.5">兄弟割引</div>
-                          <div className="text-sm font-medium" data-testid={`text-sibling-discount-${student.id}`}>
-                            {student.siblingDiscountStatus === "あり" ? "あり" : "(空欄)"}
-                          </div>
+                          <Select
+                            value={student.siblingDiscountStatus || "none"}
+                            onValueChange={(value) => {
+                              const newValue = value === "none" ? null : value;
+                              updateSiblingDiscountMutation.mutate({ studentId: student.id, siblingDiscountStatus: newValue });
+                            }}
+                            disabled={payment?.isPaid || false}
+                            data-testid={`select-sibling-discount-${student.id}`}
+                          >
+                            <SelectTrigger className="w-[130px]">
+                              <SelectValue placeholder="" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none"> </SelectItem>
+                              <SelectItem value="あり">あり</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
 
@@ -659,65 +695,77 @@ export default function TuitionPage() {
                       </div>
                     </div>
 
-                    {/* Bottom: Fee Details in 2 columns */}
-                    <div className="grid grid-cols-2 gap-3 pt-4 border-t">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-muted-foreground">月謝</label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">¥</span>
-                          <Input
-                            type="number"
-                            value={getEditingValue(student.id, 'baseAmount', baseAmount)}
-                            onChange={(e) => setEditingValue(student.id, 'baseAmount', parseInt(e.target.value) || 0)}
-                            onBlur={() => handleFieldUpdate(student.id, 'baseAmount')}
-                            className="w-full text-right pl-8"
-                            data-testid={`input-base-amount-${student.id}`}
-                          />
+                    {/* Bottom: Fee Details in Collapsible */}
+                    <Collapsible defaultOpen={!payment?.isPaid} className="pt-4 border-t">
+                      <CollapsibleTrigger className="flex items-center justify-between w-full text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                        <span>明細</span>
+                        <ChevronDown className="h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="grid grid-cols-2 gap-3 pt-3">
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-muted-foreground">月謝</label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">¥</span>
+                              <Input
+                                type="number"
+                                value={getEditingValue(student.id, 'baseAmount', baseAmount)}
+                                onChange={(e) => setEditingValue(student.id, 'baseAmount', parseInt(e.target.value) || 0)}
+                                onBlur={() => handleFieldUpdate(student.id, 'baseAmount')}
+                                className="w-full text-right pl-8"
+                                disabled={payment?.isPaid || false}
+                                data-testid={`input-base-amount-${student.id}`}
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-muted-foreground">割引</label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">¥</span>
+                              <Input
+                                type="number"
+                                value={getEditingValue(student.id, 'discount', discount)}
+                                onChange={(e) => setEditingValue(student.id, 'discount', parseInt(e.target.value) || 0)}
+                                onBlur={() => handleFieldUpdate(student.id, 'discount')}
+                                className="w-full text-right pl-8"
+                                disabled={payment?.isPaid || false}
+                                data-testid={`input-discount-${student.id}`}
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-muted-foreground">入会/年会費</label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">¥</span>
+                              <Input
+                                type="number"
+                                value={getEditingValue(student.id, 'enrollmentOrAnnualFee', enrollmentOrAnnualFee)}
+                                onChange={(e) => setEditingValue(student.id, 'enrollmentOrAnnualFee', parseInt(e.target.value) || 0)}
+                                onBlur={() => handleFieldUpdate(student.id, 'enrollmentOrAnnualFee')}
+                                className="w-full text-right pl-8"
+                                disabled={payment?.isPaid || false}
+                                data-testid={`input-enrollment-fee-${student.id}`}
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-muted-foreground">スポット</label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">¥</span>
+                              <Input
+                                type="number"
+                                value={getEditingValue(student.id, 'spotFee', spotFee)}
+                                onChange={(e) => setEditingValue(student.id, 'spotFee', parseInt(e.target.value) || 0)}
+                                onBlur={() => handleFieldUpdate(student.id, 'spotFee')}
+                                className="w-full text-right pl-8"
+                                disabled={payment?.isPaid || false}
+                                data-testid={`input-spot-fee-${student.id}`}
+                              />
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-muted-foreground">割引</label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">¥</span>
-                          <Input
-                            type="number"
-                            value={getEditingValue(student.id, 'discount', discount)}
-                            onChange={(e) => setEditingValue(student.id, 'discount', parseInt(e.target.value) || 0)}
-                            onBlur={() => handleFieldUpdate(student.id, 'discount')}
-                            className="w-full text-right pl-8"
-                            data-testid={`input-discount-${student.id}`}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-muted-foreground">入会/年会費</label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">¥</span>
-                          <Input
-                            type="number"
-                            value={getEditingValue(student.id, 'enrollmentOrAnnualFee', enrollmentOrAnnualFee)}
-                            onChange={(e) => setEditingValue(student.id, 'enrollmentOrAnnualFee', parseInt(e.target.value) || 0)}
-                            onBlur={() => handleFieldUpdate(student.id, 'enrollmentOrAnnualFee')}
-                            className="w-full text-right pl-8"
-                            data-testid={`input-enrollment-fee-${student.id}`}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-muted-foreground">スポット</label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">¥</span>
-                          <Input
-                            type="number"
-                            value={getEditingValue(student.id, 'spotFee', spotFee)}
-                            onChange={(e) => setEditingValue(student.id, 'spotFee', parseInt(e.target.value) || 0)}
-                            onBlur={() => handleFieldUpdate(student.id, 'spotFee')}
-                            className="w-full text-right pl-8"
-                            data-testid={`input-spot-fee-${student.id}`}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </div>
                 );
               })}

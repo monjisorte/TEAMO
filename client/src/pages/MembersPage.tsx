@@ -334,10 +334,10 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                           data-testid={`select-sibling-discount-${student.id}`}
                         >
                           <SelectTrigger className="w-full text-xs md:text-sm h-8 md:h-9">
-                            <SelectValue />
+                            <SelectValue placeholder=" " />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">(空欄)</SelectItem>
+                            <SelectItem value="none"> </SelectItem>
                             <SelectItem value="あり">あり</SelectItem>
                           </SelectContent>
                         </Select>
