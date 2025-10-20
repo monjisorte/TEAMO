@@ -148,6 +148,15 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
     return attendances.filter(a => a.scheduleId === scheduleId);
   };
 
+  const getAttendanceCounts = (scheduleId: string) => {
+    const scheduleAttendances = getAttendancesBySchedule(scheduleId);
+    return {
+      confirmed: scheduleAttendances.filter(a => a.status === "○").length,
+      maybe: scheduleAttendances.filter(a => a.status === "△").length,
+      absent: scheduleAttendances.filter(a => a.status === "×").length,
+    };
+  };
+
   const getStudentName = (studentIdParam: string) => {
     const student = students.find(s => s.id === studentIdParam);
     return student?.name || "不明";
@@ -284,6 +293,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                         const categoryIds = getScheduleCategoryIds(schedule);
                         const primaryCategoryId = categoryIds[0];
                         const colorClasses = primaryCategoryId ? getCategoryColor(primaryCategoryId) : 'bg-muted/10 text-muted-foreground border-muted/20';
+                        const attendanceCounts = getAttendanceCounts(schedule.id);
 
                         const endTime = schedule.endHour !== null && schedule.endMinute !== null
                           ? `${String(schedule.endHour).padStart(2, '0')}:${String(schedule.endMinute).padStart(2, '0')}`
@@ -312,6 +322,9 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                                   {attendance?.status || "-"}
                                 </Badge>
                                 <div className="font-medium text-sm flex-1">{schedule.title}</div>
+                                <div className="text-xs font-semibold shrink-0">
+                                  ○{attendanceCounts.confirmed} △{attendanceCounts.maybe} ×{attendanceCounts.absent}
+                                </div>
                               </div>
                               
                               {/* Comment */}
@@ -683,6 +696,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                         const categoryIds = getScheduleCategoryIds(schedule);
                         const primaryCategoryId = categoryIds[0];
                         const colorClasses = primaryCategoryId ? getCategoryColor(primaryCategoryId) : 'bg-muted/10 text-muted-foreground border-muted/20';
+                        const attendanceCounts = getAttendanceCounts(schedule.id);
 
                         return (
                           <div
@@ -691,7 +705,14 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                             data-testid={`schedule-${schedule.id}`}
                             onClick={() => setSelectedSchedule(schedule)}
                           >
-                            <div className="truncate">{schedule.title}</div>
+                            <div className="flex items-center justify-between gap-1">
+                              <div className="truncate flex-1">{schedule.title}</div>
+                              {attendanceCounts.confirmed > 0 && (
+                                <span className="hidden md:inline-block text-[10px] font-semibold shrink-0">
+                                  {attendanceCounts.confirmed}名
+                                </span>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
