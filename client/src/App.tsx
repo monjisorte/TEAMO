@@ -45,6 +45,13 @@ interface CoachData {
   name: string;
   email: string;
   teamId: string;
+  lastName?: string;
+  firstName?: string;
+  lastNameKana?: string;
+  firstNameKana?: string;
+  photoUrl?: string;
+  bio?: string;
+  position?: string;
 }
 
 function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogout: () => void }) {
@@ -209,6 +216,11 @@ function CoachPortalContent({ coachId, onLogout }: { coachId: string; onLogout: 
     "--sidebar-width": "16rem",
   };
 
+  // プロフィール設定の姓名を優先的に使用
+  const displayName = coach.lastName && coach.firstName
+    ? `${coach.lastName} ${coach.firstName}`
+    : coach.name;
+
   return (
     <SidebarProvider style={style as React.CSSProperties}>
       <div className="flex h-screen w-full">
@@ -219,7 +231,7 @@ function CoachPortalContent({ coachId, onLogout }: { coachId: string; onLogout: 
               <SidebarTrigger data-testid="button-sidebar-toggle" />
               <div>
                 <h1 className="text-lg font-semibold" data-testid="text-coach-name">
-                  {coach.name}さん
+                  {displayName}さん
                 </h1>
                 <p className="text-xs text-muted-foreground">{coach.email}</p>
               </div>
