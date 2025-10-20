@@ -247,122 +247,124 @@ export default function MembersPage({ teamId }: MembersPageProps) {
               className="hover-elevate border-0 shadow-lg transition-all duration-300" 
               data-testid={`card-member-${student.id}`}
             >
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
                   <div className="relative shrink-0">
-                    <Avatar className="w-12 h-12 ring-2 ring-blue-50">
+                    <Avatar className="w-16 h-16 ring-2 ring-blue-50">
                       <AvatarImage src={student.photoUrl || undefined} alt={student.name} />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold">
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-lg">
                         {student.name.slice(0, 2)}
                       </AvatarFallback>
                     </Avatar>
                   </div>
-                  <div className="flex-1 flex flex-wrap gap-x-4 gap-y-2 items-start min-w-0">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-xs text-muted-foreground">名前</span>
-                      <span className="text-sm font-bold" data-testid={`text-member-name-${student.id}`}>
-                        {student.name}
-                      </span>
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-xs text-muted-foreground">背番号</span>
-                      <span className="text-sm" data-testid={`text-jersey-${student.id}`}>
-                        {student.jerseyNumber != null && student.jerseyNumber >= 0 ? student.jerseyNumber : '未設定'}
-                      </span>
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-xs text-muted-foreground">生年月日</span>
-                      <span className="text-sm whitespace-nowrap" data-testid={`text-birthdate-${student.id}`}>
-                        {student.birthDate 
-                          ? new Date(student.birthDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
-                          : '未設定'}
-                      </span>
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-xs text-muted-foreground">学校名</span>
-                      <span className="text-sm truncate" data-testid={`text-school-${student.id}`}>
-                        {student.schoolName || '未設定'}
-                      </span>
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-xs text-muted-foreground">ステータス</span>
-                      <Select
-                        value={student.playerType || "none"}
-                        onValueChange={(value) => {
-                          const newValue = value === "none" ? "" : value;
-                          updatePlayerTypeMutation.mutate({ studentId: student.id, playerType: newValue });
-                        }}
-                        data-testid={`select-player-type-${student.id}`}
-                      >
-                        <SelectTrigger className="w-32 text-xs h-7 border-0 shadow-none px-2">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">未設定</SelectItem>
-                          <SelectItem value="team">チーム生</SelectItem>
-                          <SelectItem value="school">スクール生</SelectItem>
-                          <SelectItem value="inactive">休部</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-xs text-muted-foreground">カテゴリー</span>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            className="h-7 text-xs justify-between px-2 hover:bg-accent"
-                            data-testid={`button-category-${student.id}`}
-                          >
-                            {(() => {
-                              const studentCategoryIds = getStudentCategories(student.id);
-                              if (studentCategoryIds.length === 0) return "未設定";
-                              const selectedCategories = categories.filter(c => studentCategoryIds.includes(c.id));
-                              if (selectedCategories.length === 1) return selectedCategories[0].name;
-                              return `${selectedCategories.length}件選択`;
-                            })()}
-                            <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-56 p-3" align="start">
-                          <div className="space-y-2">
-                            {categories.map((category) => {
-                              const isChecked = getStudentCategories(student.id).includes(category.id);
-                              return (
-                                <div key={category.id} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id={`category-${student.id}-${category.id}`}
-                                    checked={isChecked}
-                                    onCheckedChange={(checked) => {
-                                      handleCategoryToggle(student.id, category.id, checked as boolean);
-                                    }}
-                                    data-testid={`checkbox-category-${student.id}-${category.id}`}
-                                  />
-                                  <label
-                                    htmlFor={`category-${student.id}-${category.id}`}
-                                    className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                                  >
-                                    {category.name}
-                                  </label>
-                                </div>
-                              );
-                            })}
-                            {categories.length === 0 && (
-                              <p className="text-sm text-muted-foreground text-center py-2">
-                                カテゴリーがありません
-                              </p>
-                            )}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-xs text-muted-foreground">登録日</span>
-                      <span className="text-sm whitespace-nowrap" data-testid={`text-created-${student.id}`}>
-                        {student.createdAt 
-                          ? new Date(student.createdAt).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
-                          : '未設定'}
-                      </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">名前</p>
+                        <p className="text-base font-bold" data-testid={`text-member-name-${student.id}`}>
+                          {student.name}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">背番号</p>
+                        <p className="text-base" data-testid={`text-jersey-${student.id}`}>
+                          {student.jerseyNumber != null && student.jerseyNumber >= 0 ? student.jerseyNumber : '未設定'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">生年月日</p>
+                        <p className="text-base" data-testid={`text-birthdate-${student.id}`}>
+                          {student.birthDate 
+                            ? new Date(student.birthDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
+                            : '未設定'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">学校名</p>
+                        <p className="text-base truncate" data-testid={`text-school-${student.id}`}>
+                          {student.schoolName || '未設定'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">ステータス</p>
+                        <Select
+                          value={student.playerType || "none"}
+                          onValueChange={(value) => {
+                            const newValue = value === "none" ? "" : value;
+                            updatePlayerTypeMutation.mutate({ studentId: student.id, playerType: newValue });
+                          }}
+                          data-testid={`select-player-type-${student.id}`}
+                        >
+                          <SelectTrigger className="w-full text-sm h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">未設定</SelectItem>
+                            <SelectItem value="team">チーム生</SelectItem>
+                            <SelectItem value="school">スクール生</SelectItem>
+                            <SelectItem value="inactive">休部</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">カテゴリー</p>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="w-full h-9 text-sm justify-between"
+                              data-testid={`button-category-${student.id}`}
+                            >
+                              {(() => {
+                                const studentCategoryIds = getStudentCategories(student.id);
+                                if (studentCategoryIds.length === 0) return "未設定";
+                                const selectedCategories = categories.filter(c => studentCategoryIds.includes(c.id));
+                                if (selectedCategories.length === 1) return selectedCategories[0].name;
+                                return `${selectedCategories[0]?.name || ''}＋`;
+                              })()}
+                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-56 p-3" align="start">
+                            <div className="space-y-2">
+                              {categories.map((category) => {
+                                const isChecked = getStudentCategories(student.id).includes(category.id);
+                                return (
+                                  <div key={category.id} className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id={`category-${student.id}-${category.id}`}
+                                      checked={isChecked}
+                                      onCheckedChange={(checked) => {
+                                        handleCategoryToggle(student.id, category.id, checked as boolean);
+                                      }}
+                                      data-testid={`checkbox-category-${student.id}-${category.id}`}
+                                    />
+                                    <label
+                                      htmlFor={`category-${student.id}-${category.id}`}
+                                      className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                    >
+                                      {category.name}
+                                    </label>
+                                  </div>
+                                );
+                              })}
+                              {categories.length === 0 && (
+                                <p className="text-sm text-muted-foreground text-center py-2">
+                                  カテゴリーがありません
+                                </p>
+                              )}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">登録日</p>
+                        <p className="text-base" data-testid={`text-created-${student.id}`}>
+                          {student.createdAt 
+                            ? new Date(student.createdAt).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
+                            : '未設定'}
+                        </p>
+                      </div>
                     </div>
                   </div>
                   <Button
