@@ -250,3 +250,32 @@ export const admins = pgTable("admins", {
 export const insertAdminSchema = createInsertSchema(admins).omit({ id: true, createdAt: true });
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
 export type Admin = typeof admins.$inferSelect;
+
+export const activityLogs = pgTable("activity_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  teamId: varchar("team_id").notNull(),
+  activityType: text("activity_type").notNull(), // "schedule_created", "schedule_updated", "attendance_submitted", etc.
+  actorId: varchar("actor_id"), // ID of coach or student who performed the action
+  actorType: text("actor_type"), // "coach" or "student"
+  actorName: text("actor_name"), // Name for display
+  targetType: text("target_type"), // "schedule", "student", "document", etc.
+  targetId: varchar("target_id"), // ID of the target entity
+  targetName: text("target_name"), // Name of target for display
+  description: text("description"), // Human-readable description
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({ id: true, createdAt: true });
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+export type ActivityLog = typeof activityLogs.$inferSelect;
+
+export const coachCategories = pgTable("coach_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  coachId: varchar("coach_id").notNull(),
+  categoryId: varchar("category_id").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertCoachCategorySchema = createInsertSchema(coachCategories).omit({ id: true, createdAt: true });
+export type InsertCoachCategory = z.infer<typeof insertCoachCategorySchema>;
+export type CoachCategory = typeof coachCategories.$inferSelect;

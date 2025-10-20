@@ -8,8 +8,8 @@ import {
 } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { db } from "./db";
-import { teams, students, coaches, studentCategories, attendances, schedules, categories, sharedDocuments, folders, tuitionPayments, venues, admins } from "@shared/schema";
-import { eq, and, inArray, isNull, or, count, sql as drizzleSql } from "drizzle-orm";
+import { teams, students, coaches, studentCategories, attendances, schedules, categories, sharedDocuments, folders, tuitionPayments, venues, admins, activityLogs, coachCategories } from "@shared/schema";
+import { eq, and, inArray, isNull, or, count, sql as drizzleSql, desc } from "drizzle-orm";
 import { generateTeamCode, hashPassword, verifyPassword } from "./utils";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -2037,6 +2037,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(adminData);
     } catch (error) {
       console.error("Error creating admin account:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Activity Logs
+  app.get("/api/activity-logs/:teamId", async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      const limit = parseInt(req.query.limit as string) || 20;
+      
+      const logs = await db.select()
+        .from(activityLogs)
+        .where(eq(activityLogs.teamId, teamId))
+        .orderBy(desc(activityLogs.createdAt))
+        .limit(limit);
+      
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching activity logs:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/activity-logs", async (req, res) => {
+    try {
+      const newLog = await db.insert(activityLogs).values(req.body).returning();
+      res.json(newLog[0]);
+    } catch (error) {
+      console.error("Error creating activity log:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Coach Categories
+  app.get("/api/coach-categories/:coachId", async (req, res) => {
+    try {
+      const { coachId } = req.params;
+      const coachCats = await db.select()
+        .from(coachCategories)
+        .where(eq(coachCategories.coachId, coachId));
+      res.json(coachCats);
+    } catch (error) {
+      console.error("Error fetching coach categories:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/coach-categories", async (req, res) => {
+    try {
+      const { coachId, categoryId } = req.body;
+      
+      if (!coachId || !categoryId) {
+        return res.status(400).json({ error: "coachId and categoryId are required" });
+      }
+      
+      // Check if relationship already exists
+      const existing = await db.select()
+        .from(coachCategories)
+        .where(
+          and(
+            eq(coachCategories.coachId, coachId),
+            eq(coachCategories.categoryId, categoryId)
+          )
+        )
+        .limit(1);
+      
+      if (existing.length > 0) {
+        return res.json(existing[0]);
+      }
+      
+      const newRelation = await db.insert(coachCategories).values({
+        coachId,
+        categoryId,
+      }).returning();
+      
+      res.json(newRelation[0]);
+    } catch (error) {
+      console.error("Error adding coach category:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/coach-categories/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await db.delete(coachCategories).where(eq(coachCategories.id, id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting coach category:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
