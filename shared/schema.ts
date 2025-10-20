@@ -38,8 +38,8 @@ export const teams = pgTable("teams", {
   representativeEmail: text("representative_email"),
   address: text("address"),
   sportType: text("sport_type"), // サッカー、野球、バスケットボール、テニス、ダンス、バドミントン、ラグビー、水泳、その他
-  monthlyFeeMember: integer("monthly_fee_member"), // 部活生の月謝
-  monthlyFeeSchool: integer("monthly_fee_school"), // スクール生の月謝
+  monthlyFeeMember: integer("monthly_fee_member"), // チーム生の月会費
+  monthlyFeeSchool: integer("monthly_fee_school"), // スクール生の月会費
   siblingDiscount: integer("sibling_discount"), // 兄弟割引額
   annualFee: integer("annual_fee"), // 年会費
   createdAt: timestamp("created_at").notNull().defaultNow(),

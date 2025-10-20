@@ -356,7 +356,7 @@ export default function TeamInfoPage() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="fee-member">部活生の月謝（円）</Label>
+                  <Label htmlFor="fee-member">チーム生の月会費（円）</Label>
                   <Input
                     id="fee-member"
                     type="number"
@@ -367,7 +367,7 @@ export default function TeamInfoPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="fee-school">スクール生の月謝（円）</Label>
+                  <Label htmlFor="fee-school">スクール生の月会費（円）</Label>
                   <Input
                     id="fee-school"
                     type="number"
@@ -428,13 +428,13 @@ export default function TeamInfoPage() {
             <div className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground text-xs">部活生の月謝</Label>
+                  <Label className="text-muted-foreground text-xs">チーム生の月会費</Label>
                   <p className="text-sm font-medium" data-testid="text-monthly-fee-member">
                     ¥{team.monthlyFeeMember?.toLocaleString() || "0"}
                   </p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground text-xs">スクール生の月謝</Label>
+                  <Label className="text-muted-foreground text-xs">スクール生の月会費</Label>
                   <p className="text-sm font-medium" data-testid="text-monthly-fee-school">
                     ¥{team.monthlyFeeSchool?.toLocaleString() || "0"}
                   </p>
