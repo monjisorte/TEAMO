@@ -808,7 +808,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/student/:studentId", async (req, res) => {
     try {
       const { studentId } = req.params;
-      const { name, schoolName, birthDate, photoUrl, playerType } = req.body;
+      const { name, schoolName, birthDate, photoUrl, playerType, jerseyNumber } = req.body;
 
       const updateData: any = {};
       if (name !== undefined) updateData.name = name;
@@ -816,6 +816,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (birthDate !== undefined) updateData.birthDate = birthDate;
       if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
       if (playerType !== undefined) updateData.playerType = playerType;
+      if (jerseyNumber !== undefined) updateData.jerseyNumber = jerseyNumber;
 
       if (Object.keys(updateData).length === 0) {
         return res.status(400).json({ error: "No fields to update" });

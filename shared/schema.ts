@@ -79,6 +79,7 @@ export const students = pgTable("students", {
   birthDate: date("birth_date"),
   photoUrl: text("photo_url"),
   playerType: text("player_type"),
+  jerseyNumber: integer("jersey_number"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

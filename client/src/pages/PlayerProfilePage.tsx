@@ -26,12 +26,14 @@ interface PlayerProfile {
   schoolName?: string | null;
   birthDate?: string | null;
   photoUrl?: string | null;
+  jerseyNumber?: number | null;
 }
 
 const profileSchema = z.object({
   name: z.string().min(1, "名前を入力してください"),
   schoolName: z.string().optional(),
   birthDate: z.string().optional(),
+  jerseyNumber: z.string().optional(),
 });
 
 const emailSchema = z.object({
@@ -70,6 +72,7 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
       name: "",
       schoolName: "",
       birthDate: "",
+      jerseyNumber: "",
     },
   });
 
@@ -97,6 +100,7 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
         name: player.name || "",
         schoolName: player.schoolName || "",
         birthDate: player.birthDate || "",
+        jerseyNumber: player.jerseyNumber?.toString() || "",
       });
       emailForm.reset({
         email: player.email || "",
@@ -188,6 +192,7 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
 
       const requestData = {
         ...data,
+        jerseyNumber: data.jerseyNumber ? parseInt(data.jerseyNumber) : null,
         photoUrl,
       };
       
@@ -226,6 +231,7 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
         name: player.name || "",
         schoolName: player.schoolName || "",
         birthDate: player.birthDate || "",
+        jerseyNumber: player.jerseyNumber?.toString() || "",
       });
       if (player.photoUrl) {
         setPhotoPreview(player.photoUrl);
@@ -430,6 +436,26 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
                       <Input 
                         type="date" 
                         data-testid="input-birth-date"
+                        disabled={!isEditing}
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="jerseyNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>背番号</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="10"
+                        data-testid="input-jersey-number"
                         disabled={!isEditing}
                         {...field} 
                       />
