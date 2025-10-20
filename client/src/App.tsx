@@ -96,8 +96,8 @@ function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogou
       <div className="flex h-screen w-full">
         <PlayerSidebar teamName={teamName} />
         <div className="flex flex-col flex-1 min-w-0">
-          <header className="flex items-center justify-between px-8 py-4 border-b bg-card/50 backdrop-blur-sm">
-            <div className="flex items-center gap-4">
+          <header className="flex items-center justify-between px-2 md:px-8 py-4 border-b bg-card/50 backdrop-blur-sm">
+            <div className="flex items-center gap-2 md:gap-4">
               <SidebarTrigger data-testid="button-player-sidebar-toggle" />
               <div>
                 <h1 className="text-lg font-semibold" data-testid="text-player-name">
@@ -119,7 +119,7 @@ function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogou
               </Button>
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-8">
+          <main className="flex-1 overflow-auto p-2 md:p-8">
             <Switch>
               <Route path="/attendance">
                 {() => <PlayerAttendancePage playerId={player.id} teamId={player.teamId} />}
@@ -214,8 +214,8 @@ function CoachPortalContent({ coachId, onLogout }: { coachId: string; onLogout: 
       <div className="flex h-screen w-full">
         <AppSidebar teamId={coach.teamId} teamName={teamName} />
         <div className="flex flex-col flex-1 min-w-0">
-          <header className="flex items-center justify-between px-8 py-4 border-b bg-card/50 backdrop-blur-sm">
-            <div className="flex items-center gap-4">
+          <header className="flex items-center justify-between px-2 md:px-8 py-4 border-b bg-card/50 backdrop-blur-sm">
+            <div className="flex items-center gap-2 md:gap-4">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
               <div>
                 <h1 className="text-lg font-semibold" data-testid="text-coach-name">
@@ -237,7 +237,7 @@ function CoachPortalContent({ coachId, onLogout }: { coachId: string; onLogout: 
               </Button>
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-8">
+          <main className="flex-1 overflow-auto p-2 md:p-8">
             <CoachRouter teamId={coach.teamId} />
           </main>
         </div>

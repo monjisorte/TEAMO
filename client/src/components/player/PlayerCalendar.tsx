@@ -647,7 +647,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                         return (
                           <div
                             key={schedule.id}
-                            className={`text-xs p-1 rounded border ${colorClasses} truncate cursor-pointer opacity-50`}
+                            className={`text-xs p-1 rounded border overflow-hidden ${colorClasses} truncate cursor-pointer opacity-50`}
                             onClick={() => setSelectedSchedule(schedule)}
                           >
                             <span className="font-semibold mr-1">{attendance?.status || "-"}</span>
@@ -688,16 +688,16 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                         return (
                           <div
                             key={schedule.id}
-                            className={`text-xs p-1.5 rounded border ${colorClasses} cursor-pointer hover-elevate`}
+                            className={`text-xs p-1.5 rounded border overflow-hidden ${colorClasses} cursor-pointer hover-elevate`}
                             data-testid={`schedule-${schedule.id}`}
                             onClick={() => setSelectedSchedule(schedule)}
                           >
-                            <div className="flex items-center gap-1">
-                              <span className="font-bold">{attendance?.status || "-"}</span>
+                            <div className="flex items-center gap-1 overflow-hidden">
+                              <span className="font-bold shrink-0">{attendance?.status || "-"}</span>
                               <span className="truncate flex-1">{schedule.title}</span>
                             </div>
                             {startTime && (
-                              <div className="text-[10px] opacity-70 mt-0.5">{startTime}</div>
+                              <div className="text-[10px] opacity-70 mt-0.5 truncate">{startTime}</div>
                             )}
                           </div>
                         );
@@ -732,7 +732,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                         return (
                           <div
                             key={schedule.id}
-                            className={`text-xs p-1 rounded border ${colorClasses} truncate cursor-pointer opacity-50`}
+                            className={`text-xs p-1 rounded border overflow-hidden ${colorClasses} truncate cursor-pointer opacity-50`}
                             onClick={() => setSelectedSchedule(schedule)}
                           >
                             <span className="font-semibold mr-1">{attendance?.status || "-"}</span>

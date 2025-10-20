@@ -306,7 +306,7 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                       return (
                         <div
                           key={schedule.id}
-                          className={`text-xs p-1.5 rounded border ${primaryCategoryId ? getCategoryColor(primaryCategoryId) : 'bg-muted/10 text-muted-foreground border-muted/20'}`}
+                          className={`text-xs p-1.5 rounded border overflow-hidden ${primaryCategoryId ? getCategoryColor(primaryCategoryId) : 'bg-muted/10 text-muted-foreground border-muted/20'}`}
                           data-testid={`schedule-${schedule.id}`}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -314,11 +314,11 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                           }}
                         >
                           <div className="font-medium truncate">{schedule.title}</div>
-                          <div className="flex items-center justify-between gap-1 mt-0.5">
+                          <div className="flex items-center justify-between gap-1 mt-0.5 overflow-hidden">
                             {startTime && (
-                              <div className="text-[10px] opacity-80">{startTime}</div>
+                              <div className="text-[10px] opacity-80 shrink-0">{startTime}</div>
                             )}
-                            <div className="flex items-center gap-0.5 text-[10px]">
+                            <div className="flex items-center gap-0.5 text-[10px] shrink-0">
                               <Users className="h-2.5 w-2.5" />
                               <span>{attendanceCount}</span>
                             </div>
