@@ -87,10 +87,51 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setPhotoFile(file);
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "ファイルサイズエラー",
+          description: "画像ファイルは5MB以下にしてください",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          // Resize image to max 800x800 while maintaining aspect ratio
+          const maxSize = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxSize) {
+              height = (height * maxSize) / width;
+              width = maxSize;
+            }
+          } else {
+            if (height > maxSize) {
+              width = (width * maxSize) / height;
+              height = maxSize;
+            }
+          }
+
+          // Create canvas and resize
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            // Convert to base64 with quality 0.8 (80%)
+            const resizedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+            setPhotoPreview(resizedBase64);
+            setPhotoFile(file);
+          }
+        };
+        img.src = event.target?.result as string;
       };
       reader.readAsDataURL(file);
     }
