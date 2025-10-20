@@ -89,10 +89,32 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
     }
   };
 
-  // 未回答のスケジュールのみ表示（出欠登録がないもの）
-  // コーチ指定のスケジュール（studentCanRegister: false）は除外
+  // スケジュールのカテゴリIDを取得するヘルパー関数
+  const getScheduleCategoryIds = (schedule: Schedule): string[] => {
+    if (schedule.categoryIds && schedule.categoryIds.length > 0) {
+      return schedule.categoryIds;
+    }
+    if (schedule.categoryId) {
+      return [schedule.categoryId];
+    }
+    return [];
+  };
+
+  // 自分の所属カテゴリのスケジュールで、未回答かつコーチ指定でないもののみ表示
   const unansweredSchedules = schedules.filter(schedule => {
-    return !getAttendanceForSchedule(schedule.id) && schedule.studentCanRegister !== false;
+    // コーチ指定のスケジュールは除外
+    if (schedule.studentCanRegister === false) {
+      return false;
+    }
+    
+    // 未回答のものだけ
+    if (getAttendanceForSchedule(schedule.id)) {
+      return false;
+    }
+    
+    // 自分の所属カテゴリのスケジュールのみ
+    const scheduleCategoryIds = getScheduleCategoryIds(schedule);
+    return scheduleCategoryIds.some(catId => selectedCategories.includes(catId));
   });
 
   const sortedSchedules = [...unansweredSchedules].sort((a, b) => {
