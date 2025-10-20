@@ -262,6 +262,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { studentId, scheduleId, status, comment } = req.body;
 
+      console.log("POST /api/attendances - Body:", { studentId, scheduleId, status, comment });
+
       if (!studentId || !scheduleId || !status) {
         return res.status(400).json({ error: "studentId, scheduleId, and status are required" });
       }
@@ -275,21 +277,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ))
         .limit(1);
 
+      console.log("Existing attendance found:", existing.length > 0, existing);
+
       if (existing.length > 0) {
         // Update existing attendance
+        console.log("Updating existing attendance:", existing[0].id);
         const updated = await db.update(attendances)
           .set({ status, comment: comment || null })
           .where(eq(attendances.id, existing[0].id))
           .returning();
+        console.log("Updated attendance:", updated[0]);
         res.status(200).json(updated[0]);
       } else {
         // Create new attendance
+        console.log("Creating new attendance...");
         const newAttendance = await db.insert(attendances).values({
           studentId,
           scheduleId,
           status,
           comment: comment || null,
         }).returning();
+        console.log("Created new attendance:", newAttendance[0]);
         res.status(200).json(newAttendance[0]);
       }
     } catch (error) {
