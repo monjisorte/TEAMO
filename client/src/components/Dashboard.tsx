@@ -623,10 +623,7 @@ export function Dashboard() {
                       const student = students.find(s => s.id === attendance.studentId);
                       if (!student) return null;
                       
-                      const statusIcon = 
-                        attendance.status === "attending" ? "○" :
-                        attendance.status === "maybe" ? "△" :
-                        attendance.status === "absent" ? "×" : "-";
+                      const statusIcon = attendance.status || "-";
                       
                       const sameDaySchedules = getSameDaySchedules();
                       
