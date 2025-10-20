@@ -87,14 +87,14 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
       if (existingAttendance) {
         return await apiRequest("PUT", `/api/attendances/${existingAttendance.id}`, {
           status,
-          comment: comment !== undefined ? comment : (existingAttendance.comment || ""),
+          comment: comment !== undefined ? comment : existingAttendance.comment,
         });
       } else {
         return await apiRequest("POST", "/api/attendances", {
           scheduleId,
           studentId,
           status,
-          comment: comment || "",
+          comment: comment !== undefined ? comment : "",
         });
       }
     },
@@ -303,6 +303,13 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                                 </Badge>
                                 <div className="font-medium flex-1">{schedule.title}</div>
                               </div>
+                              
+                              {/* Comment */}
+                              {attendance?.comment && (
+                                <div className="text-sm text-muted-foreground">
+                                  {attendance.comment}
+                                </div>
+                              )}
                               
                               {/* Time and Location Info */}
                               <div className="text-sm opacity-80 space-y-0.5">
