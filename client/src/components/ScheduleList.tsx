@@ -37,7 +37,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CalendarView } from "@/components/CalendarView";
-import type { Schedule, Category, Student, Attendance } from "@shared/schema";
+import type { Schedule, Category, Student, Attendance, CoachCategory } from "@shared/schema";
 
 // 時間（0-23）のオプションを生成
 const generateHourOptions = () => {
@@ -88,6 +88,7 @@ export function ScheduleList() {
   const [view, setView] = useState<"list" | "calendar">("list");
   const [selectedSchedule, setSelectedSchedule] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState<"all" | "my">("my");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
@@ -116,9 +117,10 @@ export function ScheduleList() {
     recurrenceEndDate: "",
   });
 
-  // Get teamId from localStorage
+  // Get teamId and coachId from localStorage
   const coachData = localStorage.getItem("coachData");
   const teamId = coachData ? JSON.parse(coachData).teamId : null;
+  const coachId = coachData ? JSON.parse(coachData).id : null;
 
   // データ取得
   const { data: schedules = [] } = useQuery<Schedule[]>({
@@ -143,12 +145,27 @@ export function ScheduleList() {
     enabled: !!teamId,
   });
 
-  // 初回ロード時に全カテゴリを選択
+  const { data: coachCategories = [] } = useQuery<CoachCategory[]>({
+    queryKey: ["/api/coach-categories", coachId],
+    queryFn: async () => {
+      const response = await fetch(`/api/coach-categories/${coachId}`);
+      if (!response.ok) throw new Error("Failed to fetch coach categories");
+      return response.json();
+    },
+    enabled: !!coachId,
+  });
+
+  // 初回ロード時またはカテゴリフィルター変更時に選択カテゴリを設定
   useEffect(() => {
-    if (categories.length > 0 && selectedCategories.length === 0) {
-      setSelectedCategories(categories.map(c => c.id));
+    if (categories.length > 0) {
+      if (categoryFilter === "my" && coachCategories.length > 0) {
+        const myCoachCategoryIds = coachCategories.map(cc => cc.categoryId);
+        setSelectedCategories(myCoachCategoryIds);
+      } else if (categoryFilter === "all") {
+        setSelectedCategories(categories.map(c => c.id));
+      }
     }
-  }, [categories]);
+  }, [categories, categoryFilter, coachCategories]);
 
   // スケジュール作成
   const createScheduleMutation = useMutation({
@@ -439,7 +456,28 @@ export function ScheduleList() {
       {/* カテゴリフィルター */}
       {categories.length > 0 && (
         <Card className="border-0 shadow-lg">
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 space-y-4">
+            {/* Filter Toggle */}
+            {coachCategories.length > 0 && (
+              <div className="flex gap-2">
+                <Button
+                  variant={categoryFilter === "my" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCategoryFilter("my")}
+                  data-testid="button-my-categories"
+                >
+                  担当カテゴリのみ
+                </Button>
+                <Button
+                  variant={categoryFilter === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCategoryFilter("all")}
+                  data-testid="button-all-categories"
+                >
+                  すべて
+                </Button>
+              </div>
+            )}
             <div className="flex flex-wrap gap-4">
               {categories.map((category) => (
                 <div key={category.id} className="flex items-center gap-2">
