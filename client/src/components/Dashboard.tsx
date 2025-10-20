@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Users, MapPin, Plus, Clock, FileText, Download } from "lucide-react";
+import { Calendar, Users, MapPin, Plus, Clock, FileText, Download, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -16,9 +16,12 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { Schedule, Student, Category, Attendance, ScheduleFile } from "@shared/schema";
 
 interface DashboardStats {
@@ -29,10 +32,17 @@ interface DashboardStats {
 }
 
 export function Dashboard() {
+  const { toast } = useToast();
   const [schedulePeriod, setSchedulePeriod] = useState<string>("this-week");
   const [showMembersDialog, setShowMembersDialog] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+  const [moveParticipantData, setMoveParticipantData] = useState<{
+    attendance: Attendance;
+    fromSchedule: Schedule;
+    studentName: string;
+  } | null>(null);
+  const [targetScheduleId, setTargetScheduleId] = useState("");
   const [, setLocation] = useLocation();
 
   // Get teamId from localStorage
@@ -100,6 +110,67 @@ export function Dashboard() {
     if (playerType === "school") return "スクール生";
     if (playerType === "inactive") return "休部";
     return "未設定";
+  };
+
+  // 同じ日のスケジュールを取得
+  const getSameDaySchedules = () => {
+    if (!selectedSchedule || !stats?.schedules) return [];
+    const scheduleDate = new Date(selectedSchedule.date).toDateString();
+    return stats.schedules.filter(s => 
+      new Date(s.date).toDateString() === scheduleDate && s.id !== selectedSchedule.id
+    );
+  };
+
+  // 参加者移動ダイアログを開く
+  const openMoveParticipantDialog = (attendance: Attendance) => {
+    const student = students.find(s => s.id === attendance.studentId);
+    if (student && selectedSchedule) {
+      setMoveParticipantData({
+        attendance,
+        fromSchedule: selectedSchedule,
+        studentName: student.name,
+      });
+      setTargetScheduleId("");
+    }
+  };
+
+  // 参加者移動ダイアログを閉じる
+  const closeMoveParticipantDialog = () => {
+    setMoveParticipantData(null);
+    setTargetScheduleId("");
+  };
+
+  // 参加者移動ミューテーション
+  const moveParticipantMutation = useMutation({
+    mutationFn: async ({ attendanceId, scheduleId }: { attendanceId: string; scheduleId: string }) => {
+      return await apiRequest("PUT", `/api/attendances/${attendanceId}`, { scheduleId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/attendances"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats", teamId, schedulePeriod] });
+      toast({
+        title: "成功",
+        description: "参加者を移動しました",
+      });
+      closeMoveParticipantDialog();
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "参加者の移動に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // 参加者を移動
+  const handleParticipantMove = () => {
+    if (moveParticipantData && targetScheduleId) {
+      moveParticipantMutation.mutate({
+        attendanceId: moveParticipantData.attendance.id,
+        scheduleId: targetScheduleId,
+      });
+    }
   };
 
   return (
@@ -495,6 +566,8 @@ export function Dashboard() {
                         attendance.status === "maybe" ? "△" :
                         attendance.status === "absent" ? "×" : "-";
                       
+                      const sameDaySchedules = getSameDaySchedules();
+                      
                       return (
                         <div 
                           key={attendance.id}
@@ -504,9 +577,20 @@ export function Dashboard() {
                           <span className="w-6 text-center font-semibold">{statusIcon}</span>
                           <span className="flex-1">{student.name}</span>
                           {attendance.comment && (
-                            <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                            <span className="text-xs text-muted-foreground truncate max-w-[120px]">
                               {attendance.comment}
                             </span>
+                          )}
+                          {sameDaySchedules.length > 0 && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => openMoveParticipantDialog(attendance)}
+                              data-testid={`button-move-participant-${student.id}`}
+                              className="h-6 px-2"
+                            >
+                              <ArrowRight className="h-4 w-4" />
+                            </Button>
                           )}
                         </div>
                       );
@@ -539,6 +623,54 @@ export function Dashboard() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* 参加者移動ダイアログ */}
+      <Dialog open={moveParticipantData !== null} onOpenChange={(open) => !open && closeMoveParticipantDialog()}>
+        <DialogContent data-testid="dialog-move-participant">
+          <DialogHeader>
+            <DialogTitle>参加者を別のイベントに移動</DialogTitle>
+            <DialogDescription>
+              {moveParticipantData?.studentName} さんを別のイベントに移動します
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <div className="text-sm">
+                <span className="font-semibold">現在のイベント:</span> {moveParticipantData?.fromSchedule.title}
+              </div>
+              <div className="space-y-2 mt-4">
+                <label className="text-sm font-semibold">移動先のイベント</label>
+                <Select value={targetScheduleId} onValueChange={setTargetScheduleId}>
+                  <SelectTrigger data-testid="select-target-schedule">
+                    <SelectValue placeholder="イベントを選択してください" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getSameDaySchedules().map(schedule => (
+                      <SelectItem key={schedule.id} value={schedule.id}>
+                        {schedule.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeMoveParticipantDialog} data-testid="button-cancel-move">
+              キャンセル
+            </Button>
+            <Button 
+              onClick={handleParticipantMove} 
+              disabled={!targetScheduleId || moveParticipantMutation.isPending} 
+              data-testid="button-confirm-move"
+            >
+              {moveParticipantMutation.isPending ? "移動中..." : "移動する"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
