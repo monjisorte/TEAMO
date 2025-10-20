@@ -27,10 +27,17 @@ interface PlayerProfile {
   birthDate?: string | null;
   photoUrl?: string | null;
   jerseyNumber?: number | null;
+  lastName?: string | null;
+  firstName?: string | null;
+  lastNameKana?: string | null;
+  firstNameKana?: string | null;
 }
 
 const profileSchema = z.object({
-  name: z.string().min(1, "名前を入力してください"),
+  lastName: z.string().min(1, "苗字を入力してください"),
+  firstName: z.string().min(1, "名前を入力してください"),
+  lastNameKana: z.string().optional(),
+  firstNameKana: z.string().optional(),
   schoolName: z.string().optional(),
   birthDate: z.string().optional(),
   jerseyNumber: z.string().optional(),
@@ -69,7 +76,10 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: "",
+      lastName: "",
+      firstName: "",
+      lastNameKana: "",
+      firstNameKana: "",
       schoolName: "",
       birthDate: "",
       jerseyNumber: "",
@@ -97,7 +107,10 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
   useEffect(() => {
     if (player) {
       form.reset({
-        name: player.name || "",
+        lastName: player.lastName || "",
+        firstName: player.firstName || "",
+        lastNameKana: player.lastNameKana || "",
+        firstNameKana: player.firstNameKana || "",
         schoolName: player.schoolName || "",
         birthDate: player.birthDate || "",
         jerseyNumber: player.jerseyNumber?.toString() || "",
@@ -228,7 +241,10 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
     setIsEditing(false);
     if (player) {
       form.reset({
-        name: player.name || "",
+        lastName: player.lastName || "",
+        firstName: player.firstName || "",
+        lastNameKana: player.lastNameKana || "",
+        firstNameKana: player.firstNameKana || "",
         schoolName: player.schoolName || "",
         birthDate: player.birthDate || "",
         jerseyNumber: player.jerseyNumber?.toString() || "",
@@ -385,24 +401,85 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
           {/* Profile Form */}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>名前</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="山田太郎" 
-                        data-testid="input-name"
-                        disabled={!isEditing}
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>苗字</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="山田" 
+                          data-testid="input-last-name"
+                          disabled={!isEditing}
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>名前</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="太郎" 
+                          data-testid="input-first-name"
+                          disabled={!isEditing}
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="lastNameKana"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>苗字（かな）</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="やまだ" 
+                          data-testid="input-last-name-kana"
+                          disabled={!isEditing}
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="firstNameKana"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>名前（かな）</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="たろう" 
+                          data-testid="input-first-name-kana"
+                          disabled={!isEditing}
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}
