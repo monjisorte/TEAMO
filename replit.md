@@ -80,3 +80,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Object Storage
 **Implementation:** Replit Object Storage is configured with bucket ID and environment variables (PUBLIC_OBJECT_SEARCH_PATHS, PRIVATE_OBJECT_DIR). The ObjectStorageService (`server/objectStorage.ts`) and ObjectAcl (`server/objectAcl.ts`) handle file upload, ACL policies, and file serving. The ObjectUploader component (`client/src/components/ObjectUploader.tsx`) provides a modal-based upload interface using Uppy. Files are uploaded directly to Google Cloud Storage via presigned URLs, and ACL policies ensure team-wide public visibility for shared documents.
+
+## Recent UI Improvements (October 2025)
+**Mobile-First Optimization:** Systematic UI cleanup across both coach and player interfaces for ultra-compact, mobile-friendly design:
+- **Descriptive text removal:** All management pages (members, venues, categories, coaches, shared documents, profile) now feature streamlined layouts with descriptive paragraphs removed
+- **Shortened button labels:** Consistent "＋追加" pattern across all add buttons for space efficiency
+- **Smart filtering:** Player attendance view automatically hides events that have already started (date + time comparison), showing only upcoming events requiring response
+- **Responsive layouts:** Side-by-side layouts where appropriate for better space utilization on all screen sizes
+- **Design choice:** Emphasis on clean, minimal UI with essential information only, optimized for mobile-first user experience
+
