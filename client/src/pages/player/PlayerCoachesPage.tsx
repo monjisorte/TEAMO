@@ -72,7 +72,7 @@ export default function PlayerCoachesPage({ teamId }: PlayerCoachesPageProps) {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="text-2xl" data-testid={`text-coach-name-${coach.id}`}>
+                    <CardTitle className="text-xl" data-testid={`text-coach-name-${coach.id}`}>
                       {fullName}
                     </CardTitle>
                     {fullNameKana && (

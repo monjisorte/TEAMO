@@ -114,19 +114,16 @@ export default function PlayerMembersPage({ teamId }: PlayerMembersPageProps) {
             >
               <CardContent className="p-3">
                 <div className="flex items-start gap-3">
-                  <div className="relative" style={{ width: '20%' }}>
-                    <Avatar className="w-full aspect-square ring-2 ring-blue-50">
-                      <AvatarImage src={student.photoUrl || undefined} alt={student.name} />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-lg">
-                        {student.name.slice(0, 2)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full border-2 border-white" />
-                  </div>
-                  <div className="space-y-1.5" style={{ width: '80%' }}>
+                  <Avatar className="h-20 w-20 ring-2 ring-blue-50 shrink-0">
+                    <AvatarImage src={student.photoUrl || undefined} alt={student.name} />
+                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-lg">
+                      {student.name.slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-1.5 flex-1">
                     <div>
                       <p className="text-xs md:text-sm font-medium" data-testid={`text-member-name-${student.id}`}>
-                        名前　<span className="font-bold text-sm md:text-base">{student.name}</span>
+                        名前　<span className="font-bold text-base md:text-lg">{student.name}</span>
                       </p>
                     </div>
                     <div>
