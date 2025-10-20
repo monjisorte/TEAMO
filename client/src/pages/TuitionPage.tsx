@@ -67,7 +67,16 @@ export default function TuitionPage() {
   });
 
   const { data: payments = [], isLoading } = useQuery<TuitionPayment[]>({
-    queryKey: [`/api/tuition-payments?year=${selectedYear}&month=${selectedMonth}`],
+    queryKey: ["/api/tuition-payments", team?.id, selectedYear, selectedMonth],
+    queryFn: async () => {
+      if (!team?.id) return [];
+      const res = await fetch(`/api/tuition-payments?teamId=${team.id}&year=${selectedYear}&month=${selectedMonth}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch tuition payments");
+      return res.json();
+    },
+    enabled: !!team?.id,
   });
 
   const autoGenerateMutation = useMutation({
@@ -80,7 +89,7 @@ export default function TuitionPage() {
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ 
-        queryKey: [`/api/tuition-payments?year=${selectedYear}&month=${selectedMonth}`] 
+        queryKey: ["/api/tuition-payments"] 
       });
       queryClient.invalidateQueries({
         queryKey: ["/api/students"]
@@ -123,7 +132,7 @@ export default function TuitionPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
-        queryKey: [`/api/tuition-payments?year=${selectedYear}&month=${selectedMonth}`] 
+        queryKey: ["/api/tuition-payments"] 
       });
       toast({
         title: "更新成功",

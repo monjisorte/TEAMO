@@ -1353,14 +1353,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Tuition Payments
   app.get("/api/tuition-payments", async (req, res) => {
     try {
-      const { year, month } = req.query;
+      const { year, month, teamId } = req.query;
 
       let result;
-      if (year && month) {
+      if (year && month && teamId) {
+        result = await db.select().from(tuitionPayments).where(and(
+          eq(tuitionPayments.teamId, teamId as string),
+          eq(tuitionPayments.year, parseInt(year as string)),
+          eq(tuitionPayments.month, parseInt(month as string))
+        ));
+      } else if (year && month) {
         result = await db.select().from(tuitionPayments).where(and(
           eq(tuitionPayments.year, parseInt(year as string)),
           eq(tuitionPayments.month, parseInt(month as string))
         ));
+      } else if (teamId) {
+        result = await db.select().from(tuitionPayments).where(
+          eq(tuitionPayments.teamId, teamId as string)
+        );
       } else {
         result = await db.select().from(tuitionPayments);
       }
