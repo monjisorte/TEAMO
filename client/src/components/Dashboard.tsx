@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Users, MapPin, Plus, Clock } from "lucide-react";
+import { Calendar, Users, MapPin, Plus, Clock, FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { Schedule, Student, Category, Attendance } from "@shared/schema";
+import type { Schedule, Student, Category, Attendance, ScheduleFile } from "@shared/schema";
 
 interface DashboardStats {
   upcomingEvents: number;
@@ -65,6 +65,12 @@ export function Dashboard() {
   // Fetch attendances for schedule dialog
   const { data: attendances = [] } = useQuery<Attendance[]>({
     queryKey: ["/api/attendances"],
+    enabled: showScheduleDialog && !!teamId,
+  });
+
+  // Fetch schedule files for schedule dialog
+  const { data: scheduleFiles = [] } = useQuery<ScheduleFile[]>({
+    queryKey: ["/api/schedule-files"],
     enabled: showScheduleDialog && !!teamId,
   });
 
@@ -401,6 +407,75 @@ export function Dashboard() {
                   </div>
                 )}
               </div>
+
+              {/* 添付ファイル */}
+              {scheduleFiles.filter(f => f.scheduleId === selectedSchedule.id).length > 0 && (
+                <div className="space-y-2 pt-4 border-t">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <h4 className="font-semibold">添付ファイル</h4>
+                  </div>
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {scheduleFiles
+                      .filter(f => f.scheduleId === selectedSchedule.id)
+                      .map(file => {
+                        const isImage = file.fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+                        const isPDF = file.fileName.match(/\.pdf$/i);
+                        
+                        return (
+                          <div 
+                            key={file.id}
+                            className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 hover-elevate"
+                          >
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm truncate">{file.fileName}</p>
+                              {file.fileSize && (
+                                <p className="text-xs text-muted-foreground">
+                                  {(parseInt(file.fileSize) / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                              )}
+                            </div>
+                            <a
+                              href={file.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-shrink-0"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Button size="sm" variant="ghost" data-testid={`download-file-${file.id}`}>
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </a>
+                          </div>
+                        );
+                      })}
+                  </div>
+                  
+                  {/* 画像プレビュー */}
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {scheduleFiles
+                      .filter(f => f.scheduleId === selectedSchedule.id && f.fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i))
+                      .slice(0, 4)
+                      .map(file => (
+                        <a
+                          key={file.id}
+                          href={file.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="relative aspect-video rounded-lg overflow-hidden bg-muted hover-elevate"
+                        >
+                          <img
+                            src={file.fileUrl}
+                            alt={file.fileName}
+                            className="w-full h-full object-cover"
+                            data-testid={`preview-${file.id}`}
+                          />
+                        </a>
+                      ))}
+                  </div>
+                </div>
+              )}
 
               {/* 参加者リスト */}
               <div className="space-y-2 pt-4 border-t">
