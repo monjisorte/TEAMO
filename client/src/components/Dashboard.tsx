@@ -385,7 +385,7 @@ export function Dashboard() {
                 更新履歴がここに表示されます
               </div>
             ) : (
-              activityLogs.map((log) => {
+              activityLogs.slice(0, 5).map((log) => {
                 const timeAgo = getTimeAgo(new Date(log.createdAt));
                 const logCategoryIds = log.categoryIds || [];
                 const categoryNames = logCategoryIds.map(catId => {
@@ -396,17 +396,17 @@ export function Dashboard() {
                 return (
                   <div 
                     key={log.id} 
-                    className="p-2 rounded-lg bg-muted/30 hover-elevate"
+                    className="p-2 rounded-lg bg-muted/30 hover-elevate h-9 flex items-center overflow-hidden"
                     data-testid={`activity-log-${log.id}`}
                   >
-                    <div className="text-sm flex items-center gap-2 flex-wrap">
-                      <span>{log.description}</span>
+                    <div className="text-sm flex items-center gap-2 min-w-0 flex-1">
+                      <span className="truncate">{log.description}</span>
                       {categoryNames.map((name, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-xs">
+                        <Badge key={idx} variant="secondary" className="text-xs shrink-0">
                           {name}
                         </Badge>
                       ))}
-                      <span className="text-xs text-muted-foreground">{timeAgo}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">{timeAgo}</span>
                     </div>
                   </div>
                 );
