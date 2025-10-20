@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { Schedule, Student, Category } from "@shared/schema";
+import type { Schedule, Student, Category, Attendance } from "@shared/schema";
 
 interface DashboardStats {
   upcomingEvents: number;
@@ -62,6 +62,12 @@ export function Dashboard() {
     enabled: !!teamId,
   });
 
+  // Fetch attendances for schedule dialog
+  const { data: attendances = [] } = useQuery<Attendance[]>({
+    queryKey: ["/api/attendances"],
+    enabled: showScheduleDialog && !!teamId,
+  });
+
   // カテゴリ順にソートした生徒リスト
   const teamStudents = students.filter(s => s.teamId === teamId);
   const sortedStudents = [...teamStudents].sort((a, b) => 
@@ -97,8 +103,8 @@ export function Dashboard() {
         <p className="text-muted-foreground mt-2 text-lg">チームの活動状況を確認</p>
       </div>
 
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-3">
-        <Card className="border-0 shadow-lg">
+      <div className="md:grid md:gap-6 md:grid-cols-3 flex overflow-x-auto gap-4 pb-2 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0">
+        <Card className="border-0 shadow-lg flex-shrink-0 w-[280px] md:w-auto snap-start">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
             <Select value={schedulePeriod} onValueChange={setSchedulePeriod}>
               <SelectTrigger className="w-[140px] border-0 shadow-none p-0 h-auto" data-testid="select-schedule-period">
@@ -123,7 +129,7 @@ export function Dashboard() {
         </Card>
 
         <Card 
-          className="border-0 shadow-lg cursor-pointer hover-elevate transition-all"
+          className="border-0 shadow-lg cursor-pointer hover-elevate transition-all flex-shrink-0 w-[280px] md:w-auto snap-start"
           onClick={() => setShowMembersDialog(true)}
           data-testid="card-team-members"
         >
@@ -141,7 +147,7 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg">
+        <Card className="border-0 shadow-lg flex-shrink-0 w-[280px] md:w-auto snap-start">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
             <CardTitle className="text-sm font-medium text-muted-foreground">コーチ</CardTitle>
             <div className="rounded-xl bg-primary/10 p-3">
@@ -315,7 +321,7 @@ export function Dashboard() {
 
       {/* スケジュール詳細ポップアップ */}
       <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl">スケジュール詳細</DialogTitle>
           </DialogHeader>
@@ -394,6 +400,48 @@ export function Dashboard() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* 参加者リスト */}
+              <div className="space-y-2 pt-4 border-t">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  <h4 className="font-semibold">参加者</h4>
+                </div>
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {attendances
+                    .filter(a => a.scheduleId === selectedSchedule.id)
+                    .map(attendance => {
+                      const student = students.find(s => s.id === attendance.studentId);
+                      if (!student) return null;
+                      
+                      const statusIcon = 
+                        attendance.status === "attending" ? "○" :
+                        attendance.status === "maybe" ? "△" :
+                        attendance.status === "absent" ? "×" : "-";
+                      
+                      return (
+                        <div 
+                          key={attendance.id}
+                          className="flex items-center gap-2 p-2 rounded-lg bg-muted/30"
+                          data-testid={`participant-${student.id}`}
+                        >
+                          <span className="w-6 text-center font-semibold">{statusIcon}</span>
+                          <span className="flex-1">{student.name}</span>
+                          {attendance.comment && (
+                            <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                              {attendance.comment}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  {attendances.filter(a => a.scheduleId === selectedSchedule.id).length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      まだ参加登録がありません
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
