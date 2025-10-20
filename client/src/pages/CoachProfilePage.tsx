@@ -39,7 +39,8 @@ export default function CoachProfilePage() {
   const { toast } = useToast();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const coachId = localStorage.getItem("coachId");
+  const coachData = localStorage.getItem("coachData");
+  const coachId = coachData ? JSON.parse(coachData).id : null;
 
   const { data: coach, isLoading } = useQuery<Coach>({
     queryKey: ["/api/coach", coachId],
