@@ -272,6 +272,13 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                         const primaryCategoryId = categoryIds[0];
                         const colorClasses = primaryCategoryId ? getCategoryColor(primaryCategoryId) : 'bg-muted/10 text-muted-foreground border-muted/20';
 
+                        const endTime = schedule.endHour !== null && schedule.endMinute !== null
+                          ? `${String(schedule.endHour).padStart(2, '0')}:${String(schedule.endMinute).padStart(2, '0')}`
+                          : null;
+                        const gatherTime = schedule.gatherHour !== null && schedule.gatherMinute !== null
+                          ? `${String(schedule.gatherHour).padStart(2, '0')}:${String(schedule.gatherMinute).padStart(2, '0')}`
+                          : null;
+                        
                         return (
                           <div
                             key={schedule.id}
@@ -279,8 +286,8 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                             onClick={() => setSelectedSchedule(schedule)}
                             data-testid={`week-schedule-${schedule.id}`}
                           >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 flex-1">
+                            <div className="space-y-1.5">
+                              <div className="flex items-center gap-2">
                                 <Badge 
                                   variant={
                                     attendance?.status === "○" ? "default" :
@@ -291,12 +298,32 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                                 >
                                   {attendance?.status || "-"}
                                 </Badge>
-                                <div className="flex-1">
-                                  <div className="font-medium">{schedule.title}</div>
-                                  {startTime && (
-                                    <div className="text-sm opacity-75">{startTime}</div>
-                                  )}
-                                </div>
+                                <div className="font-medium flex-1">{schedule.title}</div>
+                              </div>
+                              
+                              {/* Time and Location Info */}
+                              <div className="text-sm opacity-80 space-y-0.5">
+                                {startTime && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-medium">時間:</span>
+                                    <span>
+                                      {startTime}
+                                      {endTime && ` - ${endTime}`}
+                                    </span>
+                                  </div>
+                                )}
+                                {gatherTime && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-medium">集合:</span>
+                                    <span>{gatherTime}</span>
+                                  </div>
+                                )}
+                                {schedule.venue && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-medium">場所:</span>
+                                    <span>{schedule.venue}</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
