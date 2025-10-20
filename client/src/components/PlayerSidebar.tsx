@@ -152,7 +152,7 @@ export function PlayerSidebar({ teamName, teamId }: PlayerSidebarProps) {
                       data-testid={`activity-log-${log.id}`}
                     >
                       <div className="text-xs flex items-center gap-1.5 flex-wrap">
-                        <span className="whitespace-nowrap">{log.description}</span>
+                        <span>{log.description}</span>
                         <div className="flex items-center gap-1.5 whitespace-nowrap">
                           {categoryNames.map((name, idx) => (
                             <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0">

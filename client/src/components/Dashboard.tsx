@@ -400,7 +400,7 @@ export function Dashboard() {
                     data-testid={`activity-log-${log.id}`}
                   >
                     <div className="text-sm flex items-center gap-2 flex-wrap">
-                      <span className="whitespace-nowrap">{log.description}</span>
+                      <span>{log.description}</span>
                       <div className="flex items-center gap-2 whitespace-nowrap">
                         {categoryNames.map((name, idx) => (
                           <Badge key={idx} variant="secondary" className="text-xs">
