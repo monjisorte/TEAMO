@@ -162,7 +162,7 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {sortedSchedules.map((schedule) => {
         const currentStatus = getCurrentStatus(schedule.id);
         const currentComment = getCurrentComment(schedule.id);
@@ -171,18 +171,18 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
 
         return (
           <Card key={schedule.id} data-testid={`card-schedule-${schedule.id}`} className="border-0 shadow-xl overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 text-white">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <CardTitle className="text-2xl font-bold mb-3">{schedule.title}</CardTitle>
+                  <CardTitle className="text-lg font-bold mb-2">{schedule.title}</CardTitle>
                   
                   {/* カテゴリーバッジ */}
                   {categoryNames.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
+                    <div className="flex flex-wrap gap-1.5 mb-2">
                       {categoryNames.map((name, index) => (
                         <Badge 
                           key={index} 
-                          className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30"
+                          className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 text-xs"
                           data-testid={`badge-category-${index}`}
                         >
                           {name}
@@ -191,31 +191,31 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
                     </div>
                   )}
 
-                  {/* 日付・時間情報 */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
+                  {/* 日付・時間情報 - 1行表示 */}
+                  <div className="flex items-center gap-3 flex-wrap text-sm">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
                       <span className="font-medium" data-testid={`text-schedule-date-${schedule.id}`}>
-                        {format(new Date(schedule.date), "M月d日(E)", { locale: ja })}
+                        {format(new Date(schedule.date), "M/d(E)", { locale: ja })}
                       </span>
                     </div>
                     
                     {schedule.startHour !== null && schedule.startMinute !== null && schedule.endHour !== null && schedule.endMinute !== null && (
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
                         <span>
-                          {String(schedule.startHour).padStart(2, '0')}:{String(schedule.startMinute).padStart(2, '0')} - {String(schedule.endHour).padStart(2, '0')}:{String(schedule.endMinute).padStart(2, '0')}
+                          {String(schedule.startHour).padStart(2, '0')}:{String(schedule.startMinute).padStart(2, '0')}-{String(schedule.endHour).padStart(2, '0')}:{String(schedule.endMinute).padStart(2, '0')}
                         </span>
                         {schedule.gatherHour !== null && schedule.gatherMinute !== null && (
-                          <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30">
-                            集合 {String(schedule.gatherHour).padStart(2, '0')}:{String(schedule.gatherMinute).padStart(2, '0')}
-                          </Badge>
+                          <span className="text-xs opacity-80">
+                            (集合 {String(schedule.gatherHour).padStart(2, '0')}:{String(schedule.gatherMinute).padStart(2, '0')})
+                          </span>
                         )}
                       </div>
                     )}
                     
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4" />
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5" />
                       <span>{schedule.venue || "未定"}</span>
                     </div>
                   </div>
@@ -223,11 +223,11 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
               </div>
             </div>
 
-            <CardContent className="p-6 space-y-5">
+            <CardContent className="p-4 space-y-3">
               {/* 出欠状況 */}
               <div>
-                <label className="text-sm font-semibold mb-3 block text-foreground">出欠状況を選択</label>
-                <div className="grid grid-cols-3 gap-3">
+                <label className="text-xs font-semibold mb-2 block text-foreground">出欠状況を選択</label>
+                <div className="grid grid-cols-3 gap-2">
                   {(["○", "△", "×"] as AttendanceStatus[]).map((status) => {
                     const isSelected = currentStatus === status;
                     const buttonClass = isSelected 
@@ -242,10 +242,9 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
                       <Button
                         key={status}
                         variant="outline"
-                        size="lg"
                         onClick={() => handleStatusChange(schedule.id, status)}
                         data-testid={`button-status-${status}-${schedule.id}`}
-                        className={`text-2xl font-bold h-16 transition-all ${buttonClass}`}
+                        className={`text-xl font-bold h-12 transition-all ${buttonClass}`}
                       >
                         {status}
                       </Button>
@@ -256,14 +255,14 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
 
               {/* コメント */}
               <div>
-                <label className="text-sm font-semibold mb-3 block text-foreground">コメント（任意）</label>
+                <label className="text-xs font-semibold mb-1 block text-foreground">コメント（任意）</label>
                 <Textarea
                   placeholder="遅刻・早退の理由などがあれば入力してください..."
                   value={currentComment}
                   onChange={(e) => handleCommentChange(schedule.id, e.target.value)}
                   data-testid={`textarea-comment-${schedule.id}`}
-                  rows={3}
-                  className="resize-none"
+                  rows={2}
+                  className="resize-none text-sm"
                 />
               </div>
 
@@ -272,7 +271,7 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
                 onClick={() => handleSave(schedule.id)}
                 disabled={savingScheduleId === schedule.id}
                 data-testid={`button-save-${schedule.id}`}
-                className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
+                className="w-full h-10 text-sm font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
               >
                 {savingScheduleId === schedule.id ? "保存中..." : "保存する"}
               </Button>
