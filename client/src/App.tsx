@@ -29,7 +29,11 @@ import PlayerCoachesPage from "@/pages/player/PlayerCoachesPage";
 import CoachLogin from "@/pages/CoachLogin";
 import MembersPage from "@/pages/MembersPage";
 import CoachProfilePage from "@/pages/CoachProfilePage";
+import AdminLogin from "@/pages/AdminLogin";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import AdminTeams from "@/pages/admin/AdminTeams";
 import { PlayerSidebar } from "@/components/PlayerSidebar";
+import { AdminSidebar } from "@/components/AdminSidebar";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
@@ -52,6 +56,12 @@ interface CoachData {
   photoUrl?: string;
   bio?: string;
   position?: string;
+}
+
+interface AdminData {
+  id: string;
+  name: string;
+  email: string;
 }
 
 function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogout: () => void }) {
@@ -310,6 +320,88 @@ function CoachRouter({ teamId }: { teamId: string }) {
   );
 }
 
+function AdminRouter() {
+  return (
+    <Switch>
+      <Route path="/admins" component={AdminDashboard} />
+      <Route path="/admins/teams" component={AdminTeams} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function AdminPortalContent({ adminId, onLogout }: { adminId: string; onLogout: () => void }) {
+  const style = {
+    "--sidebar-width": "16rem",
+  };
+
+  return (
+    <SidebarProvider style={style as React.CSSProperties}>
+      <div className="flex h-screen w-full">
+        <AdminSidebar />
+        <div className="flex flex-col flex-1 min-w-0">
+          <header className="flex items-center justify-between px-2 md:px-8 py-4 border-b bg-card/50 backdrop-blur-sm">
+            <div className="flex items-center gap-2 md:gap-4">
+              <SidebarTrigger data-testid="button-sidebar-toggle" />
+              <div>
+                <h1 className="text-lg font-semibold" data-testid="text-admin-name">
+                  管理者
+                </h1>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={onLogout}
+                data-testid="button-admin-logout"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                ログアウト
+              </Button>
+            </div>
+          </header>
+          <main className="flex-1 overflow-auto p-1 md:p-8">
+            <AdminRouter />
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
+  );
+}
+
+function AdminPortal() {
+  const [adminId, setAdminId] = useState<string | null>(null);
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    const savedAdmin = localStorage.getItem("adminData");
+    if (savedAdmin) {
+      const adminData = JSON.parse(savedAdmin);
+      setAdminId(adminData.id);
+    }
+  }, []);
+
+  const handleLoginSuccess = (adminData: AdminData) => {
+    localStorage.setItem("adminData", JSON.stringify(adminData));
+    setAdminId(adminData.id);
+    setLocation("/admins");
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("adminData");
+    setAdminId(null);
+    setLocation("/admins/login");
+  };
+
+  if (!adminId) {
+    return <AdminLogin onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  return <AdminPortalContent adminId={adminId} onLogout={handleLogout} />;
+}
+
 function App() {
   const [location] = useLocation();
 
@@ -328,6 +420,15 @@ function App() {
           </Route>
           <Route path="/team/:rest*">
             {() => <CoachPortal />}
+          </Route>
+          <Route path="/admins/login">
+            {() => <AdminPortal />}
+          </Route>
+          <Route path="/admins">
+            {() => <AdminPortal />}
+          </Route>
+          <Route path="/admins/:rest*">
+            {() => <AdminPortal />}
           </Route>
           <Route>
             {() => <PlayerPortal />}
