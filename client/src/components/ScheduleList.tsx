@@ -490,11 +490,11 @@ export function ScheduleList() {
                       <div className="flex gap-4">
                         {/* 左側: 日付表示 */}
                         <div className="flex flex-col items-center justify-center min-w-[70px] h-20 rounded-xl bg-gradient-to-br from-primary to-purple-600 text-white shrink-0">
-                          <div className="text-2xl font-bold">
-                            {schedule.date.split('-')[2]}
-                          </div>
                           <div className="text-xs opacity-90">
                             {schedule.date.substring(5, 7)}月
+                          </div>
+                          <div className="text-2xl font-bold">
+                            {schedule.date.split('-')[2]}
                           </div>
                         </div>
 
@@ -566,39 +566,37 @@ export function ScheduleList() {
                             <p className="text-sm text-muted-foreground p-3 rounded-xl bg-muted/30">{schedule.notes}</p>
                           )}
                           
-                          {/* 出席人数 */}
-                          <div 
-                            className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-primary/10 to-purple-600/10 cursor-pointer hover-elevate"
-                            onClick={() => setSelectedSchedule(schedule.id)}
-                            data-testid={`attendance-summary-${schedule.id}`}
-                          >
-                            <Users className="h-5 w-5 text-primary" />
-                            <div className="flex gap-4 text-sm font-medium">
-                              <span className="flex items-center gap-1">
-                                <span className="text-green-600 dark:text-green-400">○</span>
-                                <span data-testid={`count-present-${schedule.id}`}>{attendance.present}</span>
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <span className="text-yellow-600 dark:text-yellow-400">△</span>
-                                <span data-testid={`count-maybe-${schedule.id}`}>{attendance.maybe}</span>
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <span className="text-red-600 dark:text-red-400">×</span>
-                                <span data-testid={`count-absent-${schedule.id}`}>{attendance.absent}</span>
-                              </span>
+                          {/* 出席人数と編集ボタンを横並び */}
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-primary/10 to-purple-600/10 cursor-pointer hover-elevate flex-1"
+                              onClick={() => setSelectedSchedule(schedule.id)}
+                              data-testid={`attendance-summary-${schedule.id}`}
+                            >
+                              <Users className="h-5 w-5 text-primary" />
+                              <div className="flex gap-4 text-sm font-medium">
+                                <span className="flex items-center gap-1">
+                                  <span className="text-green-600 dark:text-green-400">○</span>
+                                  <span data-testid={`count-present-${schedule.id}`}>{attendance.present}</span>
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <span className="text-yellow-600 dark:text-yellow-400">△</span>
+                                  <span data-testid={`count-maybe-${schedule.id}`}>{attendance.maybe}</span>
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <span className="text-red-600 dark:text-red-400">×</span>
+                                  <span data-testid={`count-absent-${schedule.id}`}>{attendance.absent}</span>
+                                </span>
+                              </div>
                             </div>
-                          </div>
-
-                          <div className="flex gap-3">
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              className="flex-1 rounded-xl" 
+                              className="rounded-xl" 
                               onClick={() => handleEditSchedule(schedule)}
                               data-testid={`button-edit-${schedule.id}`}
                             >
-                              <Edit className="h-4 w-4 mr-2" />
-                              編集
+                              <Edit className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
