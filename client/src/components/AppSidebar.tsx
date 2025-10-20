@@ -9,6 +9,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -78,6 +79,7 @@ interface AppSidebarProps {
 
 export function AppSidebar({ teamId, teamName }: AppSidebarProps) {
   const [location] = useLocation();
+  const { setOpenMobile } = useSidebar();
 
   // Fetch team info if not provided
   const { data: teams } = useQuery<Array<{ id: string; name: string; teamCode: string }>>({
@@ -89,6 +91,10 @@ export function AppSidebar({ teamId, teamName }: AppSidebarProps) {
   const displayTeamName = teamName || team?.name || "チーム";
   const displayTeamCode = team?.teamCode || "---";
 
+  const handleLinkClick = () => {
+    setOpenMobile(false);
+  };
+
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
@@ -97,22 +103,22 @@ export function AppSidebar({ teamId, teamName }: AppSidebarProps) {
             <Calendar className="h-5 w-5 text-primary-foreground" />
           </div>
           <div>
-            <h2 className="font-semibold" data-testid="text-sidebar-team-name">{displayTeamName}</h2>
+            <h2 className="font-semibold text-base md:text-sm" data-testid="text-sidebar-team-name">{displayTeamName}</h2>
             <p className="text-xs text-muted-foreground" data-testid="text-sidebar-team-code">{displayTeamCode}</p>
           </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>メニュー</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs md:text-xs">メニュー</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={location === item.url}>
-                    <Link href={item.url} data-testid={`link-${item.url.slice(1) || 'dashboard'}`}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                    <Link href={item.url} onClick={handleLinkClick} data-testid={`link-${item.url.slice(1) || 'dashboard'}`}>
+                      <item.icon className="h-5 w-5 md:h-4 md:w-4" />
+                      <span className="text-base md:text-sm">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

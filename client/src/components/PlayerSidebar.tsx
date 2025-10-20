@@ -9,6 +9,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from "wouter";
 
@@ -56,6 +57,11 @@ interface PlayerSidebarProps {
 
 export function PlayerSidebar({ teamName }: PlayerSidebarProps) {
   const [location] = useLocation();
+  const { setOpenMobile } = useSidebar();
+
+  const handleLinkClick = () => {
+    setOpenMobile(false);
+  };
 
   return (
     <Sidebar>
@@ -65,7 +71,7 @@ export function PlayerSidebar({ teamName }: PlayerSidebarProps) {
             <CalendarIcon className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h2 className="font-bold text-base bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h2 className="font-bold text-base md:text-base bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               {teamName}
             </h2>
             <p className="text-xs text-muted-foreground font-medium">選手ポータル</p>
@@ -74,7 +80,7 @@ export function PlayerSidebar({ teamName }: PlayerSidebarProps) {
       </SidebarHeader>
       <SidebarContent className="px-3">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-2 mb-1">
+          <SidebarGroupLabel className="text-xs md:text-xs font-semibold text-muted-foreground px-2 mb-1">
             メニュー
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -82,9 +88,9 @@ export function PlayerSidebar({ teamName }: PlayerSidebarProps) {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={location === item.url}>
-                    <Link href={item.url} data-testid={`link-player-${item.title}`}>
-                      <item.icon className="h-4 w-4" />
-                      <span className="font-medium">{item.title}</span>
+                    <Link href={item.url} onClick={handleLinkClick} data-testid={`link-player-${item.title}`}>
+                      <item.icon className="h-5 w-5 md:h-4 md:w-4" />
+                      <span className="font-medium text-base md:text-sm">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
