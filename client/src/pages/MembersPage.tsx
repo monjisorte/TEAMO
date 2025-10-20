@@ -247,46 +247,46 @@ export default function MembersPage({ teamId }: MembersPageProps) {
               className="hover-elevate border-0 shadow-lg transition-all duration-300" 
               data-testid={`card-member-${student.id}`}
             >
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
+              <CardContent className="p-4 md:p-6">
+                <div className="flex items-start gap-3 md:gap-4">
                   <div className="relative shrink-0">
-                    <Avatar className="w-16 h-16 ring-2 ring-blue-50">
+                    <Avatar className="w-12 h-12 md:w-16 md:h-16 ring-2 ring-blue-50">
                       <AvatarImage src={student.photoUrl || undefined} alt={student.name} />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-lg">
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-sm md:text-lg">
                         {student.name.slice(0, 2)}
                       </AvatarFallback>
                     </Avatar>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-x-3 md:gap-x-6 gap-y-2 md:gap-y-3">
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">名前</p>
-                        <p className="text-base font-bold" data-testid={`text-member-name-${student.id}`}>
+                        <p className="text-xs text-muted-foreground mb-0.5">名前</p>
+                        <p className="text-sm md:text-base font-bold truncate" data-testid={`text-member-name-${student.id}`}>
                           {student.name}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">背番号</p>
-                        <p className="text-base" data-testid={`text-jersey-${student.id}`}>
+                        <p className="text-xs text-muted-foreground mb-0.5">背番号</p>
+                        <p className="text-sm md:text-base" data-testid={`text-jersey-${student.id}`}>
                           {student.jerseyNumber != null && student.jerseyNumber >= 0 ? student.jerseyNumber : '未設定'}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">生年月日</p>
-                        <p className="text-base" data-testid={`text-birthdate-${student.id}`}>
+                      <div className="col-span-2 md:col-span-1">
+                        <p className="text-xs text-muted-foreground mb-0.5">生年月日</p>
+                        <p className="text-sm md:text-base" data-testid={`text-birthdate-${student.id}`}>
                           {student.birthDate 
                             ? new Date(student.birthDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
                             : '未設定'}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">学校名</p>
-                        <p className="text-base truncate" data-testid={`text-school-${student.id}`}>
+                      <div className="col-span-2 md:col-span-1">
+                        <p className="text-xs text-muted-foreground mb-0.5">学校名</p>
+                        <p className="text-sm md:text-base truncate" data-testid={`text-school-${student.id}`}>
                           {student.schoolName || '未設定'}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">ステータス</p>
+                        <p className="text-xs text-muted-foreground mb-0.5">ステータス</p>
                         <Select
                           value={student.playerType || "none"}
                           onValueChange={(value) => {
@@ -295,7 +295,7 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                           }}
                           data-testid={`select-player-type-${student.id}`}
                         >
-                          <SelectTrigger className="w-full text-sm h-9">
+                          <SelectTrigger className="w-full text-xs md:text-sm h-8 md:h-9">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -307,22 +307,24 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                         </Select>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">カテゴリー</p>
+                        <p className="text-xs text-muted-foreground mb-0.5">カテゴリー</p>
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
-                              className="w-full h-9 text-sm justify-between"
+                              className="w-full h-8 md:h-9 text-xs md:text-sm justify-between"
                               data-testid={`button-category-${student.id}`}
                             >
-                              {(() => {
-                                const studentCategoryIds = getStudentCategories(student.id);
-                                if (studentCategoryIds.length === 0) return "未設定";
-                                const selectedCategories = categories.filter(c => studentCategoryIds.includes(c.id));
-                                if (selectedCategories.length === 1) return selectedCategories[0].name;
-                                return `${selectedCategories[0]?.name || ''}＋`;
-                              })()}
-                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              <span className="truncate">
+                                {(() => {
+                                  const studentCategoryIds = getStudentCategories(student.id);
+                                  if (studentCategoryIds.length === 0) return "未設定";
+                                  const selectedCategories = categories.filter(c => studentCategoryIds.includes(c.id));
+                                  if (selectedCategories.length === 1) return selectedCategories[0].name;
+                                  return `${selectedCategories[0]?.name || ''}＋`;
+                                })()}
+                              </span>
+                              <ChevronDown className="ml-1 h-3 w-3 md:h-4 md:w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-56 p-3" align="start">
@@ -358,8 +360,8 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                         </Popover>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">登録日</p>
-                        <p className="text-base" data-testid={`text-created-${student.id}`}>
+                        <p className="text-xs text-muted-foreground mb-0.5">登録日</p>
+                        <p className="text-sm md:text-base" data-testid={`text-created-${student.id}`}>
                           {student.createdAt 
                             ? new Date(student.createdAt).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
                             : '未設定'}
@@ -370,11 +372,11 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="shrink-0 text-destructive hover:text-destructive"
+                    className="shrink-0 text-destructive hover:text-destructive h-8 w-8 md:h-10 md:w-10"
                     onClick={() => handleDeleteClick(student)}
                     data-testid={`button-delete-${student.id}`}
                   >
-                    <Trash2 className="w-5 h-5" />
+                    <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
                   </Button>
                 </div>
               </CardContent>
