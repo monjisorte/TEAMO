@@ -59,6 +59,10 @@ export function ObjectUploader({
           try {
             const params = await onGetUploadParameters();
             console.log("Upload parameters received:", params);
+            
+            // Store the upload URL in file metadata so we can access it later
+            uppy.setFileMeta(file.id, { uploadURL: params.url });
+            
             return params;
           } catch (error) {
             console.error("Error getting upload parameters:", error);
@@ -71,6 +75,10 @@ export function ObjectUploader({
       })
       .on("upload-success", (file, response) => {
         console.log("Upload success:", file, response);
+        // Store uploadURL in the file object for easy access in complete handler
+        if (file) {
+          (file as any).uploadURL = file.meta.uploadURL;
+        }
       })
       .on("upload-error", (file, error) => {
         console.error("Upload error:", file, error);
