@@ -116,7 +116,7 @@ function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogou
   return (
     <SidebarProvider style={style as React.CSSProperties}>
       <div className="flex h-screen w-full">
-        <PlayerSidebar teamName={teamName} />
+        <PlayerSidebar teamName={teamName} teamId={player.teamId} />
         <div className="flex flex-col flex-1 min-w-0">
           <header className="flex items-center justify-between px-2 md:px-8 py-4 border-b bg-card/50 backdrop-blur-sm">
             <div className="flex items-center gap-2 md:gap-4">

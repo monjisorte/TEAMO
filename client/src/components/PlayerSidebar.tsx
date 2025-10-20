@@ -1,4 +1,4 @@
-import { CheckSquare, Calendar as CalendarIcon, FileText, User, UsersRound, Users } from "lucide-react";
+import { CheckSquare, Calendar as CalendarIcon, FileText, User, UsersRound, Users, Activity } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -12,6 +12,9 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
+import type { ActivityLog, Category } from "@shared/schema";
 
 const menuItems = [
   {
@@ -48,15 +51,43 @@ const menuItems = [
 
 interface PlayerSidebarProps {
   teamName: string;
+  teamId: string;
 }
 
-export function PlayerSidebar({ teamName }: PlayerSidebarProps) {
+// Helper function to get time ago text
+function getTimeAgo(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "たった今";
+  if (diffMins < 60) return `${diffMins}分前`;
+  if (diffHours < 24) return `${diffHours}時間前`;
+  if (diffDays < 7) return `${diffDays}日前`;
+  return date.toLocaleDateString("ja-JP", { month: "short", day: "numeric" });
+}
+
+export function PlayerSidebar({ teamName, teamId }: PlayerSidebarProps) {
   const [location] = useLocation();
   const { setOpenMobile } = useSidebar();
 
   const handleLinkClick = () => {
     setOpenMobile(false);
   };
+
+  // Fetch categories
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ["/api/categories", teamId],
+    enabled: !!teamId,
+  });
+
+  // Fetch activity logs
+  const { data: activityLogs = [] } = useQuery<ActivityLog[]>({
+    queryKey: ["/api/activity-logs", teamId],
+    enabled: !!teamId,
+  });
 
   return (
     <Sidebar>
@@ -91,6 +122,51 @@ export function PlayerSidebar({ teamName }: PlayerSidebarProps) {
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup className="mt-4">
+          <SidebarGroupLabel className="text-xs md:text-xs font-semibold text-muted-foreground px-2 mb-2 flex items-center gap-2">
+            <Activity className="h-3 w-3" />
+            タイムライン
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <div className="space-y-1.5 px-2">
+              {activityLogs.length === 0 ? (
+                <div className="text-center text-muted-foreground text-xs py-4">
+                  更新履歴がここに表示されます
+                </div>
+              ) : (
+                activityLogs.slice(0, 5).map((log) => {
+                  const timeAgo = getTimeAgo(new Date(log.createdAt));
+                  const logCategoryIds = log.categoryIds || [];
+                  const categoryNames = logCategoryIds.map(catId => {
+                    const category = categories.find(c => c.id === catId);
+                    return category?.name || "";
+                  }).filter(name => name !== "");
+                  
+                  return (
+                    <div 
+                      key={log.id} 
+                      className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 hover-elevate flex-wrap"
+                      data-testid={`activity-log-${log.id}`}
+                    >
+                      <p className="text-xs flex-1 min-w-0">{log.description}</p>
+                      {categoryNames.length > 0 && (
+                        <div className="flex gap-1 shrink-0">
+                          {categoryNames.map((name, idx) => (
+                            <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0">
+                              {name}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-[10px] text-muted-foreground shrink-0">{timeAgo}</p>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
