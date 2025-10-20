@@ -382,9 +382,9 @@ export function ScheduleList() {
   const getAttendanceCount = (scheduleId: string) => {
     const scheduleAttendances = attendances.filter(a => a.scheduleId === scheduleId);
     return {
-      present: scheduleAttendances.filter(a => a.status === "present").length,
-      maybe: scheduleAttendances.filter(a => a.status === "maybe").length,
-      absent: scheduleAttendances.filter(a => a.status === "absent").length,
+      present: scheduleAttendances.filter(a => a.status === "present" || a.status === "○").length,
+      maybe: scheduleAttendances.filter(a => a.status === "maybe" || a.status === "△").length,
+      absent: scheduleAttendances.filter(a => a.status === "absent" || a.status === "×").length,
     };
   };
 
@@ -683,19 +683,29 @@ export function ScheduleList() {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {participants.map(({ student, status }) => (
+                      {participants.map((participant) => (
                         <div 
-                          key={student!.id} 
+                          key={participant.student!.id} 
                           className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover-elevate"
-                          data-testid={`participant-${student!.id}`}
+                          data-testid={`participant-${participant.student!.id}`}
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 flex-1">
                             <span className="text-lg">
-                              {status === 'present' && <span className="text-green-600 dark:text-green-400">○</span>}
-                              {status === 'maybe' && <span className="text-yellow-600 dark:text-yellow-400">△</span>}
-                              {status === 'absent' && <span className="text-red-600 dark:text-red-400">×</span>}
+                              {participant.status === 'present' && <span className="text-green-600 dark:text-green-400">○</span>}
+                              {participant.status === '○' && <span className="text-green-600 dark:text-green-400">○</span>}
+                              {participant.status === 'maybe' && <span className="text-yellow-600 dark:text-yellow-400">△</span>}
+                              {participant.status === '△' && <span className="text-yellow-600 dark:text-yellow-400">△</span>}
+                              {participant.status === 'absent' && <span className="text-red-600 dark:text-red-400">×</span>}
+                              {participant.status === '×' && <span className="text-red-600 dark:text-red-400">×</span>}
                             </span>
-                            <span className="font-medium">{student!.name}</span>
+                            <div className="flex-1">
+                              <span className="font-medium">{participant.student!.name}</span>
+                              {participant.comment && (
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {participant.comment}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))}
