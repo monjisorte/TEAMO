@@ -42,6 +42,17 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
     queryKey: [`/api/categories/${teamId}`],
   });
 
+  // スケジュールのカテゴリIDを取得するヘルパー関数
+  const getScheduleCategoryIds = (schedule: Schedule): string[] => {
+    if (schedule.categoryIds && schedule.categoryIds.length > 0) {
+      return schedule.categoryIds;
+    }
+    if (schedule.categoryId) {
+      return [schedule.categoryId];
+    }
+    return [];
+  };
+
   // デフォルトで所属カテゴリを選択
   useEffect(() => {
     if (categories.length > 0 && visibleCategories.length === 0) {
@@ -144,16 +155,6 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(c => c.id === categoryId);
     return category?.name || "不明";
-  };
-
-  const getScheduleCategoryIds = (schedule: Schedule): string[] => {
-    if (schedule.categoryIds && schedule.categoryIds.length > 0) {
-      return schedule.categoryIds;
-    }
-    if (schedule.categoryId) {
-      return [schedule.categoryId];
-    }
-    return [];
   };
 
   const handlePrevious = () => {
