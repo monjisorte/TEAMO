@@ -44,6 +44,10 @@ interface PlayerData {
   name: string;
   email: string;
   teamId: string;
+  lastName?: string;
+  firstName?: string;
+  lastNameKana?: string;
+  firstNameKana?: string;
 }
 
 interface CoachData {
@@ -120,7 +124,9 @@ function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogou
               <SidebarTrigger data-testid="button-player-sidebar-toggle" />
               <div>
                 <h1 className="text-lg font-semibold" data-testid="text-player-name">
-                  {player.name}さん
+                  {player.lastName && player.firstName 
+                    ? `${player.lastName}${player.firstName}さん` 
+                    : `${player.name}さん`}
                 </h1>
                 <p className="text-xs text-muted-foreground">{player.email}</p>
               </div>
