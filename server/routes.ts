@@ -258,6 +258,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/attendances", async (req, res) => {
+    try {
+      const { studentId, scheduleId, status, comment } = req.body;
+
+      if (!studentId || !scheduleId || !status) {
+        return res.status(400).json({ error: "studentId, scheduleId, and status are required" });
+      }
+
+      // Check if attendance already exists
+      const existing = await db.select()
+        .from(attendances)
+        .where(and(
+          eq(attendances.studentId, studentId),
+          eq(attendances.scheduleId, scheduleId)
+        ))
+        .limit(1);
+
+      if (existing.length > 0) {
+        // Update existing attendance
+        const updated = await db.update(attendances)
+          .set({ status, comment: comment || null })
+          .where(eq(attendances.id, existing[0].id))
+          .returning();
+        res.status(200).json(updated[0]);
+      } else {
+        // Create new attendance
+        const newAttendance = await db.insert(attendances).values({
+          studentId,
+          scheduleId,
+          status,
+          comment: comment || null,
+        }).returning();
+        res.status(200).json(newAttendance[0]);
+      }
+    } catch (error) {
+      console.error("Error creating/updating attendance:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Category Endpoints
   app.get("/api/categories/:teamId", async (req, res) => {
     try {
