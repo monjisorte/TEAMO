@@ -324,7 +324,7 @@ export default function TuitionPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             月謝管理
@@ -333,10 +333,10 @@ export default function TuitionPage() {
             メンバーの月謝の支払い状況を管理します
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Dialog open={showSettings} onOpenChange={setShowSettings}>
             <DialogTrigger asChild>
-              <Button variant="outline" data-testid="button-team-settings">
+              <Button variant="outline" data-testid="button-team-settings" className="w-full sm:w-auto">
                 <Settings className="mr-2 h-4 w-4" />
                 月謝設定
               </Button>
@@ -413,6 +413,7 @@ export default function TuitionPage() {
             onClick={() => autoGenerateMutation.mutate()}
             disabled={autoGenerateMutation.isPending || !team}
             data-testid="button-auto-generate"
+            className="w-full sm:w-auto"
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${autoGenerateMutation.isPending ? 'animate-spin' : ''}`} />
             月謝データ自動生成
