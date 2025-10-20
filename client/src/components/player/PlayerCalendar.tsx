@@ -27,6 +27,16 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
   const [visibleCategories, setVisibleCategories] = useState<string[]>([]);
   const [editingComment, setEditingComment] = useState<string>("");
 
+  // ダイアログを開いたときに既存のコメントをセット
+  useEffect(() => {
+    if (selectedSchedule) {
+      const attendance = attendances.find((att) => att.scheduleId === selectedSchedule.id && att.studentId === studentId);
+      setEditingComment(attendance?.comment || "");
+    } else {
+      setEditingComment("");
+    }
+  }, [selectedSchedule?.id, attendances, studentId]);
+
   const { data: schedules = [] } = useQuery<Schedule[]>({
     queryKey: [`/api/student/${studentId}/schedules`],
     enabled: selectedCategories.length > 0,
@@ -495,7 +505,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                   <div className="flex gap-2">
                     <Button
                       variant={attendance?.status === "○" ? "default" : "outline"}
-                      onClick={() => handleAttendanceChange(nextSchedule.id, "○", editingComment || attendance?.comment)}
+                      onClick={() => handleAttendanceChange(nextSchedule.id, "○", editingComment)}
                       disabled={saveAttendanceMutation.isPending}
                       data-testid="button-next-attendance-yes"
                     >
@@ -503,7 +513,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                     </Button>
                     <Button
                       variant={attendance?.status === "△" ? "default" : "outline"}
-                      onClick={() => handleAttendanceChange(nextSchedule.id, "△", editingComment || attendance?.comment)}
+                      onClick={() => handleAttendanceChange(nextSchedule.id, "△", editingComment)}
                       disabled={saveAttendanceMutation.isPending}
                       data-testid="button-next-attendance-maybe"
                     >
@@ -511,7 +521,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                     </Button>
                     <Button
                       variant={attendance?.status === "×" ? "default" : "outline"}
-                      onClick={() => handleAttendanceChange(nextSchedule.id, "×", editingComment || attendance?.comment)}
+                      onClick={() => handleAttendanceChange(nextSchedule.id, "×", editingComment)}
                       disabled={saveAttendanceMutation.isPending}
                       data-testid="button-next-attendance-no"
                     >
@@ -524,7 +534,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                     <label className="text-sm font-semibold mb-2 block">コメント（任意）</label>
                     <Textarea
                       placeholder="遅刻・早退の理由などがあれば入力してください..."
-                      value={editingComment !== "" ? editingComment : (attendance?.comment || "")}
+                      value={editingComment}
                       onChange={(e) => setEditingComment(e.target.value)}
                       data-testid="textarea-next-comment"
                       rows={3}
@@ -966,10 +976,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                           <Button
                             variant={getAttendanceForSchedule(selectedSchedule.id)?.status === "○" ? "default" : "outline"}
                             size="sm"
-                            onClick={() => {
-                              const currentComment = editingComment || getAttendanceForSchedule(selectedSchedule.id)?.comment || "";
-                              handleAttendanceChange(selectedSchedule.id, "○", currentComment);
-                            }}
+                            onClick={() => handleAttendanceChange(selectedSchedule.id, "○", editingComment)}
                             disabled={saveAttendanceMutation.isPending}
                             data-testid="button-attendance-yes"
                           >
@@ -978,10 +985,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                           <Button
                             variant={getAttendanceForSchedule(selectedSchedule.id)?.status === "△" ? "default" : "outline"}
                             size="sm"
-                            onClick={() => {
-                              const currentComment = editingComment || getAttendanceForSchedule(selectedSchedule.id)?.comment || "";
-                              handleAttendanceChange(selectedSchedule.id, "△", currentComment);
-                            }}
+                            onClick={() => handleAttendanceChange(selectedSchedule.id, "△", editingComment)}
                             disabled={saveAttendanceMutation.isPending}
                             data-testid="button-attendance-maybe"
                           >
@@ -990,10 +994,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                           <Button
                             variant={getAttendanceForSchedule(selectedSchedule.id)?.status === "×" ? "default" : "outline"}
                             size="sm"
-                            onClick={() => {
-                              const currentComment = editingComment || getAttendanceForSchedule(selectedSchedule.id)?.comment || "";
-                              handleAttendanceChange(selectedSchedule.id, "×", currentComment);
-                            }}
+                            onClick={() => handleAttendanceChange(selectedSchedule.id, "×", editingComment)}
                             disabled={saveAttendanceMutation.isPending}
                             data-testid="button-attendance-no"
                           >
@@ -1006,17 +1007,15 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                           <label className="text-sm font-semibold">コメント（任意）</label>
                           <Textarea
                             placeholder="遅刻・早退の理由などがあれば入力してください..."
-                            value={editingComment || getAttendanceForSchedule(selectedSchedule.id)?.comment || ""}
+                            value={editingComment}
                             onChange={(e) => setEditingComment(e.target.value)}
                             data-testid="textarea-attendance-comment"
                             rows={3}
                             className="resize-none"
                           />
-                          {(editingComment || getAttendanceForSchedule(selectedSchedule.id)?.comment) && (
-                            <p className="text-xs text-muted-foreground">
-                              コメントは出欠登録ボタンをクリックすると保存されます
-                            </p>
-                          )}
+                          <p className="text-xs text-muted-foreground">
+                            コメントは出欠登録ボタンをクリックすると保存されます
+                          </p>
                         </div>
                       </div>
                     ) : (
