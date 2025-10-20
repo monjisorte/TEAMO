@@ -805,6 +805,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Student Email Change
+  app.put("/api/student/:studentId/email", async (req, res) => {
+    try {
+      const { studentId } = req.params;
+      const { email, currentPassword } = req.body;
+
+      if (!email || !currentPassword) {
+        return res.status(400).json({ error: "Email and current password are required" });
+      }
+
+      // Get student
+      const student = await db.select().from(students).where(eq(students.id, studentId)).limit(1);
+      if (student.length === 0) {
+        return res.status(404).json({ error: "Student not found" });
+      }
+
+      // Verify current password
+      const isPasswordValid = await verifyPassword(currentPassword, student[0].password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ error: "現在のパスワードが正しくありません" });
+      }
+
+      // Check if email is already in use by another student
+      const existingStudent = await db.select().from(students)
+        .where(eq(students.email, email))
+        .limit(1);
+      
+      if (existingStudent.length > 0 && existingStudent[0].id !== studentId) {
+        return res.status(400).json({ error: "このメールアドレスは既に使用されています" });
+      }
+
+      // Update email
+      await db.update(students).set({ email }).where(eq(students.id, studentId));
+
+      res.json({ success: true, email });
+    } catch (error) {
+      console.error("Error changing student email:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Student Password Change
+  app.put("/api/student/:studentId/password", async (req, res) => {
+    try {
+      const { studentId } = req.params;
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: "現在のパスワードと新しいパスワードが必要です" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ error: "新しいパスワードは6文字以上である必要があります" });
+      }
+
+      // Get student
+      const student = await db.select().from(students).where(eq(students.id, studentId)).limit(1);
+      if (student.length === 0) {
+        return res.status(404).json({ error: "Student not found" });
+      }
+
+      // Verify current password
+      const isPasswordValid = await verifyPassword(currentPassword, student[0].password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ error: "現在のパスワードが正しくありません" });
+      }
+
+      // Hash new password
+      const hashedPassword = await hashPassword(newPassword);
+
+      // Update password
+      await db.update(students).set({ password: hashedPassword }).where(eq(students.id, studentId));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error changing student password:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Get all student-category relationships
   app.get("/api/student-categories", async (req, res) => {
     try {

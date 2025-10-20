@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import CategorySelection from "@/components/player/CategorySelection";
-import { Upload, User } from "lucide-react";
+import { Upload, User, Mail, Lock } from "lucide-react";
 
 interface PlayerProfilePageProps {
   playerId: string;
@@ -34,7 +34,23 @@ const profileSchema = z.object({
   birthDate: z.string().optional(),
 });
 
+const emailSchema = z.object({
+  email: z.string().email("有効なメールアドレスを入力してください"),
+  currentPassword: z.string().min(1, "現在のパスワードを入力してください"),
+});
+
+const passwordSchema = z.object({
+  currentPassword: z.string().min(1, "現在のパスワードを入力してください"),
+  newPassword: z.string().min(6, "新しいパスワードは6文字以上である必要があります"),
+  confirmPassword: z.string().min(1, "確認用パスワードを入力してください"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "パスワードが一致しません",
+  path: ["confirmPassword"],
+});
+
 type ProfileFormValues = z.infer<typeof profileSchema>;
+type EmailFormValues = z.infer<typeof emailSchema>;
+type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePageProps) {
   const { toast } = useToast();
@@ -57,6 +73,23 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
     },
   });
 
+  const emailForm = useForm<EmailFormValues>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: {
+      email: "",
+      currentPassword: "",
+    },
+  });
+
+  const passwordForm = useForm<PasswordFormValues>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
   // Update form when player data is loaded
   useEffect(() => {
     if (player) {
@@ -65,11 +98,15 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
         schoolName: player.schoolName || "",
         birthDate: player.birthDate || "",
       });
+      emailForm.reset({
+        email: player.email || "",
+        currentPassword: "",
+      });
       if (player.photoUrl) {
         setPhotoPreview(player.photoUrl);
       }
     }
-  }, [player, form]);
+  }, [player, form, emailForm]);
 
   // Load saved categories
   useEffect(() => {
@@ -195,6 +232,76 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
       }
       setPhotoFile(null);
     }
+  };
+
+  // Email change mutation
+  const changeEmailMutation = useMutation({
+    mutationFn: async (data: EmailFormValues) => {
+      const response = await apiRequest("PUT", `/api/student/${playerId}/email`, data);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to change email");
+      }
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/student/${playerId}`] });
+      emailForm.reset({ email: "", currentPassword: "" });
+      
+      // Update localStorage with new email
+      const playerData = JSON.parse(localStorage.getItem("playerData") || "{}");
+      playerData.email = data.email;
+      localStorage.setItem("playerData", JSON.stringify(playerData));
+      
+      toast({
+        title: "メールアドレス変更完了",
+        description: "メールアドレスを更新しました。次回から新しいメールアドレスでログインしてください。",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "エラー",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Password change mutation
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: PasswordFormValues) => {
+      const response = await apiRequest("PUT", `/api/student/${playerId}/password`, {
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to change password");
+      }
+      return await response.json();
+    },
+    onSuccess: () => {
+      passwordForm.reset({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      toast({
+        title: "パスワード変更完了",
+        description: "パスワードを更新しました。次回から新しいパスワードでログインしてください。",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "エラー",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onEmailSubmit = (data: EmailFormValues) => {
+    changeEmailMutation.mutate(data);
+  };
+
+  const onPasswordSubmit = (data: PasswordFormValues) => {
+    changePasswordMutation.mutate(data);
   };
 
   if (isLoading) {
@@ -367,6 +474,153 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
             teamId={teamId}
             onCategoriesUpdated={handleCategoriesUpdated}
           />
+        </CardContent>
+      </Card>
+
+      {/* Email Change Card */}
+      <Card className="border-0 shadow-xl">
+        <CardHeader className="pb-6">
+          <div className="flex items-center gap-2">
+            <Mail className="h-5 w-5 text-blue-600" />
+            <CardTitle className="text-2xl font-bold">メールアドレス変更</CardTitle>
+          </div>
+          <CardDescription>
+            現在のパスワードを入力して、メールアドレスを変更できます
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-8 pt-0">
+          <Form {...emailForm}>
+            <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-4">
+              <FormField
+                control={emailForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>新しいメールアドレス</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="email"
+                        placeholder="example@example.com" 
+                        data-testid="input-new-email"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={emailForm.control}
+                name="currentPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>現在のパスワード</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password"
+                        placeholder="現在のパスワードを入力" 
+                        data-testid="input-current-password-email"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button 
+                type="submit" 
+                disabled={changeEmailMutation.isPending}
+                data-testid="button-change-email"
+              >
+                {changeEmailMutation.isPending ? "変更中..." : "メールアドレスを変更"}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
+      {/* Password Change Card */}
+      <Card className="border-0 shadow-xl">
+        <CardHeader className="pb-6">
+          <div className="flex items-center gap-2">
+            <Lock className="h-5 w-5 text-blue-600" />
+            <CardTitle className="text-2xl font-bold">パスワード変更</CardTitle>
+          </div>
+          <CardDescription>
+            現在のパスワードと新しいパスワードを入力してください
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-8 pt-0">
+          <Form {...passwordForm}>
+            <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
+              <FormField
+                control={passwordForm.control}
+                name="currentPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>現在のパスワード</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password"
+                        placeholder="現在のパスワードを入力" 
+                        data-testid="input-current-password"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={passwordForm.control}
+                name="newPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>新しいパスワード</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password"
+                        placeholder="新しいパスワード（6文字以上）" 
+                        data-testid="input-new-password"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={passwordForm.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>新しいパスワード（確認）</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password"
+                        placeholder="新しいパスワードを再入力" 
+                        data-testid="input-confirm-password"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button 
+                type="submit" 
+                disabled={changePasswordMutation.isPending}
+                data-testid="button-change-password"
+              >
+                {changePasswordMutation.isPending ? "変更中..." : "パスワードを変更"}
+              </Button>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>
