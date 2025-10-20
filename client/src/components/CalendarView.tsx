@@ -502,7 +502,9 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                           {/* 参加者 */}
                           {confirmedAttendances.length > 0 && (
                             <div className="space-y-2">
-                              <h4 className="font-semibold text-sm">参加者</h4>
+                              <h4 className="font-semibold text-sm">
+                                <span className="text-green-600 dark:text-green-400">○</span> 参加者 {confirmedAttendances.length}名
+                              </h4>
                               {confirmedAttendances.map(attendance => (
                                 <div key={attendance.id} className="flex items-center gap-2 text-sm">
                                   <span className="text-green-600 dark:text-green-400">○</span>
@@ -529,7 +531,9 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                           {/* 不参加 */}
                           {absentAttendances.length > 0 && (
                             <div className="space-y-2">
-                              <h4 className="font-semibold text-sm">不参加</h4>
+                              <h4 className="font-semibold text-sm">
+                                <span className="text-red-600 dark:text-red-400">×</span> 不参加 {absentAttendances.length}名
+                              </h4>
                               {absentAttendances.map(attendance => (
                                 <div key={attendance.id} className="flex items-center gap-2 text-sm">
                                   <span className="text-red-600 dark:text-red-400">×</span>
@@ -556,7 +560,9 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                           {/* 未定 */}
                           {maybeAttendances.length > 0 && (
                             <div className="space-y-2">
-                              <h4 className="font-semibold text-sm">未定</h4>
+                              <h4 className="font-semibold text-sm">
+                                <span className="text-yellow-600 dark:text-yellow-400">△</span> 未定 {maybeAttendances.length}名
+                              </h4>
                               {maybeAttendances.map(attendance => (
                                 <div key={attendance.id} className="flex items-center gap-2 text-sm">
                                   <span className="text-yellow-600 dark:text-yellow-400">△</span>
