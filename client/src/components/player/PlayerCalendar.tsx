@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import type { Schedule, Attendance, Student, Category } from "@shared/schema";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +23,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+  const [visibleCategories, setVisibleCategories] = useState<string[]>([]);
 
   const { data: schedules = [] } = useQuery<Schedule[]>({
     queryKey: [`/api/student/${studentId}/schedules`],
@@ -39,6 +40,31 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: [`/api/categories/${teamId}`],
+  });
+
+  // デフォルトで所属カテゴリを選択
+  useEffect(() => {
+    if (categories.length > 0 && visibleCategories.length === 0) {
+      // 自分が所属しているカテゴリをデフォルトで選択
+      setVisibleCategories(selectedCategories);
+    }
+  }, [categories, selectedCategories]);
+
+  // カテゴリの表示/非表示を切り替え
+  const toggleCategoryVisibility = (categoryId: string) => {
+    setVisibleCategories(prev => {
+      if (prev.includes(categoryId)) {
+        return prev.filter(id => id !== categoryId);
+      } else {
+        return [...prev, categoryId];
+      }
+    });
+  };
+
+  // フィルタリングされたスケジュール
+  const filteredSchedules = schedules.filter(schedule => {
+    const scheduleCategoryIds = getScheduleCategoryIds(schedule);
+    return scheduleCategoryIds.some(catId => visibleCategories.includes(catId));
   });
 
   const saveAttendanceMutation = useMutation({
@@ -90,7 +116,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
     const month_local = String(targetDate.getMonth() + 1).padStart(2, '0');
     const day_local = String(targetDate.getDate()).padStart(2, '0');
     const dateStr = `${year_local}-${month_local}-${day_local}`;
-    return schedules.filter(s => s.date === dateStr);
+    return filteredSchedules.filter(s => s.date === dateStr);
   };
 
   const getAttendancesBySchedule = (scheduleId: string) => {
@@ -207,7 +233,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
       <div className="space-y-4">
         {weekDaysData.map((date, index) => {
           const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-          const daySchedules = schedules.filter(s => s.date === dateStr);
+          const daySchedules = filteredSchedules.filter(s => s.date === dateStr);
           const today = new Date();
           const isCurrentDay = today.getFullYear() === date.getFullYear() &&
                           today.getMonth() === date.getMonth() &&
@@ -292,7 +318,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
     // 今日以降の予定をフィルタして時系列でソート
-    const upcomingSchedules = schedules
+    const upcomingSchedules = filteredSchedules
       .filter(schedule => {
         if (schedule.date > todayStr) return true;
         if (schedule.date === todayStr) {
@@ -734,19 +760,31 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
           </Button>
         </div>
         
-        {/* Category Legend */}
+        {/* Category Filter */}
         {categories.length > 0 && viewMode !== "next" && (
           <div className="flex flex-wrap gap-2 items-center">
             <span className="text-sm text-muted-foreground">カテゴリ:</span>
-            {categories.map((category) => (
-              <Badge
-                key={category.id}
-                variant="outline"
-                className={`rounded-full ${getCategoryColor(category.id)}`}
-              >
-                {category.name}
-              </Badge>
-            ))}
+            {categories.map((category) => {
+              const isVisible = visibleCategories.includes(category.id);
+              return (
+                <Badge
+                  key={category.id}
+                  variant="outline"
+                  className={`rounded-full cursor-pointer transition-all ${
+                    isVisible 
+                      ? getCategoryColor(category.id) 
+                      : 'bg-muted/50 text-muted-foreground/50 border-muted'
+                  }`}
+                  onClick={() => toggleCategoryVisibility(category.id)}
+                  data-testid={`badge-category-${category.id}`}
+                >
+                  <span className="flex items-center gap-1">
+                    {isVisible && <Check className="w-3 h-3" />}
+                    {category.name}
+                  </span>
+                </Badge>
+              );
+            })}
           </div>
         )}
       </div>
