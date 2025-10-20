@@ -297,6 +297,7 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                     {daySchedules.slice(0, 3).map((schedule) => {
                       const categoryIds = getScheduleCategoryIds(schedule);
                       const primaryCategoryId = categoryIds[0];
+                      const attendanceCount = getAttendanceCount(schedule.id);
                       
                       return (
                         <div
@@ -308,7 +309,15 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                             handleDateClick(day, 0);
                           }}
                         >
-                          <div className="font-medium truncate">{schedule.title}</div>
+                          <div className="flex items-center justify-between gap-1">
+                            <div className="font-medium truncate flex-1">{schedule.title}</div>
+                            {attendanceCount > 0 && (
+                              <div className="hidden md:flex items-center gap-0.5 shrink-0">
+                                <span className="text-green-600 dark:text-green-400">○</span>
+                                <span className="font-semibold">{attendanceCount}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
