@@ -807,6 +807,24 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
               </DialogHeader>
               
               <div className="space-y-6 py-4">
+                {/* Category and Registration Type Badges */}
+                <div className="flex flex-wrap gap-2">
+                  {getScheduleCategoryIds(selectedSchedule).map((categoryId) => (
+                    <Badge key={categoryId} className={getCategoryColor(categoryId)}>
+                      {getCategoryName(categoryId)}
+                    </Badge>
+                  ))}
+                  {selectedSchedule.studentCanRegister === false ? (
+                    <Badge variant="secondary" className="rounded-full">
+                      コーチ指定
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="rounded-full">
+                      生徒登録可
+                    </Badge>
+                  )}
+                </div>
+
                 {/* Schedule Info */}
                 <div className="space-y-3">
                   <div className="space-y-2 text-sm">
