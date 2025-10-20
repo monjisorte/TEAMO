@@ -32,6 +32,14 @@ export default function MembersPage({ teamId }: MembersPageProps) {
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
 
+  // ステータスラベルのヘルパー関数
+  const getPlayerTypeLabel = (playerType: string | null | undefined) => {
+    if (playerType === "team") return "チーム生";
+    if (playerType === "school") return "スクール生";
+    if (playerType === "inactive") return "休部";
+    return "未設定";
+  };
+
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: teamId ? [`/api/categories/${teamId}`] : [],
     enabled: !!teamId,
@@ -64,6 +72,27 @@ export default function MembersPage({ teamId }: MembersPageProps) {
 
     return students.filter(student => studentsInCategory.includes(student.id));
   }, [students, studentCategories, selectedCategoryId]);
+
+  // ステータス変更のmutation
+  const updatePlayerTypeMutation = useMutation({
+    mutationFn: async ({ studentId, playerType }: { studentId: string; playerType: string }) => {
+      return await apiRequest("PATCH", `/api/student/${studentId}`, { playerType });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/students"] });
+      toast({
+        title: "更新完了",
+        description: "ステータスを更新しました",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "ステータスの更新に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
 
   const deleteMutation = useMutation({
     mutationFn: async (studentId: string) => {
@@ -150,10 +179,11 @@ export default function MembersPage({ teamId }: MembersPageProps) {
         <div className="space-y-4">
           <div className="flex items-center gap-4 px-4">
             <div className="h-14 w-14"></div>
-            <div className="flex-1 grid grid-cols-4 gap-4">
+            <div className="flex-1 grid grid-cols-5 gap-4">
               <div className="text-sm font-semibold text-muted-foreground">名前</div>
               <div className="text-sm font-semibold text-muted-foreground">生年月日</div>
               <div className="text-sm font-semibold text-muted-foreground">学校名</div>
+              <div className="text-sm font-semibold text-muted-foreground">ステータス</div>
               <div className="text-sm font-semibold text-muted-foreground">登録日</div>
             </div>
             <div className="w-20"></div>
@@ -168,7 +198,7 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                       {student.name.slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1 grid grid-cols-4 gap-4 items-center">
+                  <div className="flex-1 grid grid-cols-5 gap-4 items-center">
                     <div>
                       <p className="font-medium" data-testid={`text-member-name-${student.id}`}>
                         {student.name}
@@ -185,6 +215,26 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                       <p className="text-sm text-muted-foreground" data-testid={`text-school-${student.id}`}>
                         {student.schoolName || '未設定'}
                       </p>
+                    </div>
+                    <div>
+                      <Select
+                        value={student.playerType || "none"}
+                        onValueChange={(value) => {
+                          const newValue = value === "none" ? "" : value;
+                          updatePlayerTypeMutation.mutate({ studentId: student.id, playerType: newValue });
+                        }}
+                        data-testid={`select-player-type-${student.id}`}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">未設定</SelectItem>
+                          <SelectItem value="team">チーム生</SelectItem>
+                          <SelectItem value="school">スクール生</SelectItem>
+                          <SelectItem value="inactive">休部</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground" data-testid={`text-created-${student.id}`}>

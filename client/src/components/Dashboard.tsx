@@ -72,6 +72,13 @@ export function Dashboard() {
     return category?.name || "未分類";
   };
 
+  const getPlayerTypeLabel = (playerType: string | null | undefined) => {
+    if (playerType === "team") return "チーム生";
+    if (playerType === "school") return "スクール生";
+    if (playerType === "inactive") return "休部";
+    return "未設定";
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -243,9 +250,14 @@ export function Dashboard() {
                         </span>
                       </div>
                     </div>
-                    <Badge variant="outline" className="rounded-full">
-                      {getCategoryName(student.categoryId)}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="rounded-full">
+                        {getPlayerTypeLabel(student.playerType)}
+                      </Badge>
+                      <Badge variant="outline" className="rounded-full">
+                        {getCategoryName(student.categoryId)}
+                      </Badge>
+                    </div>
                   </div>
                 ))
               )}
