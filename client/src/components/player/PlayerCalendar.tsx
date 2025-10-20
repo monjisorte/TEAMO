@@ -98,6 +98,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/attendances"] });
+      setSelectedSchedule(null);
       toast({
         title: "保存完了",
         description: "出欠を登録しました",
