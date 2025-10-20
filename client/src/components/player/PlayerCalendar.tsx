@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import type { Schedule, Attendance, Student, Category } from "@shared/schema";
@@ -24,6 +25,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [visibleCategories, setVisibleCategories] = useState<string[]>([]);
+  const [editingComment, setEditingComment] = useState<string>("");
 
   const { data: schedules = [] } = useQuery<Schedule[]>({
     queryKey: [`/api/student/${studentId}/schedules`],
@@ -79,26 +81,27 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
   });
 
   const saveAttendanceMutation = useMutation({
-    mutationFn: async ({ scheduleId, status }: { scheduleId: string; status: string }) => {
+    mutationFn: async ({ scheduleId, status, comment }: { scheduleId: string; status: string; comment?: string }) => {
       const existingAttendance = getAttendanceForSchedule(scheduleId);
       
       if (existingAttendance) {
         return await apiRequest("PUT", `/api/attendances/${existingAttendance.id}`, {
           status,
-          comment: existingAttendance.comment || "",
+          comment: comment !== undefined ? comment : (existingAttendance.comment || ""),
         });
       } else {
         return await apiRequest("POST", "/api/attendances", {
           scheduleId,
           studentId,
           status,
-          comment: "",
+          comment: comment || "",
         });
       }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/attendances"] });
       setSelectedSchedule(null);
+      setEditingComment("");
       toast({
         title: "保存完了",
         description: "出欠を登録しました",
@@ -113,8 +116,8 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
     },
   });
 
-  const handleAttendanceChange = (scheduleId: string, status: string) => {
-    saveAttendanceMutation.mutate({ scheduleId, status });
+  const handleAttendanceChange = (scheduleId: string, status: string, comment?: string) => {
+    saveAttendanceMutation.mutate({ scheduleId, status, comment });
   };
 
   const getAttendanceForSchedule = (scheduleId: string, studentIdParam?: string) => {
@@ -531,8 +534,11 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {confirmedAttendances.map(att => (
-                        <Badge key={att.id} variant="outline">
-                          {getStudentName(att.studentId)}
+                        <Badge key={att.id} variant="outline" className="flex items-center gap-1">
+                          <span>{getStudentName(att.studentId)}</span>
+                          {att.comment && (
+                            <span className="text-xs text-muted-foreground">({att.comment})</span>
+                          )}
                         </Badge>
                       ))}
                     </div>
@@ -549,8 +555,11 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {maybeAttendances.map(att => (
-                        <Badge key={att.id} variant="outline">
-                          {getStudentName(att.studentId)}
+                        <Badge key={att.id} variant="outline" className="flex items-center gap-1">
+                          <span>{getStudentName(att.studentId)}</span>
+                          {att.comment && (
+                            <span className="text-xs text-muted-foreground">({att.comment})</span>
+                          )}
                         </Badge>
                       ))}
                     </div>
@@ -567,8 +576,11 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {absentAttendances.map(att => (
-                        <Badge key={att.id} variant="outline">
-                          {getStudentName(att.studentId)}
+                        <Badge key={att.id} variant="outline" className="flex items-center gap-1">
+                          <span>{getStudentName(att.studentId)}</span>
+                          {att.comment && (
+                            <span className="text-xs text-muted-foreground">({att.comment})</span>
+                          )}
                         </Badge>
                       ))}
                     </div>
@@ -822,7 +834,10 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
       {viewMode === "month" ? renderMonthView() : viewMode === "week" ? renderWeekView() : renderNextView()}
 
       {/* Schedule Details Dialog */}
-      <Dialog open={!!selectedSchedule} onOpenChange={() => setSelectedSchedule(null)}>
+      <Dialog open={!!selectedSchedule} onOpenChange={() => {
+        setSelectedSchedule(null);
+        setEditingComment("");
+      }}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto" data-testid="dialog-schedule-details">
           {selectedSchedule && (
             <>
@@ -924,39 +939,79 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                     
                     {/* Attendance Buttons */}
                     {selectedSchedule.studentCanRegister !== false ? (
-                      <div className="flex gap-2">
-                        <Button
-                          variant={getAttendanceForSchedule(selectedSchedule.id)?.status === "○" ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => handleAttendanceChange(selectedSchedule.id, "○")}
-                          disabled={saveAttendanceMutation.isPending}
-                          data-testid="button-attendance-yes"
-                        >
-                          ○ 参加
-                        </Button>
-                        <Button
-                          variant={getAttendanceForSchedule(selectedSchedule.id)?.status === "△" ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => handleAttendanceChange(selectedSchedule.id, "△")}
-                          disabled={saveAttendanceMutation.isPending}
-                          data-testid="button-attendance-maybe"
-                        >
-                          △ 未定
-                        </Button>
-                        <Button
-                          variant={getAttendanceForSchedule(selectedSchedule.id)?.status === "×" ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => handleAttendanceChange(selectedSchedule.id, "×")}
-                          disabled={saveAttendanceMutation.isPending}
-                          data-testid="button-attendance-no"
-                        >
-                          × 欠席
-                        </Button>
+                      <div className="space-y-3">
+                        <div className="flex gap-2">
+                          <Button
+                            variant={getAttendanceForSchedule(selectedSchedule.id)?.status === "○" ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                              const currentComment = editingComment || getAttendanceForSchedule(selectedSchedule.id)?.comment || "";
+                              handleAttendanceChange(selectedSchedule.id, "○", currentComment);
+                            }}
+                            disabled={saveAttendanceMutation.isPending}
+                            data-testid="button-attendance-yes"
+                          >
+                            ○ 参加
+                          </Button>
+                          <Button
+                            variant={getAttendanceForSchedule(selectedSchedule.id)?.status === "△" ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                              const currentComment = editingComment || getAttendanceForSchedule(selectedSchedule.id)?.comment || "";
+                              handleAttendanceChange(selectedSchedule.id, "△", currentComment);
+                            }}
+                            disabled={saveAttendanceMutation.isPending}
+                            data-testid="button-attendance-maybe"
+                          >
+                            △ 未定
+                          </Button>
+                          <Button
+                            variant={getAttendanceForSchedule(selectedSchedule.id)?.status === "×" ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                              const currentComment = editingComment || getAttendanceForSchedule(selectedSchedule.id)?.comment || "";
+                              handleAttendanceChange(selectedSchedule.id, "×", currentComment);
+                            }}
+                            disabled={saveAttendanceMutation.isPending}
+                            data-testid="button-attendance-no"
+                          >
+                            × 欠席
+                          </Button>
+                        </div>
+
+                        {/* Comment Section */}
+                        <div className="space-y-2">
+                          <label className="text-sm font-semibold">コメント（任意）</label>
+                          <Textarea
+                            placeholder="遅刻・早退の理由などがあれば入力してください..."
+                            value={editingComment || getAttendanceForSchedule(selectedSchedule.id)?.comment || ""}
+                            onChange={(e) => setEditingComment(e.target.value)}
+                            data-testid="textarea-attendance-comment"
+                            rows={3}
+                            className="resize-none"
+                          />
+                          {(editingComment || getAttendanceForSchedule(selectedSchedule.id)?.comment) && (
+                            <p className="text-xs text-muted-foreground">
+                              コメントは出欠登録ボタンをクリックすると保存されます
+                            </p>
+                          )}
+                        </div>
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">
-                        このイベントはコーチ指定のため、出欠の変更はできません
-                      </p>
+                      <>
+                        <p className="text-sm text-muted-foreground">
+                          このイベントはコーチ指定のため、出欠の変更はできません
+                        </p>
+                        {/* Display comment even for coach-specified events */}
+                        {getAttendanceForSchedule(selectedSchedule.id)?.comment && (
+                          <div className="space-y-2 mt-3">
+                            <label className="text-sm font-semibold">コメント</label>
+                            <p className="text-sm bg-muted p-3 rounded-md">
+                              {getAttendanceForSchedule(selectedSchedule.id)?.comment}
+                            </p>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
 
@@ -984,8 +1039,11 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                               </div>
                               <div className="flex flex-wrap gap-2">
                                 {confirmedAttendances.map(attendance => (
-                                  <Badge key={attendance.id} variant="outline">
-                                    {getStudentName(attendance.studentId)}
+                                  <Badge key={attendance.id} variant="outline" className="flex items-center gap-1">
+                                    <span>{getStudentName(attendance.studentId)}</span>
+                                    {attendance.comment && (
+                                      <span className="text-xs text-muted-foreground">({attendance.comment})</span>
+                                    )}
                                   </Badge>
                                 ))}
                               </div>
@@ -1002,8 +1060,11 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                               </div>
                               <div className="flex flex-wrap gap-2">
                                 {maybeAttendances.map(attendance => (
-                                  <Badge key={attendance.id} variant="outline">
-                                    {getStudentName(attendance.studentId)}
+                                  <Badge key={attendance.id} variant="outline" className="flex items-center gap-1">
+                                    <span>{getStudentName(attendance.studentId)}</span>
+                                    {attendance.comment && (
+                                      <span className="text-xs text-muted-foreground">({attendance.comment})</span>
+                                    )}
                                   </Badge>
                                 ))}
                               </div>
@@ -1020,8 +1081,11 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                               </div>
                               <div className="flex flex-wrap gap-2">
                                 {absentAttendances.map(attendance => (
-                                  <Badge key={attendance.id} variant="outline">
-                                    {getStudentName(attendance.studentId)}
+                                  <Badge key={attendance.id} variant="outline" className="flex items-center gap-1">
+                                    <span>{getStudentName(attendance.studentId)}</span>
+                                    {attendance.comment && (
+                                      <span className="text-xs text-muted-foreground">({attendance.comment})</span>
+                                    )}
                                   </Badge>
                                 ))}
                               </div>
