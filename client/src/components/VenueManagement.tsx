@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Plus, Trash2 } from "lucide-react";
+import { MapPin, Plus, Trash2, Edit } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -37,9 +37,11 @@ interface Venue {
 export function VenueManagement() {
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
   const [newVenue, setNewVenue] = useState({ name: "", address: "" });
+  const [editVenue, setEditVenue] = useState({ name: "", address: "" });
 
   // Get teamId from localStorage
   const coachData = localStorage.getItem("coachData");
@@ -74,6 +76,30 @@ export function VenueManagement() {
     },
   });
 
+  // Edit venue mutation
+  const editVenueMutation = useMutation({
+    mutationFn: async (data: { venueId: string; name: string; address: string }) => {
+      return await apiRequest("PUT", `/api/venues/${data.venueId}`, { name: data.name, address: data.address });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teams", teamId, "venues"] });
+      setIsEditDialogOpen(false);
+      setSelectedVenue(null);
+      setEditVenue({ name: "", address: "" });
+      toast({
+        title: "成功",
+        description: "活動場所を更新しました",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "活動場所の更新に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Delete venue mutation
   const deleteVenueMutation = useMutation({
     mutationFn: async (venueId: string) => {
@@ -100,6 +126,22 @@ export function VenueManagement() {
   const handleAdd = () => {
     if (newVenue.name) {
       addVenueMutation.mutate(newVenue);
+    }
+  };
+
+  const handleEditClick = (venue: Venue) => {
+    setSelectedVenue(venue);
+    setEditVenue({ name: venue.name, address: venue.address || "" });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEdit = () => {
+    if (selectedVenue && editVenue.name) {
+      editVenueMutation.mutate({ 
+        venueId: selectedVenue.id, 
+        name: editVenue.name, 
+        address: editVenue.address 
+      });
     }
   };
 
@@ -204,16 +246,71 @@ export function VenueManagement() {
                 variant="outline"
                 size="sm"
                 className="flex-1 rounded-xl"
+                onClick={() => handleEditClick(venue)}
+                data-testid={`button-edit-venue-${venue.id}`}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                編集
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-xl"
                 onClick={() => handleDeleteClick(venue)}
                 data-testid={`button-delete-venue-${venue.id}`}
               >
-                <Trash2 className="h-4 w-4 mr-2" />
-                削除
+                <Trash2 className="h-4 w-4" />
               </Button>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Edit Venue Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>活動場所を編集</DialogTitle>
+            <DialogDescription>
+              場所名や住所を変更できます
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-venue-name">場所名</Label>
+              <Input
+                id="edit-venue-name"
+                value={editVenue.name}
+                onChange={(e) => setEditVenue({ ...editVenue, name: e.target.value })}
+                placeholder="例: 中央グラウンド"
+                data-testid="input-edit-venue-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-venue-address">住所（任意）</Label>
+              <Input
+                id="edit-venue-address"
+                value={editVenue.address}
+                onChange={(e) => setEditVenue({ ...editVenue, address: e.target.value })}
+                placeholder="例: 東京都..."
+                data-testid="input-edit-venue-address"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} data-testid="button-cancel-edit">
+              キャンセル
+            </Button>
+            <Button 
+              onClick={handleEdit}
+              disabled={editVenueMutation.isPending}
+              data-testid="button-save-edit-venue"
+            >
+              {editVenueMutation.isPending ? "更新中..." : "更新"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

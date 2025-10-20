@@ -759,6 +759,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/venues/:venueId", async (req, res) => {
+    try {
+      const { venueId } = req.params;
+      const { name, address } = req.body;
+
+      if (!name) {
+        return res.status(400).json({ error: "Name is required" });
+      }
+
+      // Check if venue exists
+      const venue = await db.select().from(venues).where(eq(venues.id, venueId)).limit(1);
+      if (venue.length === 0) {
+        return res.status(404).json({ error: "Venue not found" });
+      }
+
+      // Update venue
+      const updatedVenue = await db.update(venues)
+        .set({ name, address })
+        .where(eq(venues.id, venueId))
+        .returning();
+
+      res.status(200).json(updatedVenue[0]);
+    } catch (error) {
+      console.error("Error updating venue:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Student Profile
   app.get("/api/student/:studentId", async (req, res) => {
     try {
