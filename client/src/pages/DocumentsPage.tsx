@@ -169,19 +169,19 @@ export default function DocumentsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex-1">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             共有資料
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-muted-foreground mt-1">
             チームの共有ドキュメントとファイルを管理します
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 shrink-0">
           <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
             <DialogTrigger asChild>
-              <Button data-testid="button-create-folder">
+              <Button className="rounded-xl" data-testid="button-create-folder">
                 <FolderPlus className="w-4 h-4 mr-2" />
                 フォルダ作成
               </Button>
@@ -217,6 +217,7 @@ export default function DocumentsPage() {
             maxFileSize={52428800}
             onGetUploadParameters={handleGetUploadParameters}
             onComplete={handleUploadComplete}
+            buttonClassName="rounded-xl"
           >
             <FilePlus className="w-4 h-4 mr-2" />
             ファイルアップロード
