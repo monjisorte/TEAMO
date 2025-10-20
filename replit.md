@@ -56,6 +56,7 @@ Preferred communication style: Simple, everyday language.
 *   `/api/admin/stats` - GET system-wide dashboard statistics (total teams count)
 *   `/api/admin/teams` - GET all teams with statistics (coach count, member count, event count)
 *   `/api/admin/teams/:teamId` - GET detailed team information with coaches and members list
+*   `/api/admin/accounts` - GET all admin accounts (excluding passwords), POST add new admin account (by existing admin)
 
 ### Database Architecture
 **ORM and Schema:** Drizzle ORM with PostgreSQL dialect, schema-first approach with TypeScript type inference, Zod integration for runtime validation, and migration support via drizzle-kit.

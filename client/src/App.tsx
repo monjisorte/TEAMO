@@ -33,6 +33,7 @@ import AdminLogin from "@/pages/AdminLogin";
 import AdminSetup from "@/pages/AdminSetup";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminTeams from "@/pages/admin/AdminTeams";
+import AdminAccounts from "@/pages/admin/AdminAccounts";
 import { PlayerSidebar } from "@/components/PlayerSidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { Button } from "@/components/ui/button";
@@ -326,6 +327,7 @@ function AdminRouter() {
     <Switch>
       <Route path="/admins" component={AdminDashboard} />
       <Route path="/admins/teams" component={AdminTeams} />
+      <Route path="/admins/accounts" component={AdminAccounts} />
       <Route component={NotFound} />
     </Switch>
   );

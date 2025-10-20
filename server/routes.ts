@@ -1924,6 +1924,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all admin accounts
+  app.get("/api/admin/accounts", async (req, res) => {
+    try {
+      const allAdmins = await db.select().from(admins);
+      
+      // Don't send passwords
+      const adminsData = allAdmins.map(({ password, ...admin }) => admin);
+      
+      res.json(adminsData);
+    } catch (error) {
+      console.error("Error fetching admin accounts:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Add a new admin account (by existing admin)
+  app.post("/api/admin/accounts", async (req, res) => {
+    try {
+      const { name, email, password } = req.body;
+
+      if (!name || !email || !password) {
+        return res.status(400).json({ error: "名前、メールアドレス、パスワードが必要です" });
+      }
+
+      // Check if email is already in use
+      const existingAdmin = await db.select().from(admins).where(eq(admins.email, email)).limit(1);
+      
+      if (existingAdmin.length > 0) {
+        return res.status(409).json({ error: "このメールアドレスは既に使用されています" });
+      }
+
+      const hashedPassword = await hashPassword(password);
+
+      const newAdmin = await db.insert(admins).values({
+        name,
+        email,
+        password: hashedPassword,
+      }).returning();
+
+      const { password: _, ...adminData } = newAdmin[0];
+      res.json(adminData);
+    } catch (error) {
+      console.error("Error creating admin account:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
