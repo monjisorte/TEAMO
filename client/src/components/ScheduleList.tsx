@@ -682,33 +682,78 @@ export function ScheduleList() {
                       参加者がいません
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      {participants.map((participant) => (
-                        <div 
-                          key={participant.student!.id} 
-                          className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover-elevate"
-                          data-testid={`participant-${participant.student!.id}`}
-                        >
-                          <div className="flex items-center gap-3 flex-1">
-                            <span className="text-lg">
-                              {participant.status === 'present' && <span className="text-green-600 dark:text-green-400">○</span>}
-                              {participant.status === '○' && <span className="text-green-600 dark:text-green-400">○</span>}
-                              {participant.status === 'maybe' && <span className="text-yellow-600 dark:text-yellow-400">△</span>}
-                              {participant.status === '△' && <span className="text-yellow-600 dark:text-yellow-400">△</span>}
-                              {participant.status === 'absent' && <span className="text-red-600 dark:text-red-400">×</span>}
-                              {participant.status === '×' && <span className="text-red-600 dark:text-red-400">×</span>}
-                            </span>
-                            <div className="flex-1">
-                              <span className="font-medium">{participant.student!.name}</span>
-                              {participant.comment && (
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  {participant.comment}
-                                </p>
-                              )}
-                            </div>
+                    <div className="space-y-4">
+                      {/* 参加者 (○) */}
+                      {(() => {
+                        const present = participants.filter(p => p.status === 'present' || p.status === '○');
+                        if (present.length === 0) return null;
+                        return (
+                          <div className="space-y-2">
+                            <h4 className="font-semibold text-sm">参加者</h4>
+                            {present.map((participant) => (
+                              <div 
+                                key={participant.student!.id} 
+                                className="flex items-center gap-2 text-sm"
+                                data-testid={`participant-present-${participant.student!.id}`}
+                              >
+                                <span className="text-green-600 dark:text-green-400">○</span>
+                                <span>
+                                  {participant.student!.name}
+                                  {participant.comment && <span className="text-muted-foreground">（{participant.comment}）</span>}
+                                </span>
+                              </div>
+                            ))}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })()}
+
+                      {/* 不参加 (×) */}
+                      {(() => {
+                        const absent = participants.filter(p => p.status === 'absent' || p.status === '×');
+                        if (absent.length === 0) return null;
+                        return (
+                          <div className="space-y-2">
+                            <h4 className="font-semibold text-sm">不参加</h4>
+                            {absent.map((participant) => (
+                              <div 
+                                key={participant.student!.id} 
+                                className="flex items-center gap-2 text-sm"
+                                data-testid={`participant-absent-${participant.student!.id}`}
+                              >
+                                <span className="text-red-600 dark:text-red-400">×</span>
+                                <span>
+                                  {participant.student!.name}
+                                  {participant.comment && <span className="text-muted-foreground">（{participant.comment}）</span>}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+
+                      {/* 未定 (△) */}
+                      {(() => {
+                        const maybe = participants.filter(p => p.status === 'maybe' || p.status === '△');
+                        if (maybe.length === 0) return null;
+                        return (
+                          <div className="space-y-2">
+                            <h4 className="font-semibold text-sm">未定</h4>
+                            {maybe.map((participant) => (
+                              <div 
+                                key={participant.student!.id} 
+                                className="flex items-center gap-2 text-sm"
+                                data-testid={`participant-maybe-${participant.student!.id}`}
+                              >
+                                <span className="text-yellow-600 dark:text-yellow-400">△</span>
+                                <span>
+                                  {participant.student!.name}
+                                  {participant.comment && <span className="text-muted-foreground">（{participant.comment}）</span>}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>

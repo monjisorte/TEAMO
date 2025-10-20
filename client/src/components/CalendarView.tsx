@@ -498,97 +498,85 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                           <h4 className="font-semibold">参加者情報</h4>
                         </div>
 
-                        <div className="grid gap-3">
-                          {/* Confirmed */}
+                        <div className="space-y-4">
+                          {/* 参加者 */}
                           {confirmedAttendances.length > 0 && (
-                            <div>
-                              <div className="flex items-center gap-2 mb-2">
-                                <Badge variant="default" className="bg-green-500">
-                                  ○ 参加 ({confirmedAttendances.length}名)
-                                </Badge>
-                              </div>
-                              <div className="flex flex-wrap gap-2">
-                                {confirmedAttendances.map(attendance => (
-                                  <div key={attendance.id} className="flex items-center gap-2">
-                                    <Badge variant="outline">
-                                      {getStudentName(attendance.studentId)}
-                                    </Badge>
-                                    {selectedDaySchedules.length > 1 && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 px-2"
-                                        onClick={() => openMoveParticipantDialog(attendance, schedule)}
-                                        data-testid={`button-move-${attendance.id}`}
-                                      >
-                                        <ArrowRight className="h-3 w-3" />
-                                      </Button>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-sm">参加者</h4>
+                              {confirmedAttendances.map(attendance => (
+                                <div key={attendance.id} className="flex items-center gap-2 text-sm">
+                                  <span className="text-green-600 dark:text-green-400">○</span>
+                                  <span>
+                                    {getStudentName(attendance.studentId)}
+                                    {attendance.comment && <span className="text-muted-foreground">（{attendance.comment}）</span>}
+                                  </span>
+                                  {selectedDaySchedules.length > 1 && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 px-2 ml-auto"
+                                      onClick={() => openMoveParticipantDialog(attendance, schedule)}
+                                      data-testid={`button-move-${attendance.id}`}
+                                    >
+                                      <ArrowRight className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
                             </div>
                           )}
 
-                          {/* Maybe */}
-                          {maybeAttendances.length > 0 && (
-                            <div>
-                              <div className="flex items-center gap-2 mb-2">
-                                <Badge variant="default" className="bg-yellow-500">
-                                  △ 未定 ({maybeAttendances.length}名)
-                                </Badge>
-                              </div>
-                              <div className="flex flex-wrap gap-2">
-                                {maybeAttendances.map(attendance => (
-                                  <div key={attendance.id} className="flex items-center gap-2">
-                                    <Badge variant="outline">
-                                      {getStudentName(attendance.studentId)}
-                                    </Badge>
-                                    {selectedDaySchedules.length > 1 && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 px-2"
-                                        onClick={() => openMoveParticipantDialog(attendance, schedule)}
-                                        data-testid={`button-move-${attendance.id}`}
-                                      >
-                                        <ArrowRight className="h-3 w-3" />
-                                      </Button>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Absent */}
+                          {/* 不参加 */}
                           {absentAttendances.length > 0 && (
-                            <div>
-                              <div className="flex items-center gap-2 mb-2">
-                                <Badge variant="default" className="bg-red-500">
-                                  × 欠席 ({absentAttendances.length}名)
-                                </Badge>
-                              </div>
-                              <div className="flex flex-wrap gap-2">
-                                {absentAttendances.map(attendance => (
-                                  <div key={attendance.id} className="flex items-center gap-2">
-                                    <Badge variant="outline">
-                                      {getStudentName(attendance.studentId)}
-                                    </Badge>
-                                    {selectedDaySchedules.length > 1 && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 px-2"
-                                        onClick={() => openMoveParticipantDialog(attendance, schedule)}
-                                        data-testid={`button-move-${attendance.id}`}
-                                      >
-                                        <ArrowRight className="h-3 w-3" />
-                                      </Button>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-sm">不参加</h4>
+                              {absentAttendances.map(attendance => (
+                                <div key={attendance.id} className="flex items-center gap-2 text-sm">
+                                  <span className="text-red-600 dark:text-red-400">×</span>
+                                  <span>
+                                    {getStudentName(attendance.studentId)}
+                                    {attendance.comment && <span className="text-muted-foreground">（{attendance.comment}）</span>}
+                                  </span>
+                                  {selectedDaySchedules.length > 1 && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 px-2 ml-auto"
+                                      onClick={() => openMoveParticipantDialog(attendance, schedule)}
+                                      data-testid={`button-move-${attendance.id}`}
+                                    >
+                                      <ArrowRight className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* 未定 */}
+                          {maybeAttendances.length > 0 && (
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-sm">未定</h4>
+                              {maybeAttendances.map(attendance => (
+                                <div key={attendance.id} className="flex items-center gap-2 text-sm">
+                                  <span className="text-yellow-600 dark:text-yellow-400">△</span>
+                                  <span>
+                                    {getStudentName(attendance.studentId)}
+                                    {attendance.comment && <span className="text-muted-foreground">（{attendance.comment}）</span>}
+                                  </span>
+                                  {selectedDaySchedules.length > 1 && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 px-2 ml-auto"
+                                      onClick={() => openMoveParticipantDialog(attendance, schedule)}
+                                      data-testid={`button-move-${attendance.id}`}
+                                    >
+                                      <ArrowRight className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
                             </div>
                           )}
 
