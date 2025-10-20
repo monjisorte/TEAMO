@@ -143,7 +143,7 @@ function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogou
               </Button>
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-1 md:p-8 pb-16 md:pb-24">
+          <main className="flex-1 overflow-auto p-4 md:p-8 pb-16 md:pb-24">
             <Switch>
               <Route path="/attendance">
                 {() => <PlayerAttendancePage playerId={player.id} teamId={player.teamId} />}
@@ -263,7 +263,7 @@ function CoachPortalContent({ coachId, onLogout }: { coachId: string; onLogout: 
               </Button>
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-1 md:p-8 pb-16 md:pb-24">
+          <main className="flex-1 overflow-auto p-4 md:p-8 pb-16 md:pb-24">
             <CoachRouter teamId={coach.teamId} />
           </main>
         </div>
@@ -367,7 +367,7 @@ function AdminPortalContent({ adminId, onLogout }: { adminId: string; onLogout: 
               </Button>
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-1 md:p-8 pb-16 md:pb-24">
+          <main className="flex-1 overflow-auto p-4 md:p-8 pb-16 md:pb-24">
             <AdminRouter />
           </main>
         </div>
