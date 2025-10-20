@@ -129,20 +129,20 @@ export default function PlayerMembersPage({ teamId }: PlayerMembersPageProps) {
                   </div>
                   <div className="space-y-1.5" style={{ width: '80%' }}>
                     <div>
-                      <p className="text-xs font-medium" data-testid={`text-member-name-${student.id}`}>
-                        名前　<span className="font-bold">{student.name}</span>
+                      <p className="text-xs md:text-sm font-medium" data-testid={`text-member-name-${student.id}`}>
+                        名前　<span className="font-bold text-sm md:text-base">{student.name}</span>
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium" data-testid={`text-birthdate-${student.id}`}>
-                        生年月日　{student.birthDate 
+                      <p className="text-xs md:text-sm font-medium" data-testid={`text-birthdate-${student.id}`}>
+                        生年月日　<span className="text-xs md:text-sm">{student.birthDate 
                           ? new Date(student.birthDate).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
-                          : '未設定'}
+                          : '未設定'}</span>
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium" data-testid={`text-school-${student.id}`}>
-                        学校名　{student.schoolName || '未設定'}
+                      <p className="text-xs md:text-sm font-medium" data-testid={`text-school-${student.id}`}>
+                        学校名　<span className="text-xs md:text-sm">{student.schoolName || '未設定'}</span>
                       </p>
                     </div>
                   </div>
