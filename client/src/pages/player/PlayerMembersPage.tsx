@@ -118,16 +118,16 @@ export default function PlayerMembersPage({ teamId }: PlayerMembersPageProps) {
             >
               <CardContent className="p-3">
                 <div className="flex items-start gap-3">
-                  <div className="relative shrink-0">
-                    <Avatar className="h-18 w-18 ring-2 ring-blue-50">
+                  <div className="relative" style={{ width: '20%' }}>
+                    <Avatar className="w-full aspect-square ring-2 ring-blue-50">
                       <AvatarImage src={student.photoUrl || undefined} alt={student.name} />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-base">
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-lg">
                         {student.name.slice(0, 2)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full border-2 border-white" />
                   </div>
-                  <div className="flex-1 space-y-1.5">
+                  <div className="space-y-1.5" style={{ width: '80%' }}>
                     <div>
                       <p className="text-xs font-medium" data-testid={`text-member-name-${student.id}`}>
                         名前　<span className="font-bold">{student.name}</span>
