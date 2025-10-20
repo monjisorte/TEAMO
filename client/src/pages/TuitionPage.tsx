@@ -5,11 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Student, TuitionPayment, Team } from "@shared/schema";
-import { Badge } from "@/components/ui/badge";
 import { RefreshCw, Settings } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -509,46 +507,37 @@ export default function TuitionPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>名前</TableHead>
-                  <TableHead>区分</TableHead>
-                  <TableHead className="text-right">月謝</TableHead>
-                  <TableHead className="text-right">割引</TableHead>
-                  <TableHead className="text-right">入会/年会費</TableHead>
-                  <TableHead className="text-right">スポット</TableHead>
-                  <TableHead className="text-right">合計金額(円)</TableHead>
-                  <TableHead className="text-center">ステータス</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {students.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground">
-                      メンバーが登録されていません
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  students.map((student) => {
-                    const payment = getPaymentForStudent(student.id);
-                    const baseAmount = payment?.baseAmount ?? getDefaultBaseAmount(student);
-                    const discount = payment?.discount ?? 0;
-                    const enrollmentOrAnnualFee = payment?.enrollmentOrAnnualFee ?? getDefaultEnrollmentOrAnnualFee();
-                    const spotFee = payment?.spotFee ?? 0;
-                    const amount = payment?.amount ?? calculateTotal(student.id);
+          {students.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8">
+              メンバーが登録されていません
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {students.map((student) => {
+                const payment = getPaymentForStudent(student.id);
+                const baseAmount = payment?.baseAmount ?? getDefaultBaseAmount(student);
+                const discount = payment?.discount ?? 0;
+                const enrollmentOrAnnualFee = payment?.enrollmentOrAnnualFee ?? getDefaultEnrollmentOrAnnualFee();
+                const spotFee = payment?.spotFee ?? 0;
+                const amount = payment?.amount ?? calculateTotal(student.id);
 
-                    return (
-                      <TableRow key={student.id}>
-                        <TableCell className="font-medium">{student.name}</TableCell>
-                        <TableCell>
+                return (
+                  <div key={student.id} className="border rounded-lg p-4 space-y-3">
+                    <div className="grid grid-cols-[1fr,auto] gap-4">
+                      {/* Left: Name and Category */}
+                      <div className="space-y-2">
+                        <div>
+                          <div className="text-xs text-muted-foreground mb-1">名前</div>
+                          <div className="font-medium">{student.name}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted-foreground mb-1">区分</div>
                           <Select
                             value={payment?.category || (student.playerType === "member" ? "team" : student.playerType === "school" ? "school" : "unset")}
                             onValueChange={(value) => handleCategoryChange(student.id, value === "unset" ? null : value)}
                             data-testid={`select-category-${student.id}`}
                           >
-                            <SelectTrigger className="w-[100px]">
+                            <SelectTrigger className="w-[120px]">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -557,48 +546,13 @@ export default function TuitionPage() {
                               <SelectItem value="unset">(未選択)</SelectItem>
                             </SelectContent>
                           </Select>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Input
-                            type="number"
-                            value={getEditingValue(student.id, 'baseAmount', baseAmount)}
-                            onChange={(e) => setEditingValue(student.id, 'baseAmount', parseInt(e.target.value) || 0)}
-                            onBlur={() => handleFieldUpdate(student.id, 'baseAmount')}
-                            className="w-24 text-right"
-                            data-testid={`input-base-amount-${student.id}`}
-                          />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Input
-                            type="number"
-                            value={getEditingValue(student.id, 'discount', discount)}
-                            onChange={(e) => setEditingValue(student.id, 'discount', parseInt(e.target.value) || 0)}
-                            onBlur={() => handleFieldUpdate(student.id, 'discount')}
-                            className="w-24 text-right"
-                            data-testid={`input-discount-${student.id}`}
-                          />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Input
-                            type="number"
-                            value={getEditingValue(student.id, 'enrollmentOrAnnualFee', enrollmentOrAnnualFee)}
-                            onChange={(e) => setEditingValue(student.id, 'enrollmentOrAnnualFee', parseInt(e.target.value) || 0)}
-                            onBlur={() => handleFieldUpdate(student.id, 'enrollmentOrAnnualFee')}
-                            className="w-24 text-right"
-                            data-testid={`input-enrollment-fee-${student.id}`}
-                          />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Input
-                            type="number"
-                            value={getEditingValue(student.id, 'spotFee', spotFee)}
-                            onChange={(e) => setEditingValue(student.id, 'spotFee', parseInt(e.target.value) || 0)}
-                            onBlur={() => handleFieldUpdate(student.id, 'spotFee')}
-                            className="w-24 text-right"
-                            data-testid={`input-spot-fee-${student.id}`}
-                          />
-                        </TableCell>
-                        <TableCell className="text-right">
+                        </div>
+                      </div>
+
+                      {/* Right: Total and Status */}
+                      <div className="space-y-2 text-right">
+                        <div>
+                          <div className="text-xs text-muted-foreground mb-1">合計金額</div>
                           <Input
                             type="number"
                             value={getEditingValue(student.id, 'amount', amount)}
@@ -607,21 +561,73 @@ export default function TuitionPage() {
                             className="w-28 text-right font-semibold"
                             data-testid={`input-total-amount-${student.id}`}
                           />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Checkbox
-                            checked={payment?.isPaid || false}
-                            onCheckedChange={(checked) => handlePaidToggle(student.id, checked as boolean)}
-                            data-testid={`checkbox-paid-${student.id}`}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted-foreground mb-1">ステータス</div>
+                          <div className="flex items-center justify-end gap-2">
+                            <Checkbox
+                              checked={payment?.isPaid || false}
+                              onCheckedChange={(checked) => handlePaidToggle(student.id, checked as boolean)}
+                              data-testid={`checkbox-paid-${student.id}`}
+                            />
+                            <span className="text-sm">{payment?.isPaid ? "入金済み" : "未入金"}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bottom: Fee Details in 2 columns */}
+                    <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">月謝</div>
+                        <Input
+                          type="number"
+                          value={getEditingValue(student.id, 'baseAmount', baseAmount)}
+                          onChange={(e) => setEditingValue(student.id, 'baseAmount', parseInt(e.target.value) || 0)}
+                          onBlur={() => handleFieldUpdate(student.id, 'baseAmount')}
+                          className="w-full text-right"
+                          data-testid={`input-base-amount-${student.id}`}
+                        />
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">割引</div>
+                        <Input
+                          type="number"
+                          value={getEditingValue(student.id, 'discount', discount)}
+                          onChange={(e) => setEditingValue(student.id, 'discount', parseInt(e.target.value) || 0)}
+                          onBlur={() => handleFieldUpdate(student.id, 'discount')}
+                          className="w-full text-right"
+                          data-testid={`input-discount-${student.id}`}
+                        />
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">入会/年会費</div>
+                        <Input
+                          type="number"
+                          value={getEditingValue(student.id, 'enrollmentOrAnnualFee', enrollmentOrAnnualFee)}
+                          onChange={(e) => setEditingValue(student.id, 'enrollmentOrAnnualFee', parseInt(e.target.value) || 0)}
+                          onBlur={() => handleFieldUpdate(student.id, 'enrollmentOrAnnualFee')}
+                          className="w-full text-right"
+                          data-testid={`input-enrollment-fee-${student.id}`}
+                        />
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">スポット</div>
+                        <Input
+                          type="number"
+                          value={getEditingValue(student.id, 'spotFee', spotFee)}
+                          onChange={(e) => setEditingValue(student.id, 'spotFee', parseInt(e.target.value) || 0)}
+                          onBlur={() => handleFieldUpdate(student.id, 'spotFee')}
+                          className="w-full text-right"
+                          data-testid={`input-spot-fee-${student.id}`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
