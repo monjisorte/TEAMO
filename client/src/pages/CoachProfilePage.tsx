@@ -105,7 +105,7 @@ export default function CoachProfilePage() {
     if (coach?.photoUrl) {
       setPhotoPreview(coach.photoUrl);
     }
-  }, [coach]);
+  }, [coach?.photoUrl]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
