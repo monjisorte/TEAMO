@@ -16,7 +16,7 @@ interface AttendanceViewProps {
   selectedCategories: string[];
 }
 
-type AttendanceStatus = "○" | "△" | "×";
+type AttendanceStatus = "○" | "△" | "×" | "-";
 
 export default function AttendanceView({ studentId, selectedCategories }: AttendanceViewProps) {
   const { toast } = useToast();
@@ -70,9 +70,20 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
   };
 
   const handleSave = async (scheduleId: string) => {
+    const status = getCurrentStatus(scheduleId);
+    
+    // 未選択の場合は保存できないようにする
+    if (status === "-") {
+      toast({
+        title: "エラー",
+        description: "出欠状況を選択してください",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSavingScheduleId(scheduleId);
     try {
-      const status = getCurrentStatus(scheduleId);
       const comment = getCurrentComment(scheduleId);
 
       const response = await apiRequest("POST", `/api/student/${studentId}/attendance`, { scheduleId, status, comment });

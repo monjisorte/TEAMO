@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Loader2, User } from "lucide-react";
 import type { Coach } from "@shared/schema";
 
@@ -78,6 +79,11 @@ export default function PlayerCoachesPage({ teamId }: PlayerCoachesPageProps) {
                       <CardDescription className="mt-1" data-testid={`text-coach-kana-${coach.id}`}>
                         {fullNameKana}
                       </CardDescription>
+                    )}
+                    {coach.position && (
+                      <Badge className="mt-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white" data-testid={`badge-coach-position-${coach.id}`}>
+                        {coach.position}
+                      </Badge>
                     )}
                   </div>
                 </div>
