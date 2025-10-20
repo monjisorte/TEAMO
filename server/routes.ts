@@ -1431,6 +1431,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Coach Profile Management
+  app.get("/api/coach/:coachId", async (req, res) => {
+    try {
+      const { coachId } = req.params;
+      
+      const coach = await db.select().from(coaches).where(eq(coaches.id, coachId)).limit(1);
+      
+      if (coach.length === 0) {
+        return res.status(404).json({ error: "Coach not found" });
+      }
+
+      // Don't send password
+      const { password, ...coachData } = coach[0];
+      res.json(coachData);
+    } catch (error) {
+      console.error("Error fetching coach:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/coach/:coachId", async (req, res) => {
+    try {
+      const { coachId } = req.params;
+      const { lastName, firstName, lastNameKana, firstNameKana, photoUrl, bio } = req.body;
+
+      const updateData: any = {};
+      if (lastName !== undefined) updateData.lastName = lastName;
+      if (firstName !== undefined) updateData.firstName = firstName;
+      if (lastNameKana !== undefined) updateData.lastNameKana = lastNameKana;
+      if (firstNameKana !== undefined) updateData.firstNameKana = firstNameKana;
+      if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
+      if (bio !== undefined) updateData.bio = bio;
+
+      const updated = await db.update(coaches)
+        .set(updateData)
+        .where(eq(coaches.id, coachId))
+        .returning();
+
+      if (updated.length === 0) {
+        return res.status(404).json({ error: "Coach not found" });
+      }
+
+      const { password, ...coachData } = updated[0];
+      res.json(coachData);
+    } catch (error) {
+      console.error("Error updating coach profile:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/coach/:coachId/password", async (req, res) => {
+    try {
+      const { coachId } = req.params;
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: "Current and new password are required" });
+      }
+
+      // Get current coach
+      const coach = await db.select().from(coaches).where(eq(coaches.id, coachId)).limit(1);
+      
+      if (coach.length === 0) {
+        return res.status(404).json({ error: "Coach not found" });
+      }
+
+      // Verify current password
+      const isValid = await verifyPassword(currentPassword, coach[0].password);
+      if (!isValid) {
+        return res.status(401).json({ error: "現在のパスワードが正しくありません" });
+      }
+
+      // Hash new password
+      const hashedPassword = await hashPassword(newPassword);
+
+      // Update password
+      await db.update(coaches)
+        .set({ password: hashedPassword })
+        .where(eq(coaches.id, coachId));
+
+      res.json({ success: true, message: "パスワードを変更しました" });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get team coaches (for student view)
+  app.get("/api/team/:teamId/coaches", async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      
+      const teamCoaches = await db.select().from(coaches).where(eq(coaches.teamId, teamId));
+      
+      // Don't send passwords
+      const coachesData = teamCoaches.map(({ password, ...coach }) => coach);
+      
+      res.json(coachesData);
+    } catch (error) {
+      console.error("Error fetching team coaches:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

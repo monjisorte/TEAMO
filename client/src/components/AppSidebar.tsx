@@ -1,4 +1,4 @@
-import { Home, Calendar, MapPin, Tag, Users, FileText, DollarSign, Settings as SettingsIcon, Bell, UsersRound } from "lucide-react";
+import { Home, Calendar, MapPin, Tag, Users, FileText, DollarSign, Settings as SettingsIcon, Bell, UsersRound, UserCircle } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -63,6 +63,11 @@ const menuItems = [
     title: "LINE通知",
     url: "/team/line",
     icon: Bell,
+  },
+  {
+    title: "プロフィール設定",
+    url: "/team/profile",
+    icon: UserCircle,
   },
 ];
 

@@ -27,6 +27,7 @@ import PlayerProfilePage from "@/pages/PlayerProfilePage";
 import PlayerMembersPage from "@/pages/player/PlayerMembersPage";
 import CoachLogin from "@/pages/CoachLogin";
 import MembersPage from "@/pages/MembersPage";
+import CoachProfilePage from "@/pages/CoachProfilePage";
 import { PlayerSidebar } from "@/components/PlayerSidebar";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
@@ -280,6 +281,7 @@ function CoachRouter({ teamId }: { teamId: string }) {
       <Route path="/team/billing" component={TuitionPage} />
       <Route path="/team/information2" component={TeamInfoPage} />
       <Route path="/team/line" component={LineNotificationsPage} />
+      <Route path="/team/profile" component={CoachProfilePage} />
       <Route component={NotFound} />
     </Switch>
   );

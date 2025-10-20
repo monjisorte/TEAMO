@@ -93,6 +93,12 @@ export const coaches = pgTable("coaches", {
   password: text("password").notNull(),
   teamId: varchar("team_id").notNull(),
   role: text("role").default("coach"), // "owner", "coach", "assistant"
+  lastName: text("last_name"), // 性
+  firstName: text("first_name"), // 名
+  lastNameKana: text("last_name_kana"), // 性 かな
+  firstNameKana: text("first_name_kana"), // 名 かな
+  photoUrl: text("photo_url"), // プロフィール写真URL
+  bio: text("bio"), // プロフィール/自己紹介
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
