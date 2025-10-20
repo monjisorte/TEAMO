@@ -248,7 +248,7 @@ export default function MembersPage({ teamId }: MembersPageProps) {
               data-testid={`card-member-${student.id}`}
             >
               <CardContent className="p-4">
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3">
                   <div className="relative shrink-0">
                     <Avatar className="w-12 h-12 ring-2 ring-blue-50">
                       <AvatarImage src={student.photoUrl || undefined} alt={student.name} />
@@ -257,35 +257,35 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                       </AvatarFallback>
                     </Avatar>
                   </div>
-                  <div className="flex-1 grid grid-cols-7 gap-2 items-center min-w-0">
-                    <div>
-                      <p className="text-xs text-muted-foreground">名前</p>
-                      <p className="text-sm font-bold truncate" data-testid={`text-member-name-${student.id}`}>
+                  <div className="flex-1 flex flex-wrap gap-x-4 gap-y-2 items-start min-w-0">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xs text-muted-foreground">名前</span>
+                      <span className="text-sm font-bold" data-testid={`text-member-name-${student.id}`}>
                         {student.name}
-                      </p>
+                      </span>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">背番号</p>
-                      <p className="text-sm" data-testid={`text-jersey-${student.id}`}>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xs text-muted-foreground">背番号</span>
+                      <span className="text-sm" data-testid={`text-jersey-${student.id}`}>
                         {student.jerseyNumber != null && student.jerseyNumber >= 0 ? student.jerseyNumber : '未設定'}
-                      </p>
+                      </span>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">生年月日</p>
-                      <p className="text-sm whitespace-nowrap" data-testid={`text-birthdate-${student.id}`}>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xs text-muted-foreground">生年月日</span>
+                      <span className="text-sm whitespace-nowrap" data-testid={`text-birthdate-${student.id}`}>
                         {student.birthDate 
-                          ? new Date(student.birthDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/')
+                          ? new Date(student.birthDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
                           : '未設定'}
-                      </p>
+                      </span>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">学校名</p>
-                      <p className="text-sm truncate" data-testid={`text-school-${student.id}`}>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xs text-muted-foreground">学校名</span>
+                      <span className="text-sm truncate" data-testid={`text-school-${student.id}`}>
                         {student.schoolName || '未設定'}
-                      </p>
+                      </span>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">ステータス</p>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xs text-muted-foreground">ステータス</span>
                       <Select
                         value={student.playerType || "none"}
                         onValueChange={(value) => {
@@ -294,7 +294,7 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                         }}
                         data-testid={`select-player-type-${student.id}`}
                       >
-                        <SelectTrigger className="w-full text-xs h-8">
+                        <SelectTrigger className="w-32 text-xs h-7 border-0 shadow-none px-2">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -305,13 +305,13 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">カテゴリー</p>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xs text-muted-foreground">カテゴリー</span>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
-                            variant="outline"
-                            className="w-full h-8 text-xs justify-between"
+                            variant="ghost"
+                            className="h-7 text-xs justify-between px-2 hover:bg-accent"
                             data-testid={`button-category-${student.id}`}
                           >
                             {(() => {
@@ -356,13 +356,13 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                         </PopoverContent>
                       </Popover>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">登録日</p>
-                      <p className="text-sm whitespace-nowrap" data-testid={`text-created-${student.id}`}>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xs text-muted-foreground">登録日</span>
+                      <span className="text-sm whitespace-nowrap" data-testid={`text-created-${student.id}`}>
                         {student.createdAt 
                           ? new Date(student.createdAt).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
                           : '未設定'}
-                      </p>
+                      </span>
                     </div>
                   </div>
                   <Button
