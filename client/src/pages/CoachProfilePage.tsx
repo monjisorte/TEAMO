@@ -335,55 +335,53 @@ export default function CoachProfilePage() {
         </p>
       </div>
 
-      {/* Profile Photo */}
-      <Card>
-        <CardHeader>
-          <CardTitle>プロフィール写真</CardTitle>
-          <CardDescription>写真をクリックして変更できます</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center gap-4">
-          <label
-            htmlFor="photo-upload"
-            className="relative group cursor-pointer"
-            data-testid="button-change-photo"
-          >
-            <Avatar className="h-32 w-32">
-              <AvatarImage src={photoPreview || coach?.photoUrl || ""} alt={fullName} />
-              <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white text-3xl">
-                <User className="h-16 w-16" />
-              </AvatarFallback>
-            </Avatar>
-            <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <Camera className="h-8 w-8 text-white" />
-            </div>
-          </label>
-          <input
-            id="photo-upload"
-            type="file"
-            accept="image/*"
-            onChange={handlePhotoChange}
-            className="hidden"
-            data-testid="input-photo"
-          />
-          {photoFile && (
-            <p className="text-sm text-muted-foreground">
-              新しい写真が選択されています。保存ボタンをクリックしてください。
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Basic Information */}
       <Card>
         <CardHeader>
           <CardTitle>基本情報</CardTitle>
-          <CardDescription>氏名とプロフィールを入力してください</CardDescription>
+          <CardDescription>氏名、プロフィール、写真を変更できます</CardDescription>
         </CardHeader>
         <CardContent>
           <form
             onSubmit={profileForm.handleSubmit((data) => updateProfileMutation.mutate(data))}
             className="space-y-6"
           >
+            {/* Profile Photo */}
+            <div className="flex flex-col items-center gap-4 pb-6 border-b">
+              <Label className="text-sm font-semibold">プロフィール写真</Label>
+              <label
+                htmlFor="photo-upload"
+                className="relative group cursor-pointer"
+                data-testid="button-change-photo"
+              >
+                <Avatar className="h-32 w-32">
+                  <AvatarImage src={photoPreview || coach?.photoUrl || ""} alt={fullName} />
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white text-3xl">
+                    <User className="h-16 w-16" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Camera className="h-8 w-8 text-white" />
+                </div>
+              </label>
+              <input
+                id="photo-upload"
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="hidden"
+                data-testid="input-photo"
+              />
+              <p className="text-sm text-muted-foreground text-center">
+                写真をクリックして変更
+                {photoFile && (
+                  <span className="block text-primary font-medium mt-1">
+                    新しい写真が選択されています
+                  </span>
+                )}
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="lastName">性</Label>
