@@ -608,7 +608,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: coach[0].id, 
           name: coach[0].name, 
           email: coach[0].email,
-          teamId: coach[0].teamId 
+          teamId: coach[0].teamId,
+          role: coach[0].role
         } 
       });
     } catch (error) {
@@ -645,6 +646,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: coaches.email,
         role: coaches.role,
         createdAt: coaches.createdAt,
+        lastName: coaches.lastName,
+        firstName: coaches.firstName,
+        lastNameKana: coaches.lastNameKana,
+        firstNameKana: coaches.firstNameKana,
+        photoUrl: coaches.photoUrl,
+        bio: coaches.bio,
       }).from(coaches).where(eq(coaches.teamId, teamId));
 
       res.json(teamCoaches);

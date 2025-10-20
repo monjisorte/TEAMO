@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -35,6 +35,12 @@ interface Coach {
   email: string;
   role: string;
   createdAt: string;
+  lastName?: string;
+  firstName?: string;
+  lastNameKana?: string;
+  firstNameKana?: string;
+  photoUrl?: string;
+  bio?: string;
 }
 
 export function CoachManagement() {
@@ -253,60 +259,84 @@ export function CoachManagement() {
         </Dialog>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {[...coaches].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((coach) => (
-          <Card key={coach.id} className="border-0 shadow-lg hover-elevate transition-all" data-testid={`coach-card-${coach.id}`}>
-            <CardHeader className="space-y-0 pb-6">
-              <div className="flex items-start gap-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white font-semibold text-xl">
-                    {getInitials(coach.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <CardTitle className="text-xl truncate">{coach.name}</CardTitle>
-                    {coach.role === "owner" && (
-                      <Badge variant="default" className="rounded-full" data-testid={`badge-owner-${coach.id}`}>
-                        <Shield className="h-3 w-3 mr-1" />
-                        オーナー
-                      </Badge>
+      <div className="grid gap-6">
+        {[...coaches].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((coach) => {
+          const fullName = coach.lastName && coach.firstName
+            ? `${coach.lastName} ${coach.firstName}`
+            : coach.name;
+          
+          const fullNameKana = coach.lastNameKana && coach.firstNameKana
+            ? `${coach.lastNameKana} ${coach.firstNameKana}`
+            : "";
+
+          return (
+            <Card key={coach.id} className="border-0 shadow-lg hover-elevate transition-all" data-testid={`coach-card-${coach.id}`}>
+              <CardHeader className="pb-4">
+                <div className="flex items-start gap-4">
+                  <Avatar className="h-20 w-20 border-2 border-primary/20">
+                    <AvatarImage src={coach.photoUrl || ""} alt={fullName} />
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white font-semibold text-xl">
+                      {getInitials(fullName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <CardTitle className="text-2xl">{fullName}</CardTitle>
+                      {coach.role === "owner" && (
+                        <Badge variant="default" className="rounded-full" data-testid={`badge-owner-${coach.id}`}>
+                          <Shield className="h-3 w-3 mr-1" />
+                          オーナー
+                        </Badge>
+                      )}
+                    </div>
+                    {fullNameKana && (
+                      <p className="text-sm text-muted-foreground">{fullNameKana}</p>
                     )}
-                  </div>
-                  <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
-                    <Mail className="h-4 w-4" />
-                    <span className="truncate">{coach.email}</span>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Mail className="h-4 w-4" />
+                      <span>{coach.email}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="flex gap-3">
+              </CardHeader>
+              
+              {coach.bio && (
+                <CardContent className="pt-0 pb-4">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm text-muted-foreground">プロフィール</h4>
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{coach.bio}</p>
+                  </div>
+                </CardContent>
+              )}
+
               {currentCoachRole === "owner" && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex-1 rounded-xl" 
-                  onClick={() => handlePasswordClick(coach)}
-                  data-testid={`button-set-password-${coach.id}`}
-                >
-                  <Key className="h-4 w-4 mr-2" />
-                  パスワード設定
-                </Button>
+                <CardContent className={`flex gap-3 ${coach.bio ? 'pt-0' : ''}`}>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 rounded-xl" 
+                    onClick={() => handlePasswordClick(coach)}
+                    data-testid={`button-set-password-${coach.id}`}
+                  >
+                    <Key className="h-4 w-4 mr-2" />
+                    パスワード設定
+                  </Button>
+                  {coach.role !== "owner" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl"
+                      onClick={() => handleDeleteClick(coach)}
+                      data-testid={`button-delete-coach-${coach.id}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </CardContent>
               )}
-              {coach.role !== "owner" && currentCoachRole === "owner" && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-xl"
-                  onClick={() => handleDeleteClick(coach)}
-                  data-testid={`button-delete-coach-${coach.id}`}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </div>
 
       {/* Delete Confirmation Dialog */}
