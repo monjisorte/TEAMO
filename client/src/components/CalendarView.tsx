@@ -428,6 +428,15 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                                   {getCategoryName(categoryId)}
                                 </Badge>
                               ))}
+                              {schedule.studentCanRegister === false ? (
+                                <Badge variant="secondary" className="rounded-full">
+                                  コーチ指定
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="rounded-full">
+                                  生徒登録可
+                                </Badge>
+                              )}
                             </div>
                           </div>
                           <div className="flex gap-2">
