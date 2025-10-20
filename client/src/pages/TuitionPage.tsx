@@ -522,22 +522,22 @@ export default function TuitionPage() {
                 const amount = payment?.amount ?? calculateTotal(student.id);
 
                 return (
-                  <div key={student.id} className="border rounded-lg p-4 space-y-3">
-                    <div className="grid grid-cols-[1fr,auto] gap-4">
+                  <div key={student.id} className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-card to-card/50 p-5 shadow-sm hover-elevate transition-all">
+                    <div className="flex items-start justify-between gap-4 mb-4">
                       {/* Left: Name and Category */}
-                      <div className="space-y-2">
+                      <div className="flex-1 space-y-3">
                         <div>
-                          <div className="text-xs text-muted-foreground mb-1">名前</div>
-                          <div className="font-medium">{student.name}</div>
+                          <div className="text-xs font-medium text-muted-foreground mb-1.5">名前</div>
+                          <div className="text-lg font-semibold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">{student.name}</div>
                         </div>
                         <div>
-                          <div className="text-xs text-muted-foreground mb-1">区分</div>
+                          <div className="text-xs font-medium text-muted-foreground mb-1.5">区分</div>
                           <Select
                             value={payment?.category || (student.playerType === "member" ? "team" : student.playerType === "school" ? "school" : "unset")}
                             onValueChange={(value) => handleCategoryChange(student.id, value === "unset" ? null : value)}
                             data-testid={`select-category-${student.id}`}
                           >
-                            <SelectTrigger className="w-[120px]">
+                            <SelectTrigger className="w-[130px]">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -550,77 +550,85 @@ export default function TuitionPage() {
                       </div>
 
                       {/* Right: Total and Status */}
-                      <div className="space-y-2 text-right">
-                        <div>
-                          <div className="text-xs text-muted-foreground mb-1">合計金額</div>
-                          <Input
-                            type="number"
-                            value={getEditingValue(student.id, 'amount', amount)}
-                            onChange={(e) => setEditingValue(student.id, 'amount', parseInt(e.target.value) || 0)}
-                            onBlur={() => handleFieldUpdate(student.id, 'amount')}
-                            className="w-28 text-right font-semibold"
-                            data-testid={`input-total-amount-${student.id}`}
-                          />
+                      <div className="text-right space-y-3">
+                        <div className="bg-primary/5 rounded-lg p-3 border border-primary/10">
+                          <div className="text-xs font-medium text-muted-foreground mb-1">合計金額</div>
+                          <div className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent" data-testid={`text-total-amount-${student.id}`}>
+                            ¥{amount.toLocaleString()}
+                          </div>
                         </div>
                         <div>
-                          <div className="text-xs text-muted-foreground mb-1">ステータス</div>
-                          <div className="flex items-center justify-end gap-2">
+                          <label className="flex items-center justify-end gap-2 cursor-pointer group">
                             <Checkbox
                               checked={payment?.isPaid || false}
                               onCheckedChange={(checked) => handlePaidToggle(student.id, checked as boolean)}
                               data-testid={`checkbox-paid-${student.id}`}
                             />
-                            <span className="text-sm">{payment?.isPaid ? "入金済み" : "未入金"}</span>
-                          </div>
+                            <span className={`text-sm font-medium transition-colors ${payment?.isPaid ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                              {payment?.isPaid ? "✓ 入金済み" : "未入金"}
+                            </span>
+                          </label>
                         </div>
                       </div>
                     </div>
 
                     {/* Bottom: Fee Details in 2 columns */}
-                    <div className="grid grid-cols-2 gap-3 pt-2 border-t">
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1">月謝</div>
-                        <Input
-                          type="number"
-                          value={getEditingValue(student.id, 'baseAmount', baseAmount)}
-                          onChange={(e) => setEditingValue(student.id, 'baseAmount', parseInt(e.target.value) || 0)}
-                          onBlur={() => handleFieldUpdate(student.id, 'baseAmount')}
-                          className="w-full text-right"
-                          data-testid={`input-base-amount-${student.id}`}
-                        />
+                    <div className="grid grid-cols-2 gap-3 pt-4 border-t">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground">月謝</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">¥</span>
+                          <Input
+                            type="number"
+                            value={getEditingValue(student.id, 'baseAmount', baseAmount)}
+                            onChange={(e) => setEditingValue(student.id, 'baseAmount', parseInt(e.target.value) || 0)}
+                            onBlur={() => handleFieldUpdate(student.id, 'baseAmount')}
+                            className="w-full text-right pl-8"
+                            data-testid={`input-base-amount-${student.id}`}
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1">割引</div>
-                        <Input
-                          type="number"
-                          value={getEditingValue(student.id, 'discount', discount)}
-                          onChange={(e) => setEditingValue(student.id, 'discount', parseInt(e.target.value) || 0)}
-                          onBlur={() => handleFieldUpdate(student.id, 'discount')}
-                          className="w-full text-right"
-                          data-testid={`input-discount-${student.id}`}
-                        />
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground">割引</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">¥</span>
+                          <Input
+                            type="number"
+                            value={getEditingValue(student.id, 'discount', discount)}
+                            onChange={(e) => setEditingValue(student.id, 'discount', parseInt(e.target.value) || 0)}
+                            onBlur={() => handleFieldUpdate(student.id, 'discount')}
+                            className="w-full text-right pl-8"
+                            data-testid={`input-discount-${student.id}`}
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1">入会/年会費</div>
-                        <Input
-                          type="number"
-                          value={getEditingValue(student.id, 'enrollmentOrAnnualFee', enrollmentOrAnnualFee)}
-                          onChange={(e) => setEditingValue(student.id, 'enrollmentOrAnnualFee', parseInt(e.target.value) || 0)}
-                          onBlur={() => handleFieldUpdate(student.id, 'enrollmentOrAnnualFee')}
-                          className="w-full text-right"
-                          data-testid={`input-enrollment-fee-${student.id}`}
-                        />
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground">入会/年会費</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">¥</span>
+                          <Input
+                            type="number"
+                            value={getEditingValue(student.id, 'enrollmentOrAnnualFee', enrollmentOrAnnualFee)}
+                            onChange={(e) => setEditingValue(student.id, 'enrollmentOrAnnualFee', parseInt(e.target.value) || 0)}
+                            onBlur={() => handleFieldUpdate(student.id, 'enrollmentOrAnnualFee')}
+                            className="w-full text-right pl-8"
+                            data-testid={`input-enrollment-fee-${student.id}`}
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1">スポット</div>
-                        <Input
-                          type="number"
-                          value={getEditingValue(student.id, 'spotFee', spotFee)}
-                          onChange={(e) => setEditingValue(student.id, 'spotFee', parseInt(e.target.value) || 0)}
-                          onBlur={() => handleFieldUpdate(student.id, 'spotFee')}
-                          className="w-full text-right"
-                          data-testid={`input-spot-fee-${student.id}`}
-                        />
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground">スポット</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">¥</span>
+                          <Input
+                            type="number"
+                            value={getEditingValue(student.id, 'spotFee', spotFee)}
+                            onChange={(e) => setEditingValue(student.id, 'spotFee', parseInt(e.target.value) || 0)}
+                            onBlur={() => handleFieldUpdate(student.id, 'spotFee')}
+                            className="w-full text-right pl-8"
+                            data-testid={`input-spot-fee-${student.id}`}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
