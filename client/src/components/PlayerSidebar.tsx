@@ -104,7 +104,7 @@ export function PlayerSidebar({ teamName, teamId }: PlayerSidebarProps) {
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent className="px-3">
+      <SidebarContent className="px-3 overflow-hidden">
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs md:text-xs font-semibold text-muted-foreground px-2 mb-1">
             メニュー
@@ -131,7 +131,7 @@ export function PlayerSidebar({ teamName, teamId }: PlayerSidebarProps) {
             タイムライン
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <div className="space-y-1.5 px-2">
+            <div className="space-y-1.5">
               {activityLogs.length === 0 ? (
                 <div className="text-center text-muted-foreground text-xs py-4">
                   更新履歴がここに表示されます
