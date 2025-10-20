@@ -254,7 +254,7 @@ export function CoachManagement() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {coaches.map((coach) => (
+        {[...coaches].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((coach) => (
           <Card key={coach.id} className="border-0 shadow-lg hover-elevate transition-all" data-testid={`coach-card-${coach.id}`}>
             <CardHeader className="space-y-0 pb-6">
               <div className="flex items-start gap-4">
