@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Folder, Download } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FileText, Folder, Download, X } from "lucide-react";
 import type { SharedDocument, Folder as FolderType } from "@shared/schema";
 
 interface SharedDocumentsProps {
@@ -11,6 +12,7 @@ interface SharedDocumentsProps {
 
 export default function SharedDocuments({ teamId }: SharedDocumentsProps) {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [previewDocument, setPreviewDocument] = useState<SharedDocument | null>(null);
 
   const { data: folders = [], isLoading: foldersLoading } = useQuery<FolderType[]>({
     queryKey: ["/api/folders", currentFolderId, teamId],
@@ -99,20 +101,26 @@ export default function SharedDocuments({ teamId }: SharedDocumentsProps) {
         {documents.map((doc) => (
           <Card
             key={doc.id}
-            className="hover-elevate"
+            className="hover-elevate cursor-pointer"
             data-testid={`card-document-${doc.id}`}
           >
             <CardContent className="flex flex-col items-center justify-center p-6 space-y-2">
-              <FileText className="w-12 h-12 text-green-500" />
-              <p className="font-semibold text-center text-sm">{doc.title}</p>
-              {doc.fileName && (
-                <p className="text-xs text-muted-foreground">{doc.fileName}</p>
-              )}
+              <div 
+                className="flex flex-col items-center space-y-2 w-full"
+                onClick={() => setPreviewDocument(doc)}
+              >
+                <FileText className="w-12 h-12 text-green-500" />
+                <p className="font-semibold text-center text-sm">{doc.title}</p>
+                {doc.fileName && (
+                  <p className="text-xs text-muted-foreground">{doc.fileName}</p>
+                )}
+              </div>
               {doc.fileUrl && (
                 <Button
                   variant="ghost"
                   size="sm"
                   asChild
+                  onClick={(e) => e.stopPropagation()}
                   data-testid={`button-download-document-${doc.id}`}
                 >
                   <a href={doc.fileUrl} download>
@@ -134,6 +142,131 @@ export default function SharedDocuments({ teamId }: SharedDocumentsProps) {
           </CardContent>
         </Card>
       )}
+
+      {/* File Preview Dialog */}
+      <Dialog open={!!previewDocument} onOpenChange={(open) => !open && setPreviewDocument(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <DialogTitle>{previewDocument?.title}</DialogTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPreviewDocument(null)}
+                data-testid="button-close-preview"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            {previewDocument?.fileName && (
+              <DialogDescription>{previewDocument.fileName}</DialogDescription>
+            )}
+          </DialogHeader>
+          
+          {previewDocument && (
+            <div className="mt-4">
+              {(() => {
+                const fileName = previewDocument.fileName || previewDocument.title || '';
+                const fileUrl = previewDocument.fileUrl || '';
+                const extension = fileName.split('.').pop()?.toLowerCase() || '';
+                
+                // Image files
+                if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(extension)) {
+                  return (
+                    <div className="flex justify-center">
+                      <img 
+                        src={fileUrl} 
+                        alt={previewDocument.title}
+                        className="max-w-full h-auto rounded-lg"
+                        data-testid="preview-image"
+                      />
+                    </div>
+                  );
+                }
+                
+                // PDF files
+                if (extension === 'pdf') {
+                  return (
+                    <iframe
+                      src={fileUrl}
+                      className="w-full h-[600px] rounded-lg border"
+                      title={previewDocument.title}
+                      data-testid="preview-pdf"
+                    />
+                  );
+                }
+                
+                // Video files
+                if (['mp4', 'webm', 'ogg', 'mov'].includes(extension)) {
+                  return (
+                    <video
+                      src={fileUrl}
+                      controls
+                      className="w-full rounded-lg"
+                      data-testid="preview-video"
+                    >
+                      お使いのブラウザは動画タグをサポートしていません。
+                    </video>
+                  );
+                }
+                
+                // Audio files
+                if (['mp3', 'wav', 'ogg', 'm4a'].includes(extension)) {
+                  return (
+                    <audio
+                      src={fileUrl}
+                      controls
+                      className="w-full"
+                      data-testid="preview-audio"
+                    >
+                      お使いのブラウザは音声タグをサポートしていません。
+                    </audio>
+                  );
+                }
+                
+                // Text files
+                if (['txt', 'md', 'json', 'csv', 'log'].includes(extension)) {
+                  return (
+                    <iframe
+                      src={fileUrl}
+                      className="w-full h-[600px] rounded-lg border"
+                      title={previewDocument.title}
+                      data-testid="preview-text"
+                    />
+                  );
+                }
+                
+                // Unsupported file types
+                return (
+                  <div className="text-center py-12">
+                    <FileText className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                    <p className="text-muted-foreground mb-4">
+                      このファイル形式はプレビューできません
+                    </p>
+                    <Button asChild>
+                      <a href={fileUrl} download>
+                        <Download className="w-4 h-4 mr-2" />
+                        ダウンロード
+                      </a>
+                    </Button>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+          
+          {previewDocument?.fileUrl && (
+            <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+              <Button variant="outline" asChild>
+                <a href={previewDocument.fileUrl} download>
+                  <Download className="w-4 h-4 mr-2" />
+                  ダウンロード
+                </a>
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
