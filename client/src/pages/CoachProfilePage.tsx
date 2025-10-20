@@ -12,7 +12,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, User, Camera } from "lucide-react";
-import type { Coach } from "@shared/schema";
+import type { Coach, Category, CoachCategory } from "@shared/schema";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const profileSchema = z.object({
   lastName: z.string().optional(),
@@ -49,9 +50,25 @@ export default function CoachProfilePage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const coachData = localStorage.getItem("coachData");
   const coachId = coachData ? JSON.parse(coachData).id : null;
+  const teamId = coachData ? JSON.parse(coachData).teamId : null;
 
   const { data: coach, isLoading } = useQuery<Coach>({
     queryKey: ["/api/coach", coachId],
+    enabled: !!coachId,
+  });
+
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ["/api/categories", teamId],
+    enabled: !!teamId,
+  });
+
+  const { data: coachCategories = [] } = useQuery<CoachCategory[]>({
+    queryKey: ["/api/coach-categories", coachId],
+    queryFn: async () => {
+      const response = await fetch(`/api/coach-categories/${coachId}`);
+      if (!response.ok) throw new Error("Failed to fetch coach categories");
+      return response.json();
+    },
     enabled: !!coachId,
   });
 
@@ -240,6 +257,56 @@ export default function CoachProfilePage() {
       });
     },
   });
+
+  const addCoachCategoryMutation = useMutation({
+    mutationFn: async (categoryId: string) => {
+      return await apiRequest("POST", "/api/coach-categories", {
+        coachId,
+        categoryId,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/coach-categories", coachId] });
+      toast({
+        title: "カテゴリを追加しました",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "カテゴリの追加に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const removeCoachCategoryMutation = useMutation({
+    mutationFn: async (coachCategoryId: string) => {
+      return await apiRequest("DELETE", `/api/coach-categories/${coachCategoryId}`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/coach-categories", coachId] });
+      toast({
+        title: "カテゴリを削除しました",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "カテゴリの削除に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCategoryToggle = (categoryId: string) => {
+    const existingRelation = coachCategories.find(cc => cc.categoryId === categoryId);
+    if (existingRelation) {
+      removeCoachCategoryMutation.mutate(existingRelation.id);
+    } else {
+      addCoachCategoryMutation.mutate(categoryId);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -447,6 +514,45 @@ export default function CoachProfilePage() {
               メールアドレスを変更する
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Category Selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle>担当カテゴリ</CardTitle>
+          <CardDescription>指導するカテゴリを選択してください</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {categories.length === 0 ? (
+              <p className="text-sm text-muted-foreground">カテゴリがありません</p>
+            ) : (
+              categories.map((category) => {
+                const isSelected = coachCategories.some(cc => cc.categoryId === category.id);
+                return (
+                  <div
+                    key={category.id}
+                    className="flex items-center space-x-3 p-3 rounded-lg bg-muted/30 hover-elevate"
+                    data-testid={`category-item-${category.id}`}
+                  >
+                    <Checkbox
+                      id={`category-${category.id}`}
+                      checked={isSelected}
+                      onCheckedChange={() => handleCategoryToggle(category.id)}
+                      data-testid={`checkbox-category-${category.id}`}
+                    />
+                    <label
+                      htmlFor={`category-${category.id}`}
+                      className="flex-1 text-sm font-medium cursor-pointer"
+                    >
+                      {category.name}
+                    </label>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </CardContent>
       </Card>
 
