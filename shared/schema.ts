@@ -80,6 +80,7 @@ export const students = pgTable("students", {
   photoUrl: text("photo_url"),
   playerType: text("player_type"),
   jerseyNumber: integer("jersey_number"),
+  siblingDiscountStatus: text("sibling_discount_status"), // "あり" or null
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

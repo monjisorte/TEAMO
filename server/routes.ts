@@ -808,7 +808,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/student/:studentId", async (req, res) => {
     try {
       const { studentId } = req.params;
-      const { name, schoolName, birthDate, photoUrl, playerType, jerseyNumber } = req.body;
+      const { name, schoolName, birthDate, photoUrl, playerType, jerseyNumber, siblingDiscountStatus } = req.body;
 
       const updateData: any = {};
       if (name !== undefined) updateData.name = name;
@@ -817,6 +817,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
       if (playerType !== undefined) updateData.playerType = playerType;
       if (jerseyNumber !== undefined) updateData.jerseyNumber = jerseyNumber;
+      if (siblingDiscountStatus !== undefined) updateData.siblingDiscountStatus = siblingDiscountStatus;
 
       if (Object.keys(updateData).length === 0) {
         return res.status(400).json({ error: "No fields to update" });
@@ -1505,7 +1506,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (existing.length === 0) {
             // Determine base amount based on student type
             let baseAmount = 0;
-            if (student.playerType === "member") {
+            if (student.playerType === "team") {
               baseAmount = team[0].monthlyFeeMember || 0;
             } else if (student.playerType === "school") {
               baseAmount = team[0].monthlyFeeSchool || 0;
@@ -1517,7 +1518,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               enrollmentOrAnnualFee = team[0].annualFee || 0;
             }
 
-            const discount = 0;
+            // Apply sibling discount if applicable
+            let discount = 0;
+            if (student.siblingDiscountStatus === "あり") {
+              discount = team[0].siblingDiscount || 0;
+            }
+
             const spotFee = 0;
             const totalAmount = baseAmount - discount + enrollmentOrAnnualFee + spotFee;
 
@@ -1533,7 +1539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               spotFee,
               amount: totalAmount,
               isPaid: false,
-              category: student.playerType === "member" ? "team" : student.playerType === "school" ? "school" : null,
+              category: student.playerType === "team" ? "team" : student.playerType === "school" ? "school" : null,
             });
 
             generatedCount++;

@@ -158,6 +158,27 @@ export default function MembersPage({ teamId }: MembersPageProps) {
     },
   });
 
+  // 兄弟割引ステータス変更のmutation
+  const updateSiblingDiscountMutation = useMutation({
+    mutationFn: async ({ studentId, siblingDiscountStatus }: { studentId: string; siblingDiscountStatus: string | null }) => {
+      return await apiRequest("PATCH", `/api/student/${studentId}`, { siblingDiscountStatus });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/students"] });
+      toast({
+        title: "更新完了",
+        description: "兄弟割引ステータスを更新しました",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "兄弟割引ステータスの更新に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (studentId: string) => {
       return await apiRequest("DELETE", `/api/students/${studentId}`, {});
@@ -299,6 +320,25 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                             <SelectItem value="team">チーム生</SelectItem>
                             <SelectItem value="school">スクール生</SelectItem>
                             <SelectItem value="inactive">休部</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-0.5">兄弟割引</p>
+                        <Select
+                          value={student.siblingDiscountStatus || "none"}
+                          onValueChange={(value) => {
+                            const newValue = value === "none" ? null : value;
+                            updateSiblingDiscountMutation.mutate({ studentId: student.id, siblingDiscountStatus: newValue });
+                          }}
+                          data-testid={`select-sibling-discount-${student.id}`}
+                        >
+                          <SelectTrigger className="w-full text-xs md:text-sm h-8 md:h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">(空欄)</SelectItem>
+                            <SelectItem value="あり">あり</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

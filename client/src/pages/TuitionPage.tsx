@@ -628,6 +628,12 @@ export default function TuitionPage() {
                             </SelectContent>
                           </Select>
                         </div>
+                        <div>
+                          <div className="text-xs font-medium text-muted-foreground mb-1.5">兄弟割引</div>
+                          <div className="text-sm font-medium" data-testid={`text-sibling-discount-${student.id}`}>
+                            {student.siblingDiscountStatus === "あり" ? "あり" : "(空欄)"}
+                          </div>
+                        </div>
                       </div>
 
                       {/* Right: Total and Status */}
