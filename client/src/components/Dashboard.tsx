@@ -180,12 +180,15 @@ export function Dashboard() {
         <p className="text-muted-foreground mt-2 text-lg">チームの活動状況を確認</p>
       </div>
 
-      <div className="md:grid md:gap-6 md:grid-cols-3 flex overflow-x-auto gap-4 pb-2 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0">
-        <Card className="border-0 shadow-lg flex-shrink-0 w-[280px] md:w-auto snap-start">
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
+      <div className="grid grid-cols-3 gap-3 md:gap-6">
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="flex flex-col items-center space-y-0 pb-3 md:pb-4">
+            <div className="rounded-xl bg-primary/10 p-2 md:p-3 mb-2">
+              <Calendar className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+            </div>
             <Select value={schedulePeriod} onValueChange={setSchedulePeriod}>
-              <SelectTrigger className="w-[140px] border-0 shadow-none p-0 h-auto" data-testid="select-schedule-period">
-                <SelectValue className="text-sm font-medium text-muted-foreground" />
+              <SelectTrigger className="w-full border-0 shadow-none p-0 h-auto text-center" data-testid="select-schedule-period">
+                <SelectValue className="text-xs md:text-sm font-medium text-muted-foreground" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="this-week">今週の予定</SelectItem>
@@ -194,48 +197,45 @@ export function Dashboard() {
                 <SelectItem value="next-month">来月の予定</SelectItem>
               </SelectContent>
             </Select>
-            <div className="rounded-xl bg-primary/10 p-3">
-              <Calendar className="h-5 w-5 text-primary" />
-            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold" data-testid="text-upcoming-events">
+          <CardContent className="text-center pb-3 md:pb-4">
+            <div className="text-2xl md:text-4xl font-bold" data-testid="text-upcoming-events">
               {isLoadingStats ? "..." : stats?.upcomingEvents || 0}
             </div>
           </CardContent>
         </Card>
 
         <Card 
-          className="border-0 shadow-lg cursor-pointer hover-elevate transition-all flex-shrink-0 w-[280px] md:w-auto snap-start"
+          className="border-0 shadow-lg cursor-pointer hover-elevate transition-all"
           onClick={() => setShowMembersDialog(true)}
           data-testid="card-team-members"
         >
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
-            <CardTitle className="text-sm font-medium text-muted-foreground">チームメンバー</CardTitle>
-            <div className="rounded-xl bg-primary/10 p-3">
-              <Users className="h-5 w-5 text-primary" />
+          <CardHeader className="flex flex-col items-center space-y-0 pb-3 md:pb-4">
+            <div className="rounded-xl bg-primary/10 p-2 md:p-3 mb-2">
+              <Users className="h-4 w-4 md:h-5 md:w-5 text-primary" />
             </div>
+            <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground text-center">メンバー</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold" data-testid="text-team-members">
+          <CardContent className="text-center pb-3 md:pb-4">
+            <div className="text-2xl md:text-4xl font-bold" data-testid="text-team-members">
               {isLoadingStats ? "..." : stats?.teamMembers || 0}
             </div>
-            <p className="text-sm text-muted-foreground mt-1">クリックして詳細表示</p>
+            <p className="text-xs md:text-sm text-muted-foreground mt-1 hidden md:block">クリック</p>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg flex-shrink-0 w-[280px] md:w-auto snap-start">
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
-            <CardTitle className="text-sm font-medium text-muted-foreground">コーチ</CardTitle>
-            <div className="rounded-xl bg-primary/10 p-3">
-              <Users className="h-5 w-5 text-primary" />
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="flex flex-col items-center space-y-0 pb-3 md:pb-4">
+            <div className="rounded-xl bg-primary/10 p-2 md:p-3 mb-2">
+              <Users className="h-4 w-4 md:h-5 md:w-5 text-primary" />
             </div>
+            <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground text-center">コーチ</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold" data-testid="text-active-coaches">
+          <CardContent className="text-center pb-3 md:pb-4">
+            <div className="text-2xl md:text-4xl font-bold" data-testid="text-active-coaches">
               {isLoadingStats ? "..." : stats?.activeCoaches || 0}
             </div>
-            <p className="text-sm text-muted-foreground mt-1">名</p>
+            <p className="text-xs md:text-sm text-muted-foreground mt-1">名</p>
           </CardContent>
         </Card>
       </div>
