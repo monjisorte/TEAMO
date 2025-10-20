@@ -884,10 +884,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/student/:studentId/password", async (req, res) => {
     try {
       const { studentId } = req.params;
-      const { currentPassword, newPassword } = req.body;
+      const { newPassword } = req.body;
 
-      if (!currentPassword || !newPassword) {
-        return res.status(400).json({ error: "現在のパスワードと新しいパスワードが必要です" });
+      if (!newPassword) {
+        return res.status(400).json({ error: "新しいパスワードが必要です" });
       }
 
       if (newPassword.length < 6) {
@@ -898,12 +898,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const student = await db.select().from(students).where(eq(students.id, studentId)).limit(1);
       if (student.length === 0) {
         return res.status(404).json({ error: "Student not found" });
-      }
-
-      // Verify current password
-      const isPasswordValid = await verifyPassword(currentPassword, student[0].password);
-      if (!isPasswordValid) {
-        return res.status(401).json({ error: "現在のパスワードが正しくありません" });
       }
 
       // Hash new password

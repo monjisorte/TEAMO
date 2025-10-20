@@ -49,7 +49,6 @@ const emailSchema = z.object({
 });
 
 const passwordSchema = z.object({
-  currentPassword: z.string().min(1, "現在のパスワードを入力してください"),
   newPassword: z.string().min(6, "新しいパスワードは6文字以上である必要があります"),
   confirmPassword: z.string().min(1, "確認用パスワードを入力してください"),
 }).refine((data) => data.newPassword === data.confirmPassword, {
@@ -97,7 +96,6 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
   const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
     defaultValues: {
-      currentPassword: "",
       newPassword: "",
       confirmPassword: "",
     },
@@ -293,7 +291,6 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
   const changePasswordMutation = useMutation({
     mutationFn: async (data: PasswordFormValues) => {
       const response = await apiRequest("PUT", `/api/student/${playerId}/password`, {
-        currentPassword: data.currentPassword,
         newPassword: data.newPassword,
       });
       if (!response.ok) {
@@ -303,7 +300,7 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
       return await response.json();
     },
     onSuccess: () => {
-      passwordForm.reset({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      passwordForm.reset({ newPassword: "", confirmPassword: "" });
       toast({
         title: "パスワード変更完了",
         description: "パスワードを更新しました。次回から新しいパスワードでログインしてください。",
@@ -649,25 +646,6 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
         <CardContent className="p-3 pt-0">
           <Form {...passwordForm}>
             <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
-              <FormField
-                control={passwordForm.control}
-                name="currentPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>現在のパスワード</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="password"
-                        placeholder="現在のパスワードを入力" 
-                        data-testid="input-current-password"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <FormField
                 control={passwordForm.control}
                 name="newPassword"
