@@ -698,10 +698,17 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                         const colorClasses = primaryCategoryId ? getCategoryColor(primaryCategoryId) : 'bg-muted/10 text-muted-foreground border-muted/20';
                         const attendanceCounts = getAttendanceCounts(schedule.id);
 
+                        const isAbsent = attendance?.status === "×";
+                        const isAttending = attendance?.status === "○" || attendance?.status === "△";
+                        
                         return (
                           <div
                             key={schedule.id}
-                            className={`text-xs p-1 rounded border overflow-hidden ${colorClasses} cursor-pointer hover-elevate`}
+                            className={`text-xs p-1 rounded border overflow-hidden ${colorClasses} cursor-pointer hover-elevate ${
+                              isAbsent ? "opacity-50" : ""
+                            } ${
+                              isAttending ? "ring-2 ring-primary/50 font-semibold" : ""
+                            }`}
                             data-testid={`schedule-${schedule.id}`}
                             onClick={() => setSelectedSchedule(schedule)}
                           >
