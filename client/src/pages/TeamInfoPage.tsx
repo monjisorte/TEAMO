@@ -48,8 +48,6 @@ export default function TeamInfoPage() {
   const team = teams.find(t => t.id === teamId);
 
   const [formData, setFormData] = useState({
-    ownerName: team?.ownerName || "",
-    ownerEmail: team?.ownerEmail || "",
     representativeEmail: team?.representativeEmail || team?.contactEmail || "",
     address: team?.address || "",
     sportType: team?.sportType || "",
@@ -63,8 +61,6 @@ export default function TeamInfoPage() {
   useEffect(() => {
     if (team) {
       setFormData({
-        ownerName: team.ownerName || (coachData?.name || ""),
-        ownerEmail: team.ownerEmail || (coachData?.email || ""),
         representativeEmail: team.representativeEmail || team.contactEmail || (coachData?.email || ""),
         address: team.address || "",
         sportType: team.sportType || "",
@@ -101,8 +97,6 @@ export default function TeamInfoPage() {
 
   const handleSaveBasicInfo = () => {
     updateTeamMutation.mutate({
-      ownerName: formData.ownerName,
-      ownerEmail: formData.ownerEmail,
       representativeEmail: formData.representativeEmail,
       address: formData.address,
       sportType: formData.sportType,
@@ -122,8 +116,6 @@ export default function TeamInfoPage() {
     if (team) {
       setFormData({
         ...formData,
-        ownerName: team.ownerName || "",
-        ownerEmail: team.ownerEmail || "",
         representativeEmail: team.representativeEmail || team.contactEmail || "",
         address: team.address || "",
         sportType: team.sportType || "",
@@ -200,30 +192,6 @@ export default function TeamInfoPage() {
         <CardContent className="space-y-4">
           {isEditingBasicInfo ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="owner-name">オーナー名</Label>
-                  <Input
-                    id="owner-name"
-                    value={formData.ownerName}
-                    onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
-                    placeholder="山田 太郎"
-                    data-testid="input-owner-name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="owner-email">オーナーメールアドレス</Label>
-                  <Input
-                    id="owner-email"
-                    type="email"
-                    value={formData.ownerEmail}
-                    onChange={(e) => setFormData({ ...formData, ownerEmail: e.target.value })}
-                    placeholder="owner@example.com"
-                    data-testid="input-owner-email"
-                  />
-                </div>
-              </div>
-
               <div>
                 <Label htmlFor="rep-email">代表メールアドレス</Label>
                 <Input
@@ -288,21 +256,6 @@ export default function TeamInfoPage() {
             </>
           ) : (
             <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-muted-foreground text-xs">オーナー名</Label>
-                  <p className="text-sm font-medium" data-testid="text-owner-name">
-                    {team.ownerName || coachData?.name || "未設定"}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground text-xs">オーナーメールアドレス</Label>
-                  <p className="text-sm font-medium" data-testid="text-owner-email">
-                    {team.ownerEmail || coachData?.email || "未設定"}
-                  </p>
-                </div>
-              </div>
-
               <div>
                 <Label className="text-muted-foreground text-xs">代表メールアドレス</Label>
                 <p className="text-sm font-medium" data-testid="text-representative-email">
