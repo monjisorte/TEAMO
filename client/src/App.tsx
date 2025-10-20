@@ -55,6 +55,13 @@ function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogou
     retry: false,
   });
 
+  // Update localStorage when player data is fetched
+  useEffect(() => {
+    if (player) {
+      localStorage.setItem("playerData", JSON.stringify(player));
+    }
+  }, [player]);
+
   // If player data fetch fails (404, etc.), log out
   useEffect(() => {
     if (isError) {
