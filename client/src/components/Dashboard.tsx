@@ -143,12 +143,7 @@ export function Dashboard() {
       <div className="grid gap-8 md:grid-cols-[3fr_2fr]">
         <Card className="border-0 shadow-xl">
           <CardHeader className="pb-6">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xl">直近のスケジュール</CardTitle>
-              <Button variant="ghost" size="sm" data-testid="button-view-all">
-                すべて表示
-              </Button>
-            </div>
+            <CardTitle className="text-xl">直近のスケジュール</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {isLoadingStats ? (
