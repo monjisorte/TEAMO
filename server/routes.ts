@@ -808,10 +808,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/student/:studentId", async (req, res) => {
     try {
       const { studentId } = req.params;
-      const { name, schoolName, birthDate, photoUrl, playerType, jerseyNumber, siblingDiscountStatus } = req.body;
+      const { name, lastName, firstName, lastNameKana, firstNameKana, schoolName, birthDate, photoUrl, playerType, jerseyNumber, siblingDiscountStatus } = req.body;
 
       const updateData: any = {};
       if (name !== undefined) updateData.name = name;
+      if (lastName !== undefined) updateData.lastName = lastName;
+      if (firstName !== undefined) updateData.firstName = firstName;
+      if (lastNameKana !== undefined) updateData.lastNameKana = lastNameKana;
+      if (firstNameKana !== undefined) updateData.firstNameKana = firstNameKana;
       if (schoolName !== undefined) updateData.schoolName = schoolName;
       if (birthDate !== undefined) updateData.birthDate = birthDate;
       if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
