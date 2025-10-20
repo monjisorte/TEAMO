@@ -422,7 +422,11 @@ function App() {
             {() => <RegisterPage />}
           </Route>
           <Route path="/login">
-            {() => <CoachPortal />}
+            {() => {
+              // Redirect /login to /team
+              window.location.href = "/team";
+              return null;
+            }}
           </Route>
           <Route path="/team">
             {() => <CoachPortal />}
