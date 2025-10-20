@@ -325,20 +325,12 @@ export function Dashboard() {
 
         <Card className="border-0 shadow-xl">
           <CardHeader className="pb-6">
-            <CardTitle className="text-xl">クイックアクション</CardTitle>
+            <CardTitle className="text-xl">タイムライン</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button 
-              className="w-full justify-start gap-3 h-14 text-base rounded-xl" 
-              onClick={() => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                setLocation("/team/schedule");
-              }}
-              data-testid="button-add-schedule"
-            >
-              <Plus className="h-5 w-5" />
-              スケジュールを追加
-            </Button>
+            <div className="text-center text-muted-foreground py-8">
+              更新履歴がここに表示されます
+            </div>
           </CardContent>
         </Card>
       </div>
