@@ -24,7 +24,7 @@ Preferred communication style: Simple, everyday language.
 
 **Server Structure:** `server/index.ts` handles Express setup, `server/routes.ts` for API routes, `server/db.ts` for Drizzle ORM configuration, and `server/storage.ts` provides an abstraction layer for storage operations, currently in-memory but designed for database-backed migration.
 
-**Data Models:** Defined in `shared/schema.ts`, including Users, Teams, Categories, Students, StudentCategories, Schedules, Attendance, Venues, ScheduleFiles, SharedDocuments, and TuitionPayments. All models use UUID primary keys and are designed for team isolation via `teamId` foreign keys. **Schedules table** supports both single category (`categoryId`) and multiple categories (`categoryIds` array) with backward compatibility, optional venue field (nullable), `studentCanRegister` boolean flag for coach-specified events, and recurring schedule metadata (`recurrenceRule`, `recurrenceInterval`, `recurrenceDays`, `recurrenceEndDate`, `parentScheduleId` for linking recurring instances). **TuitionPayments table** includes student ID, team ID, year/month, category ("team" | "school" | null for unselected), baseAmount (monthly fee based on student type), discount, enrollmentOrAnnualFee (annual fee automatically added in April), spotFee, amount (total calculated amount, manually editable), payment status (`isPaid`), payment timestamp, and notes. **Teams table** includes monthly fee settings for both members (monthlyFeeMember) and school students (monthlyFeeSchool), sibling discount (siblingDiscount), and annual fee (annualFee). **Coaches table** includes profile information fields: lastName, firstName, lastNameKana, firstNameKana, photoUrl, and bio for coach profile management.
+**Data Models:** Defined in `shared/schema.ts`, including Users, Teams, Categories, Students, StudentCategories, Schedules, Attendance, Venues, ScheduleFiles, SharedDocuments, and TuitionPayments. All models use UUID primary keys and are designed for team isolation via `teamId` foreign keys. **Schedules table** supports both single category (`categoryId`) and multiple categories (`categoryIds` array) with backward compatibility, optional venue field (nullable), `studentCanRegister` boolean flag for coach-specified events, and recurring schedule metadata (`recurrenceRule`, `recurrenceInterval`, `recurrenceDays`, `recurrenceEndDate`, `parentScheduleId` for linking recurring instances). **TuitionPayments table** includes student ID, team ID, year/month, category ("team" | "school" | null for unselected), baseAmount (monthly fee based on student type), discount, enrollmentOrAnnualFee (annual fee automatically added in April), spotFee, amount (total calculated amount, manually editable), payment status (`isPaid`), payment timestamp, and notes. **Teams table** includes monthly fee settings for both members (monthlyFeeMember - チーム生の月会費) and school students (monthlyFeeSchool - スクール生の月会費), sibling discount (siblingDiscount), and annual fee (annualFee). **Coaches table** includes profile information fields: lastName, firstName, lastNameKana, firstNameKana, photoUrl, bio, and position (役職 - display title separate from role field used for permissions).
 
 **API Endpoints:**
 *   `/api/stats/:teamId` - GET dashboard statistics (upcoming events count by period, team members count, active coaches count, recent schedules). Accepts query parameter `period` (this-week, next-week, this-month, next-month).
@@ -32,11 +32,14 @@ Preferred communication style: Simple, everyday language.
 *   `/api/schedules/:id` - PUT (with `updateType` parameter: "this" | "all" for recurring schedules), DELETE (with `deleteType` query parameter: "this" | "all" for recurring schedules)
 *   `/api/categories` - GET/POST/DELETE category management
 *   `/api/venues` - GET/POST/DELETE venue management
+*   `/api/venues/:venueId` - PUT venue editing (name and address)
 *   `/api/students` - GET student data
 *   `/api/student/:studentId` - PATCH student profile update (supports name, schoolName, birthDate, photoUrl, playerType)
+*   `/api/student/:studentId/email` - PUT student email change with current password verification
+*   `/api/student/:studentId/password` - PUT student password change with current password verification
 *   `/api/coaches` - GET/POST/DELETE coach management
 *   `/api/coach/:coachId` - GET coach profile information (excluding password)
-*   `/api/coach/:coachId` - PUT update coach profile (lastName, firstName, lastNameKana, firstNameKana, photoUrl, bio)
+*   `/api/coach/:coachId` - PUT update coach profile (lastName, firstName, lastNameKana, firstNameKana, photoUrl, bio, position)
 *   `/api/coach/:coachId/password` - PUT change coach password with current password verification
 *   `/api/team/:teamId/coaches` - GET list of all coaches for a team (for student view, excluding passwords)
 *   `/api/attendances` - GET/POST attendance tracking
