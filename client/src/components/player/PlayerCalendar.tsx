@@ -646,10 +646,10 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                 return (
                   <div
                     key={`prev-${index}`}
-                    className="min-h-[100px] p-2 border-b border-r text-muted-foreground/30"
+                    className="min-h-[100px] p-2 border-b border-r"
                     data-testid={`calendar-day-prev-${day}`}
                   >
-                    <div className="text-sm mb-1">{day}</div>
+                    <div className="text-sm mb-1 text-muted-foreground">{day}</div>
                     <div className="space-y-1">
                       {daySchedules.slice(0, 2).map((schedule) => {
                         const attendance = getAttendanceForSchedule(schedule.id);
@@ -657,10 +657,18 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                         const primaryCategoryId = categoryIds[0];
                         const colorClasses = primaryCategoryId ? getCategoryColor(primaryCategoryId) : 'bg-muted/10 text-muted-foreground border-muted/20';
                         
+                        const isAbsent = attendance?.status === "×";
+                        const isAttending = attendance?.status === "○";
+                        const isUndecided = attendance?.status === "△" || !attendance;
+                        
                         return (
                           <div
                             key={schedule.id}
-                            className={`text-xs p-1 rounded border overflow-hidden ${colorClasses} truncate cursor-pointer opacity-50`}
+                            className={`text-xs p-1 rounded overflow-hidden ${colorClasses} truncate cursor-pointer ${
+                              isAbsent ? "opacity-50 border" : 
+                              isAttending ? "border-2 font-bold" : 
+                              "font-light border"
+                            }`}
                             onClick={() => setSelectedSchedule(schedule)}
                           >
                             {schedule.title}
@@ -699,15 +707,16 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                         const attendanceCounts = getAttendanceCounts(schedule.id);
 
                         const isAbsent = attendance?.status === "×";
-                        const isAttending = attendance?.status === "○" || attendance?.status === "△";
+                        const isAttending = attendance?.status === "○";
+                        const isUndecided = attendance?.status === "△" || !attendance;
                         
                         return (
                           <div
                             key={schedule.id}
-                            className={`text-xs p-1 rounded border overflow-hidden ${colorClasses} cursor-pointer hover-elevate ${
-                              isAbsent ? "opacity-50" : ""
-                            } ${
-                              isAttending ? "ring-2 ring-primary/50 font-semibold" : ""
+                            className={`text-xs p-1 rounded overflow-hidden ${colorClasses} cursor-pointer hover-elevate ${
+                              isAbsent ? "opacity-50 border" : 
+                              isAttending ? "border-2 font-bold" : 
+                              "font-light border"
                             }`}
                             data-testid={`schedule-${schedule.id}`}
                             onClick={() => setSelectedSchedule(schedule)}
@@ -739,10 +748,10 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                 return (
                   <div
                     key={`next-${index}`}
-                    className="min-h-[100px] p-2 border-b border-r text-muted-foreground/30"
+                    className="min-h-[100px] p-2 border-b border-r"
                     data-testid={`calendar-day-next-${day}`}
                   >
-                    <div className="text-sm mb-1">{day}</div>
+                    <div className="text-sm mb-1 text-muted-foreground">{day}</div>
                     <div className="space-y-1">
                       {daySchedules.slice(0, 2).map((schedule) => {
                         const attendance = getAttendanceForSchedule(schedule.id);
@@ -750,10 +759,18 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                         const primaryCategoryId = categoryIds[0];
                         const colorClasses = primaryCategoryId ? getCategoryColor(primaryCategoryId) : 'bg-muted/10 text-muted-foreground border-muted/20';
                         
+                        const isAbsent = attendance?.status === "×";
+                        const isAttending = attendance?.status === "○";
+                        const isUndecided = attendance?.status === "△" || !attendance;
+                        
                         return (
                           <div
                             key={schedule.id}
-                            className={`text-xs p-1 rounded border overflow-hidden ${colorClasses} truncate cursor-pointer opacity-50`}
+                            className={`text-xs p-1 rounded overflow-hidden ${colorClasses} truncate cursor-pointer ${
+                              isAbsent ? "opacity-50 border" : 
+                              isAttending ? "border-2 font-bold" : 
+                              "font-light border"
+                            }`}
                             onClick={() => setSelectedSchedule(schedule)}
                           >
                             {schedule.title}
