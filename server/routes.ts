@@ -176,6 +176,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user?.claims?.sub;
       if (userId && newSchedule[0].teamId) {
         try {
+          // Format date as "M月D日"
+          const scheduleDate = new Date(newSchedule[0].date);
+          const month = scheduleDate.getMonth() + 1;
+          const day = scheduleDate.getDate();
+          const formattedDate = `${month}月${day}日`;
+          const eventNameWithDate = `${formattedDate} ${newSchedule[0].title}`;
+
           await db.insert(activityLogs).values({
             teamId: newSchedule[0].teamId,
             activityType: "schedule_created",
@@ -184,7 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             targetType: "schedule",
             targetId: newSchedule[0].id,
             targetName: newSchedule[0].title,
-            description: `新しく「${newSchedule[0].title}」が登録されました`,
+            description: `新しく「${eventNameWithDate}」が登録されました`,
           });
         } catch (logError) {
           console.error("Error logging activity:", logError);
@@ -237,6 +244,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user?.claims?.sub;
       if (userId && updated[0].teamId) {
         try {
+          // Format date as "M月D日"
+          const scheduleDate = new Date(updated[0].date);
+          const month = scheduleDate.getMonth() + 1;
+          const day = scheduleDate.getDate();
+          const formattedDate = `${month}月${day}日`;
+          const eventNameWithDate = `${formattedDate} ${updated[0].title}`;
+
           let changeDescription = "";
           if (updateData.startHour !== undefined || updateData.startMinute !== undefined) {
             changeDescription = "の開始時間が変更されました";
@@ -256,7 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             targetType: "schedule",
             targetId: updated[0].id,
             targetName: updated[0].title,
-            description: `「${updated[0].title}」${changeDescription}`,
+            description: `「${eventNameWithDate}」${changeDescription}`,
           });
         } catch (logError) {
           console.error("Error logging activity:", logError);
@@ -300,6 +314,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user?.claims?.sub;
       if (userId && schedule[0].teamId) {
         try {
+          // Format date as "M月D日"
+          const scheduleDate = new Date(schedule[0].date);
+          const month = scheduleDate.getMonth() + 1;
+          const day = scheduleDate.getDate();
+          const formattedDate = `${month}月${day}日`;
+          const eventNameWithDate = `${formattedDate} ${schedule[0].title}`;
+
           await db.insert(activityLogs).values({
             teamId: schedule[0].teamId,
             activityType: "schedule_deleted",
@@ -308,7 +329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             targetType: "schedule",
             targetId: schedule[0].id,
             targetName: schedule[0].title,
-            description: `「${schedule[0].title}」が削除されました`,
+            description: `「${eventNameWithDate}」が削除されました`,
           });
         } catch (logError) {
           console.error("Error logging activity:", logError);
