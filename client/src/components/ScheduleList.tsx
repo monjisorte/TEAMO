@@ -760,7 +760,7 @@ export function ScheduleList() {
                                           </span>
                                         )}
                                       </div>
-                                      <div className="flex flex-wrap gap-2">
+                                      <div className="flex flex-wrap gap-2 mb-2">
                                         {(schedule.categoryIds || (schedule.categoryId ? [schedule.categoryId] : [])).map((catId) => {
                                           const category = categories.find(c => c.id === catId);
                                           return category ? (
@@ -775,6 +775,24 @@ export function ScheduleList() {
                                             繰り返し
                                           </Badge>
                                         )}
+                                      </div>
+                                      <div className="flex items-center gap-3 text-xs">
+                                        {(() => {
+                                          const scheduleAttendances = attendances.filter(a => a.scheduleId === schedule.id);
+                                          const attending = scheduleAttendances.filter(a => a.status === "○").length;
+                                          const maybe = scheduleAttendances.filter(a => a.status === "△").length;
+                                          const absent = scheduleAttendances.filter(a => a.status === "×").length;
+                                          const noResponse = scheduleAttendances.filter(a => a.status === "-").length;
+                                          
+                                          return (
+                                            <>
+                                              {attending > 0 && <span className="text-green-600 font-medium">○{attending}</span>}
+                                              {maybe > 0 && <span className="text-yellow-600 font-medium">△{maybe}</span>}
+                                              {absent > 0 && <span className="text-red-600 font-medium">×{absent}</span>}
+                                              {noResponse > 0 && <span className="text-muted-foreground">-{noResponse}</span>}
+                                            </>
+                                          );
+                                        })()}
                                       </div>
                                     </div>
                                     <div className="flex gap-2">
@@ -798,7 +816,7 @@ export function ScheduleList() {
                                             setScheduleToDelete(schedule);
                                             setShowRecurringDeleteDialog(true);
                                           } else {
-                                            handleDeleteSchedule(schedule.id, "this");
+                                            handleDeleteSchedule(schedule.id);
                                           }
                                         }}
                                         data-testid={`button-delete-schedule-${schedule.id}`}
