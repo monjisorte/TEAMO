@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, User, Mail } from "lucide-react";
+import { Loader2, User } from "lucide-react";
 import type { Coach } from "@shared/schema";
 
 interface PlayerCoachesPageProps {
@@ -13,6 +13,12 @@ export default function PlayerCoachesPage({ teamId }: PlayerCoachesPageProps) {
     queryKey: ["/api/team", teamId, "coaches"],
   });
 
+  // ソート済みのコーチリスト（登録が古い順）
+  const sortedCoaches = coaches ? [...coaches].sort((a, b) => {
+    if (!a.createdAt || !b.createdAt) return 0;
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  }) : [];
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -21,7 +27,7 @@ export default function PlayerCoachesPage({ teamId }: PlayerCoachesPageProps) {
     );
   }
 
-  if (!coaches || coaches.length === 0) {
+  if (!sortedCoaches || sortedCoaches.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-muted-foreground">コーチ情報がありません</p>
@@ -40,8 +46,8 @@ export default function PlayerCoachesPage({ teamId }: PlayerCoachesPageProps) {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {coaches.map((coach) => {
+      <div className="grid gap-6">
+        {sortedCoaches.map((coach) => {
           const fullName = coach.lastName && coach.firstName
             ? `${coach.lastName} ${coach.firstName}`
             : coach.name;
@@ -73,10 +79,6 @@ export default function PlayerCoachesPage({ teamId }: PlayerCoachesPageProps) {
                         {fullNameKana}
                       </CardDescription>
                     )}
-                    <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                      <Mail className="h-4 w-4" />
-                      <span data-testid={`text-coach-email-${coach.id}`}>{coach.email}</span>
-                    </div>
                   </div>
                 </div>
               </CardHeader>
