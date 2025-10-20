@@ -82,18 +82,9 @@ export function Dashboard() {
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="border-0 shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
-            <CardTitle className="text-sm font-medium text-muted-foreground">今後の予定</CardTitle>
-            <div className="rounded-xl bg-primary/10 p-3">
-              <Calendar className="h-5 w-5 text-primary" />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="text-4xl font-bold" data-testid="text-upcoming-events">
-              {isLoadingStats ? "..." : stats?.upcomingEvents || 0}
-            </div>
             <Select value={schedulePeriod} onValueChange={setSchedulePeriod}>
-              <SelectTrigger className="w-full" data-testid="select-schedule-period">
-                <SelectValue />
+              <SelectTrigger className="w-[140px] border-0 shadow-none p-0 h-auto" data-testid="select-schedule-period">
+                <SelectValue className="text-sm font-medium text-muted-foreground" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="this-week">今週の予定</SelectItem>
@@ -102,6 +93,14 @@ export function Dashboard() {
                 <SelectItem value="next-month">来月の予定</SelectItem>
               </SelectContent>
             </Select>
+            <div className="rounded-xl bg-primary/10 p-3">
+              <Calendar className="h-5 w-5 text-primary" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold" data-testid="text-upcoming-events">
+              {isLoadingStats ? "..." : stats?.upcomingEvents || 0}
+            </div>
           </CardContent>
         </Card>
 
