@@ -22,7 +22,6 @@ import PlayerLogin from "@/pages/PlayerLogin";
 import PlayerAttendancePage from "@/pages/PlayerAttendancePage";
 import PlayerCalendarPage from "@/pages/PlayerCalendarPage";
 import PlayerDocumentsPage from "@/pages/PlayerDocumentsPage";
-import PlayerContactPage from "@/pages/PlayerContactPage";
 import PlayerProfilePage from "@/pages/PlayerProfilePage";
 import PlayerMembersPage from "@/pages/player/PlayerMembersPage";
 import PlayerCoachesPage from "@/pages/player/PlayerCoachesPage";
@@ -160,9 +159,6 @@ function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogou
               </Route>
               <Route path="/profile">
                 {() => <PlayerProfilePage playerId={player.id} teamId={player.teamId} />}
-              </Route>
-              <Route path="/contact">
-                {() => <PlayerContactPage teamId={player.teamId} playerName={player.name} playerEmail={player.email} />}
               </Route>
               <Route path="/">
                 {() => <PlayerCalendarPage playerId={player.id} teamId={player.teamId} />}

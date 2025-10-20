@@ -1,4 +1,4 @@
-import { CheckSquare, Calendar as CalendarIcon, FileText, Mail, User, UsersRound, Users } from "lucide-react";
+import { CheckSquare, Calendar as CalendarIcon, FileText, User, UsersRound, Users } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -43,11 +43,6 @@ const menuItems = [
     title: "プロフィール管理",
     url: "/profile",
     icon: User,
-  },
-  {
-    title: "問い合わせ",
-    url: "/contact",
-    icon: Mail,
   },
 ];
 
