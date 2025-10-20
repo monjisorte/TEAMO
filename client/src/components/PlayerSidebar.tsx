@@ -148,17 +148,17 @@ export function PlayerSidebar({ teamName, teamId }: PlayerSidebarProps) {
                   return (
                     <div 
                       key={log.id} 
-                      className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 hover-elevate"
+                      className="p-2 rounded-lg bg-muted/30 hover-elevate"
                       data-testid={`activity-log-${log.id}`}
                     >
-                      <p className="text-xs flex-1 min-w-0">{log.description}</p>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {categoryNames.length > 0 && categoryNames.map((name, idx) => (
+                      <div className="text-xs flex items-center gap-1.5 flex-wrap">
+                        <span>{log.description}</span>
+                        {categoryNames.map((name, idx) => (
                           <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0">
                             {name}
                           </Badge>
                         ))}
-                        <p className="text-[10px] text-muted-foreground">{timeAgo}</p>
+                        <span className="text-[10px] text-muted-foreground">{timeAgo}</span>
                       </div>
                     </div>
                   );

@@ -396,17 +396,17 @@ export function Dashboard() {
                 return (
                   <div 
                     key={log.id} 
-                    className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 hover-elevate"
+                    className="p-2 rounded-lg bg-muted/30 hover-elevate"
                     data-testid={`activity-log-${log.id}`}
                   >
-                    <p className="text-sm flex-1 min-w-0">{log.description}</p>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {categoryNames.length > 0 && categoryNames.map((name, idx) => (
+                    <div className="text-sm flex items-center gap-2 flex-wrap">
+                      <span>{log.description}</span>
+                      {categoryNames.map((name, idx) => (
                         <Badge key={idx} variant="secondary" className="text-xs">
                           {name}
                         </Badge>
                       ))}
-                      <p className="text-xs text-muted-foreground">{timeAgo}</p>
+                      <span className="text-xs text-muted-foreground">{timeAgo}</span>
                     </div>
                   </div>
                 );
