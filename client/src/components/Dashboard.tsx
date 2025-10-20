@@ -60,16 +60,16 @@ export function Dashboard() {
     enabled: showMembersDialog && !!teamId,
   });
 
-  // カテゴリ順にソートした生徒リスト
-  const teamStudents = students.filter(s => s.teamId === teamId);
+  // カテゴリ順にソートした生徒リスト（カテゴリ未設定の生徒は除外）
+  const teamStudents = students.filter(s => s.teamId === teamId && s.categoryId);
   const sortedStudents = [...teamStudents].sort((a, b) => 
     (a.categoryId || "").localeCompare(b.categoryId || "") || a.name.localeCompare(b.name)
   );
 
   const getCategoryName = (categoryId: string | null | undefined) => {
-    if (!categoryId) return "未分類";
+    if (!categoryId) return "";
     const category = categories.find(c => c.id === categoryId);
-    return category?.name || "未分類";
+    return category?.name || "";
   };
 
   const getPlayerTypeLabel = (playerType: string | null | undefined) => {
