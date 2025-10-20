@@ -41,12 +41,26 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
     queryKey: [`/api/student/${studentId}/attendance`],
   });
 
+  // すべてのattendancesを取得して参加者数を表示
+  const { data: allAttendances = [] } = useQuery<Attendance[]>({
+    queryKey: ["/api/attendances"],
+  });
+
   const [statusMap, setStatusMap] = useState<Record<string, AttendanceStatus>>({});
   const [commentMap, setCommentMap] = useState<Record<string, string>>({});
   const [savingScheduleId, setSavingScheduleId] = useState<string | null>(null);
 
   const getAttendanceForSchedule = (scheduleId: string) => {
     return attendances.find((att) => att.scheduleId === scheduleId);
+  };
+
+  const getAttendanceCounts = (scheduleId: string) => {
+    const scheduleAttendances = allAttendances.filter(a => a.scheduleId === scheduleId);
+    return {
+      confirmed: scheduleAttendances.filter(a => a.status === "○").length,
+      maybe: scheduleAttendances.filter(a => a.status === "△").length,
+      absent: scheduleAttendances.filter(a => a.status === "×").length,
+    };
   };
 
   const getCurrentStatus = (scheduleId: string): AttendanceStatus => {
@@ -176,13 +190,19 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
         const currentComment = getCurrentComment(schedule.id);
         const scheduleCategoryIds = getScheduleCategoryIds(schedule);
         const categoryNames = getCategoryNames(scheduleCategoryIds);
+        const attendanceCounts = getAttendanceCounts(schedule.id);
 
         return (
           <Card key={schedule.id} data-testid={`card-schedule-${schedule.id}`} className="border-0 shadow-xl overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 text-white">
+            <div className="bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 p-2 text-foreground">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <CardTitle className="text-base font-bold mb-1">{schedule.title}</CardTitle>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <CardTitle className="text-lg font-bold">{schedule.title}</CardTitle>
+                    <div className="text-xs font-semibold shrink-0 text-muted-foreground">
+                      ○{attendanceCounts.confirmed} △{attendanceCounts.maybe} ×{attendanceCounts.absent}
+                    </div>
+                  </div>
                   
                   {/* カテゴリーバッジ */}
                   {categoryNames.length > 0 && (
@@ -190,7 +210,8 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
                       {categoryNames.map((name, index) => (
                         <Badge 
                           key={index} 
-                          className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 text-xs"
+                          variant="secondary"
+                          className="text-xs"
                           data-testid={`badge-category-${index}`}
                         >
                           {name}
