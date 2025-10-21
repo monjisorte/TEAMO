@@ -369,14 +369,27 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
-    // 今日以降の予定をフィルタして時系列でソート
+    // 今日以降の予定で、かつ自分の出欠が「○」か「△」のものをフィルタして時系列でソート
     const upcomingSchedules = filteredSchedules
       .filter(schedule => {
-        if (schedule.date > todayStr) return true;
-        if (schedule.date === todayStr) {
+        // まだ開始していないイベントかチェック
+        if (schedule.date > todayStr) {
+          // 未来の日付は有効
+        } else if (schedule.date === todayStr) {
           const scheduleMinutes = (schedule.startHour ?? 0) * 60 + (schedule.startMinute ?? 0);
-          return scheduleMinutes > nowMinutes;
+          if (scheduleMinutes <= nowMinutes) {
+            return false; // 既に開始している
+          }
+        } else {
+          return false; // 過去の日付
         }
+
+        // 自分の出欠が「○」か「△」かチェック
+        const myAttendance = getAttendanceForSchedule(schedule.id);
+        if (myAttendance && (myAttendance.status === "○" || myAttendance.status === "△")) {
+          return true;
+        }
+        
         return false;
       })
       .sort((a, b) => {
