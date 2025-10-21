@@ -516,7 +516,7 @@ export function ScheduleList() {
           </TabsTrigger>
           <TabsTrigger value="calendar" className="gap-2" data-testid="tab-calendar-view">
             <CalendarDays className="h-4 w-4" />
-            カレンダー
+            月
           </TabsTrigger>
         </TabsList>
 
@@ -716,8 +716,8 @@ export function ScheduleList() {
                       <Card key={index} className={`border-0 shadow-md ${isToday ? 'ring-2 ring-primary' : ''}`}>
                         <CardContent className="p-4 md:p-6">
                           <div className="flex items-center gap-3 mb-4">
-                            <div className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl ${isToday ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-muted'}`}>
-                              <span className="text-xs md:text-sm">{weekDays[index]}</span>
+                            <div className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br from-primary to-purple-600 text-white ${isToday ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
+                              <span className="text-xs md:text-sm opacity-90">{weekDays[index]}</span>
                               <span className="text-lg md:text-2xl font-bold">{date.getDate()}</span>
                             </div>
                             <div>
