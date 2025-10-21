@@ -23,8 +23,13 @@ const registerSchema = z.object({
   teamCode: z.string().length(8, "チームIDは8文字です"),
 });
 
+const resetRequestSchema = z.object({
+  email: z.string().email("有効なメールアドレスを入力してください"),
+});
+
 type LoginFormValues = z.infer<typeof loginSchema>;
 type RegisterFormValues = z.infer<typeof registerSchema>;
+type ResetRequestFormValues = z.infer<typeof resetRequestSchema>;
 
 interface PlayerLoginProps {
   onLoginSuccess: (player: { id: string; name: string; email: string; teamId: string }) => void;
@@ -50,6 +55,13 @@ export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
       email: "",
       password: "",
       teamCode: "",
+    },
+  });
+
+  const resetRequestForm = useForm<ResetRequestFormValues>({
+    resolver: zodResolver(resetRequestSchema),
+    defaultValues: {
+      email: "",
     },
   });
 
@@ -107,6 +119,37 @@ export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
       toast({
         title: "エラー",
         description: "登録中にエラーが発生しました",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onResetRequest = async (data: ResetRequestFormValues) => {
+    setIsLoading(true);
+    try {
+      const response = await apiRequest("POST", "/api/student/request-password-reset", data);
+      const result = await response.json();
+      
+      if (response.ok) {
+        toast({
+          title: "メールを送信しました",
+          description: "パスワードリセット用のリンクをメールで送信しました。メールをご確認ください。",
+        });
+        resetRequestForm.reset();
+        setShowPasswordResetDialog(false);
+      } else {
+        toast({
+          title: "エラー",
+          description: result.error || "メール送信中にエラーが発生しました",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "エラー",
+        description: "メール送信中にエラーが発生しました",
         variant: "destructive",
       });
     } finally {
@@ -285,21 +328,50 @@ export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
           <DialogHeader>
             <DialogTitle>パスワードのリセット</DialogTitle>
             <DialogDescription>
-              パスワードを忘れた場合は、チームのコーチまたは管理者に連絡してパスワードをリセットしてもらってください。
+              登録したメールアドレスを入力してください。パスワードリセット用のリンクを送信します。
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              コーチまたは管理者は、メンバー管理画面からあなたのパスワードをリセットできます。
-            </p>
-            <Button
-              onClick={() => setShowPasswordResetDialog(false)}
-              className="w-full"
-              data-testid="button-close-password-reset"
-            >
-              閉じる
-            </Button>
-          </div>
+          <Form {...resetRequestForm}>
+            <form onSubmit={resetRequestForm.handleSubmit(onResetRequest)} className="space-y-4">
+              <FormField
+                control={resetRequestForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>メールアドレス</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="email" 
+                        placeholder="email@example.com" 
+                        data-testid="input-reset-email"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowPasswordResetDialog(false)}
+                  className="flex-1"
+                  data-testid="button-cancel-reset"
+                >
+                  キャンセル
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="flex-1" 
+                  disabled={isLoading}
+                  data-testid="button-send-reset-email"
+                >
+                  {isLoading ? "送信中..." : "送信"}
+                </Button>
+              </div>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>

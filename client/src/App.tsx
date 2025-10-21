@@ -19,6 +19,7 @@ import DocumentsPage from "@/pages/DocumentsPage";
 import TuitionPage from "@/pages/TuitionPage";
 import LineNotificationsPage from "@/pages/LineNotificationsPage";
 import PlayerLogin from "@/pages/PlayerLogin";
+import PasswordReset from "@/pages/PasswordReset";
 import PlayerAttendancePage from "@/pages/PlayerAttendancePage";
 import PlayerCalendarPage from "@/pages/PlayerCalendarPage";
 import PlayerDocumentsPage from "@/pages/PlayerDocumentsPage";
@@ -416,6 +417,9 @@ function App() {
         <Switch>
           <Route path="/register">
             {() => <RegisterPage />}
+          </Route>
+          <Route path="/reset-password">
+            {() => <PasswordReset />}
           </Route>
           <Route path="/login">
             {() => {
