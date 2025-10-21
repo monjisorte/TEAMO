@@ -689,21 +689,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send email with Resend
       const resend = new Resend(process.env.RESEND_API_KEY);
-      const resetUrl = `${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}/reset-password?token=${resetToken}`;
+      const resetUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}/reset-password?token=${resetToken}`;
 
-      await resend.emails.send({
-        from: "TEAMO <onboarding@resend.dev>",
-        to: email,
-        subject: "パスワードリセットのご案内 - TEAMO",
-        html: `
-          <h2>パスワードリセット</h2>
-          <p>パスワードのリセットをリクエストいただきありがとうございます。</p>
-          <p>下記のリンクをクリックして、新しいパスワードを設定してください：</p>
-          <p><a href="${resetUrl}">${resetUrl}</a></p>
-          <p>このリンクは1時間有効です。</p>
-          <p>もしリクエストしていない場合は、このメールを無視してください。</p>
-        `,
-      });
+      console.log("Sending password reset email to:", email);
+      console.log("Reset URL:", resetUrl);
+      
+      try {
+        const emailResult = await resend.emails.send({
+          from: "TEAMO <onboarding@resend.dev>",
+          to: email,
+          subject: "パスワードリセットのご案内 - TEAMO",
+          html: `
+            <h2>パスワードリセット</h2>
+            <p>パスワードのリセットをリクエストいただきありがとうございます。</p>
+            <p>下記のリンクをクリックして、新しいパスワードを設定してください：</p>
+            <p><a href="${resetUrl}">${resetUrl}</a></p>
+            <p>このリンクは1時間有効です。</p>
+            <p>もしリクエストしていない場合は、このメールを無視してください。</p>
+          `,
+        });
+        
+        console.log("Email sent successfully:", emailResult);
+      } catch (emailError) {
+        console.error("Error sending email:", emailError);
+        // Still return success to not reveal if email exists
+      }
 
       res.status(200).json({ message: "If the email exists, a password reset link has been sent" });
     } catch (error) {
