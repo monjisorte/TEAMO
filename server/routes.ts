@@ -8,9 +8,11 @@ import {
 } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { db } from "./db";
-import { teams, students, coaches, studentCategories, attendances, schedules, categories, sharedDocuments, folders, tuitionPayments, venues, admins, activityLogs, coachCategories } from "@shared/schema";
-import { eq, and, inArray, isNull, or, count, sql as drizzleSql, desc } from "drizzle-orm";
+import { teams, students, coaches, studentCategories, attendances, schedules, categories, sharedDocuments, folders, tuitionPayments, venues, admins, activityLogs, coachCategories, passwordResetTokens } from "@shared/schema";
+import { eq, and, inArray, isNull, or, count, sql as drizzleSql, desc, gt } from "drizzle-orm";
 import { generateTeamCode, hashPassword, verifyPassword } from "./utils";
+import { Resend } from "resend";
+import crypto from "crypto";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
@@ -654,6 +656,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error logging in student:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Password Reset Request
+  app.post("/api/student/request-password-reset", async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      // Check if student exists
+      const student = await db.select().from(students).where(eq(students.email, email)).limit(1);
+      if (student.length === 0) {
+        // Return success even if email doesn't exist (security best practice)
+        return res.status(200).json({ message: "If the email exists, a password reset link has been sent" });
+      }
+
+      // Generate reset token
+      const resetToken = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+      // Save token to database
+      await db.insert(passwordResetTokens).values({
+        email,
+        token: resetToken,
+        expiresAt,
+      });
+
+      // Send email with Resend
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const resetUrl = `${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}/reset-password?token=${resetToken}`;
+
+      await resend.emails.send({
+        from: "TEAMO <onboarding@resend.dev>",
+        to: email,
+        subject: "パスワードリセットのご案内 - TEAMO",
+        html: `
+          <h2>パスワードリセット</h2>
+          <p>パスワードのリセットをリクエストいただきありがとうございます。</p>
+          <p>下記のリンクをクリックして、新しいパスワードを設定してください：</p>
+          <p><a href="${resetUrl}">${resetUrl}</a></p>
+          <p>このリンクは1時間有効です。</p>
+          <p>もしリクエストしていない場合は、このメールを無視してください。</p>
+        `,
+      });
+
+      res.status(200).json({ message: "If the email exists, a password reset link has been sent" });
+    } catch (error) {
+      console.error("Error requesting password reset:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Verify Reset Token
+  app.post("/api/student/verify-reset-token", async (req, res) => {
+    try {
+      const { token } = req.body;
+
+      if (!token) {
+        return res.status(400).json({ error: "Token is required" });
+      }
+
+      // Find token in database
+      const resetToken = await db.select().from(passwordResetTokens)
+        .where(and(
+          eq(passwordResetTokens.token, token),
+          gt(passwordResetTokens.expiresAt, new Date())
+        ))
+        .limit(1);
+
+      if (resetToken.length === 0) {
+        return res.status(400).json({ error: "Invalid or expired token" });
+      }
+
+      res.status(200).json({ valid: true, email: resetToken[0].email });
+    } catch (error) {
+      console.error("Error verifying reset token:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Reset Password
+  app.post("/api/student/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        return res.status(400).json({ error: "Token and new password are required" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters" });
+      }
+
+      // Find token in database
+      const resetToken = await db.select().from(passwordResetTokens)
+        .where(and(
+          eq(passwordResetTokens.token, token),
+          gt(passwordResetTokens.expiresAt, new Date())
+        ))
+        .limit(1);
+
+      if (resetToken.length === 0) {
+        return res.status(400).json({ error: "Invalid or expired token" });
+      }
+
+      // Hash new password
+      const hashedPassword = await hashPassword(newPassword);
+
+      // Update student password
+      await db.update(students)
+        .set({ password: hashedPassword })
+        .where(eq(students.email, resetToken[0].email));
+
+      // Delete used token
+      await db.delete(passwordResetTokens)
+        .where(eq(passwordResetTokens.token, token));
+
+      res.status(200).json({ message: "Password reset successful" });
+    } catch (error) {
+      console.error("Error resetting password:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
