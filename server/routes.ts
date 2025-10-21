@@ -696,7 +696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       try {
         const emailResult = await resend.emails.send({
-          from: "TEAMO <noreply@sorte.work>",
+          from: "TEAMO <noreply@send.sorte.work>",
           to: email,
           subject: "パスワードリセットのご案内 - TEAMO",
           html: `
