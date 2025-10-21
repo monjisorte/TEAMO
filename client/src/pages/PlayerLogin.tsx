@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -31,6 +32,7 @@ interface PlayerLoginProps {
 
 export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPasswordResetDialog, setShowPasswordResetDialog] = useState(false);
   const { toast } = useToast();
 
   const loginForm = useForm<LoginFormValues>({
@@ -175,6 +177,16 @@ export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
                   >
                     {isLoading ? "ログイン中..." : "ログイン"}
                   </Button>
+                  <div className="text-center mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswordResetDialog(true)}
+                      className="text-sm text-muted-foreground hover:text-primary underline"
+                      data-testid="link-forgot-password"
+                    >
+                      パスワードを忘れた場合
+                    </button>
+                  </div>
                 </form>
               </Form>
             </TabsContent>
@@ -267,6 +279,29 @@ export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
           </Tabs>
         </CardContent>
       </Card>
+
+      <Dialog open={showPasswordResetDialog} onOpenChange={setShowPasswordResetDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>パスワードのリセット</DialogTitle>
+            <DialogDescription>
+              パスワードを忘れた場合は、チームのコーチまたは管理者に連絡してパスワードをリセットしてもらってください。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              コーチまたは管理者は、メンバー管理画面からあなたのパスワードをリセットできます。
+            </p>
+            <Button
+              onClick={() => setShowPasswordResetDialog(false)}
+              className="w-full"
+              data-testid="button-close-password-reset"
+            >
+              閉じる
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
