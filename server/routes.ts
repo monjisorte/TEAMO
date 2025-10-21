@@ -689,7 +689,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send email with Resend
       const resend = new Resend(process.env.RESEND_API_KEY);
-      const resetUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}/reset-password?token=${resetToken}`;
+      const resetUrl = `https://teamo.cloud/reset-password?token=${resetToken}`;
 
       console.log("Sending password reset email to:", email);
       console.log("Reset URL:", resetUrl);
