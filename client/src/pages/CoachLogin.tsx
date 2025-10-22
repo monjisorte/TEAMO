@@ -66,11 +66,13 @@ export default function CoachLogin({ onLoginSuccess }: CoachLoginProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl text-center">TEAMO</CardTitle>
-          <CardDescription className="text-center">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 dark:from-blue-900 dark:via-purple-900 dark:to-pink-900">
+      <Card className="w-full max-w-md backdrop-blur-lg bg-white/90 dark:bg-black/90 border-white/20 shadow-2xl">
+        <CardHeader className="space-y-2">
+          <CardTitle className="text-4xl font-bold text-center bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+            TEAMO
+          </CardTitle>
+          <CardDescription className="text-center text-base">
             コーチポータル
           </CardDescription>
         </CardHeader>

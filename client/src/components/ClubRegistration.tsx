@@ -96,8 +96,8 @@ export function ClubRegistration({ onRegistrationSuccess }: ClubRegistrationProp
 
   if (step === 4 && teamCode) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary/5 via-purple-500/5 to-background p-4">
-        <Card className="w-full max-w-3xl border-0 shadow-2xl">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 dark:from-blue-900 dark:via-purple-900 dark:to-pink-900 p-4">
+        <Card className="w-full max-w-3xl backdrop-blur-lg bg-white/90 dark:bg-black/90 border-white/20 shadow-2xl">
           <CardHeader className="text-center pb-8">
             <div className="flex justify-center mb-6">
               <div className="rounded-3xl bg-gradient-to-br from-primary to-purple-600 p-6">
@@ -144,8 +144,8 @@ export function ClubRegistration({ onRegistrationSuccess }: ClubRegistrationProp
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary/5 via-purple-500/5 to-background p-4">
-      <Card className="w-full max-w-3xl border-0 shadow-2xl">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 dark:from-blue-900 dark:via-purple-900 dark:to-pink-900 p-4">
+      <Card className="w-full max-w-3xl backdrop-blur-lg bg-white/90 dark:bg-black/90 border-white/20 shadow-2xl">
         <CardHeader className="pb-8">
           <div className="flex items-center gap-3 mb-6">
             {[1, 2, 3].map((s) => (
