@@ -424,6 +424,9 @@ export function ScheduleList() {
   // フィルタリングされたスケジュール
   const filteredSchedules = schedules
     .filter(schedule => {
+      // まず teamId でフィルタリング
+      if (schedule.teamId !== teamId) return false;
+      
       // カテゴリが選択されていない場合は全て表示
       if (selectedCategories.length === 0) return true;
       
