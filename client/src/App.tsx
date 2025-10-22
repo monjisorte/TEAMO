@@ -16,6 +16,7 @@ import CoachesPage from "@/pages/CoachesPage";
 import RegisterPage from "@/pages/RegisterPage";
 import TeamInfoPage from "@/pages/TeamInfoPage";
 import DocumentsPage from "@/pages/DocumentsPage";
+import LandingPage from "@/pages/LandingPage";
 import TuitionPage from "@/pages/TuitionPage";
 import LineNotificationsPage from "@/pages/LineNotificationsPage";
 import PlayerLogin from "@/pages/PlayerLogin";
@@ -616,6 +617,12 @@ function App() {
           <Route path="/team/:rest*">
             {() => <CoachPortal />}
           </Route>
+          <Route path="/player">
+            {() => <PlayerPortal />}
+          </Route>
+          <Route path="/player/:rest*">
+            {() => <PlayerPortal />}
+          </Route>
           <Route path="/admins/setup">
             {() => <AdminSetup />}
           </Route>
@@ -628,8 +635,8 @@ function App() {
           <Route path="/admins/:rest*">
             {() => <AdminPortal />}
           </Route>
-          <Route>
-            {() => <PlayerPortal />}
+          <Route path="/">
+            {() => <LandingPage />}
           </Route>
         </Switch>
         <Toaster />
