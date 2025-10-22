@@ -42,6 +42,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogOut } from "lucide-react";
 
+// Redirect component for internal routing
+function Redirect({ to }: { to: string }) {
+  const [, setLocation] = useLocation();
+  
+  useEffect(() => {
+    setLocation(to);
+  }, [to, setLocation]);
+  
+  return null;
+}
+
 interface PlayerData {
   id: string;
   name: string;
@@ -204,7 +215,7 @@ function PlayerPortal() {
   const handleLogout = () => {
     localStorage.removeItem("playerData");
     setPlayerId(null);
-    window.location.href = "https://teamo.cloud";
+    setLocation("/");
   };
 
   if (!playerId) {
@@ -337,7 +348,7 @@ function CoachPortal() {
     setCoachId(null);
     setSelectedTeamId(null);
     setInitialCoachData(null);
-    setLocation("/login");
+    setLocation("/");
   };
 
   // Not logged in
@@ -581,7 +592,7 @@ function AdminPortal() {
   const handleLogout = () => {
     localStorage.removeItem("adminData");
     setAdminId(null);
-    setLocation("/admins/login");
+    setLocation("/");
   };
 
   if (!adminId) {
@@ -608,11 +619,7 @@ function App() {
             {() => <PasswordReset />}
           </Route>
           <Route path="/login">
-            {() => {
-              // Redirect /login to /team
-              window.location.href = "/team";
-              return null;
-            }}
+            {() => <Redirect to="/team" />}
           </Route>
           <Route path="/team">
             {() => <CoachPortal />}
