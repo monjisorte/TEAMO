@@ -295,10 +295,18 @@ function CoachPortal() {
     if (savedCoach) {
       const coachData = JSON.parse(savedCoach);
       setCoachId(coachData.id);
+      
+      // If we have teams in localStorage, use them
+      if (coachData.teams) {
+        setInitialCoachData(coachData);
+      }
+      
       if (coachData.teamId) {
         setSelectedTeamId(coachData.teamId);
-        // Mark that we need to validate this teamId
-        setNeedsTeamValidation(true);
+        // Only mark for validation if we don't have teams data
+        if (!coachData.teams) {
+          setNeedsTeamValidation(true);
+        }
       }
     }
   }, []);
