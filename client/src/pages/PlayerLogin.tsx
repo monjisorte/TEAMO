@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -320,6 +321,17 @@ export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
               </Form>
             </TabsContent>
           </Tabs>
+          
+          <div className="mt-6 pt-4 border-t text-center">
+            <p className="text-sm text-muted-foreground">
+              コーチの方は
+              <Link href="/team">
+                <a className="ml-1 text-primary hover:underline font-medium" data-testid="link-coach-login">
+                  こちらからログイン
+                </a>
+              </Link>
+            </p>
+          </div>
         </CardContent>
       </Card>
 
