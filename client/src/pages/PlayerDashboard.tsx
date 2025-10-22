@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,6 +8,7 @@ import CategorySelection from "@/components/player/CategorySelection";
 import AttendanceView from "@/components/player/AttendanceView";
 import PlayerCalendar from "@/components/player/PlayerCalendar";
 import SharedDocuments from "@/components/player/SharedDocuments";
+import type { Category } from "@shared/schema";
 
 interface PlayerDashboardProps {
   player: { id: string; name: string; email: string; teamId: string };
@@ -16,6 +18,20 @@ interface PlayerDashboardProps {
 export default function PlayerDashboard({ player, onLogout }: PlayerDashboardProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [hasCategoriesSelected, setHasCategoriesSelected] = useState(false);
+
+  // 生徒のカテゴリを取得
+  const { data: studentCategories = [] } = useQuery<Category[]>({
+    queryKey: [`/api/student/${player.id}/categories`],
+  });
+
+  // 既にカテゴリが設定されている場合は、自動的にダッシュボードを表示
+  useEffect(() => {
+    if (studentCategories.length > 0) {
+      const categoryIds = studentCategories.map((cat) => cat.id);
+      setSelectedCategories(categoryIds);
+      setHasCategoriesSelected(true);
+    }
+  }, [studentCategories]);
 
   const handleCategoriesUpdated = (categoryIds: string[]) => {
     setSelectedCategories(categoryIds);
