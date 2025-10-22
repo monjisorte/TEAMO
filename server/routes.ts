@@ -93,7 +93,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Schedule Endpoints
-  app.get("/api/schedules", async (req, res) => {
+  app.get("/api/schedules", isAuthenticated, async (req, res) => {
     try {
       const allSchedules = await db.select().from(schedules);
       res.json(allSchedules);
@@ -358,7 +358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Attendance Endpoints
-  app.get("/api/attendances", async (req, res) => {
+  app.get("/api/attendances", isAuthenticated, async (req, res) => {
     try {
       const allAttendances = await db.select().from(attendances);
       res.json(allAttendances);
@@ -368,7 +368,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/attendances", async (req, res) => {
+  app.post("/api/attendances", isAuthenticated, async (req, res) => {
     try {
       const { studentId, scheduleId, status, comment } = req.body;
 
@@ -434,7 +434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Category Endpoints
-  app.get("/api/categories/:teamId", async (req, res) => {
+  app.get("/api/categories/:teamId", isAuthenticated, async (req, res) => {
     try {
       const { teamId } = req.params;
       
@@ -453,7 +453,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/categories", async (req, res) => {
+  app.post("/api/categories", isAuthenticated, async (req, res) => {
     try {
       const { teamId, name, description } = req.body;
 
@@ -474,7 +474,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/categories/:id", async (req, res) => {
+  app.delete("/api/categories/:id", isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
       await db.delete(categories).where(eq(categories.id, id));
@@ -486,7 +486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Team Management Endpoints
-  app.get("/api/teams", async (req, res) => {
+  app.get("/api/teams", isAuthenticated, async (req, res) => {
     try {
       const allTeams = await db.select().from(teams);
       res.json(allTeams);
@@ -496,7 +496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/teams", async (req, res) => {
+  app.post("/api/teams", isAuthenticated, async (req, res) => {
     try {
       const { name, contactEmail } = req.body;
 
@@ -862,7 +862,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/coach/:coachId", async (req, res) => {
+  app.get("/api/coach/:coachId", isAuthenticated, async (req, res) => {
     try {
       const { coachId } = req.params;
       
@@ -880,7 +880,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Coach Management
-  app.get("/api/teams/:teamId/coaches", async (req, res) => {
+  app.get("/api/teams/:teamId/coaches", isAuthenticated, async (req, res) => {
     try {
       const { teamId } = req.params;
 
@@ -905,7 +905,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/coaches/:coachId", async (req, res) => {
+  app.delete("/api/coaches/:coachId", isAuthenticated, async (req, res) => {
     try {
       const { coachId } = req.params;
 
@@ -924,7 +924,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/coaches/:coachId/password", async (req, res) => {
+  app.patch("/api/coaches/:coachId/password", isAuthenticated, async (req, res) => {
     try {
       const { coachId } = req.params;
       const { password } = req.body;
@@ -951,7 +951,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Venue Management
-  app.get("/api/teams/:teamId/venues", async (req, res) => {
+  app.get("/api/teams/:teamId/venues", isAuthenticated, async (req, res) => {
     try {
       const { teamId } = req.params;
 
@@ -963,7 +963,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/venues", async (req, res) => {
+  app.post("/api/venues", isAuthenticated, async (req, res) => {
     try {
       const { name, address, teamId } = req.body;
 
@@ -984,7 +984,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/venues/:venueId", async (req, res) => {
+  app.delete("/api/venues/:venueId", isAuthenticated, async (req, res) => {
     try {
       const { venueId } = req.params;
 
@@ -1003,7 +1003,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/venues/:venueId", async (req, res) => {
+  app.put("/api/venues/:venueId", isAuthenticated, async (req, res) => {
     try {
       const { venueId } = req.params;
       const { name, address } = req.body;
@@ -1032,7 +1032,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Student Profile
-  app.get("/api/student/:studentId", async (req, res) => {
+  app.get("/api/student/:studentId", isAuthenticated, async (req, res) => {
     try {
       const { studentId } = req.params;
       
@@ -1049,7 +1049,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/student/:studentId", async (req, res) => {
+  app.patch("/api/student/:studentId", isAuthenticated, async (req, res) => {
     try {
       const { studentId } = req.params;
       const { name, lastName, firstName, lastNameKana, firstNameKana, schoolName, birthDate, photoUrl, playerType, jerseyNumber, siblingDiscountStatus } = req.body;
@@ -1084,7 +1084,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Student Email Change
-  app.put("/api/student/:studentId/email", async (req, res) => {
+  app.put("/api/student/:studentId/email", isAuthenticated, async (req, res) => {
     try {
       const { studentId } = req.params;
       const { email, currentPassword } = req.body;
@@ -1125,7 +1125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Student Password Change
-  app.put("/api/student/:studentId/password", async (req, res) => {
+  app.put("/api/student/:studentId/password", isAuthenticated, async (req, res) => {
     try {
       const { studentId } = req.params;
       const { newPassword } = req.body;
@@ -1158,7 +1158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all student-category relationships
-  app.get("/api/student-categories", async (req, res) => {
+  app.get("/api/student-categories", isAuthenticated, async (req, res) => {
     try {
       const allStudentCategories = await db.select().from(studentCategories);
       res.json(allStudentCategories);
@@ -1169,7 +1169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Add student to category
-  app.post("/api/student-categories", async (req, res) => {
+  app.post("/api/student-categories", isAuthenticated, async (req, res) => {
     try {
       const { studentId, categoryId } = req.body;
 
@@ -1205,7 +1205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Remove student from category
-  app.delete("/api/student-categories/:studentId/:categoryId", async (req, res) => {
+  app.delete("/api/student-categories/:studentId/:categoryId", isAuthenticated, async (req, res) => {
     try {
       const { studentId, categoryId } = req.params;
 
@@ -1225,7 +1225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Student Category Selection
-  app.get("/api/student/:studentId/categories", async (req, res) => {
+  app.get("/api/student/:studentId/categories", isAuthenticated, async (req, res) => {
     try {
       const { studentId } = req.params;
       
@@ -1249,7 +1249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/student/:studentId/categories", async (req, res) => {
+  app.post("/api/student/:studentId/categories", isAuthenticated, async (req, res) => {
     try {
       const { studentId } = req.params;
       const { categoryIds } = req.body;
@@ -1276,7 +1276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Student Schedules (all schedules in the student's team)
-  app.get("/api/student/:studentId/schedules", async (req, res) => {
+  app.get("/api/student/:studentId/schedules", isAuthenticated, async (req, res) => {
     try {
       const { studentId } = req.params;
       
@@ -1305,7 +1305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Student Attendance
-  app.get("/api/student/:studentId/attendance", async (req, res) => {
+  app.get("/api/student/:studentId/attendance", isAuthenticated, async (req, res) => {
     try {
       const { studentId } = req.params;
       
@@ -1320,7 +1320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/student/:studentId/attendance", async (req, res) => {
+  app.post("/api/student/:studentId/attendance", isAuthenticated, async (req, res) => {
     try {
       const { studentId } = req.params;
       const { scheduleId, status, comment } = req.body;
@@ -1361,7 +1361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update attendance (for moving participants between schedules)
-  app.put("/api/attendances/:id", async (req, res) => {
+  app.put("/api/attendances/:id", isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
       const updateData = req.body;
@@ -1379,7 +1379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Shared Documents
-  app.get("/api/team/:teamId/documents", async (req, res) => {
+  app.get("/api/team/:teamId/documents", isAuthenticated, async (req, res) => {
     try {
       const { teamId } = req.params;
       
@@ -1395,7 +1395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Team Info Update
-  app.put("/api/teams/:id", async (req, res) => {
+  app.put("/api/teams/:id", isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
       const updateData = req.body;
@@ -1413,7 +1413,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Folders Management
-  app.get("/api/folders", async (req, res) => {
+  app.get("/api/folders", isAuthenticated, async (req, res) => {
     try {
       const { parentFolderId, teamId } = req.query;
       
@@ -1441,7 +1441,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/folders", async (req, res) => {
+  app.post("/api/folders", isAuthenticated, async (req, res) => {
     try {
       const { name, parentFolderId, teamId } = req.body;
 
@@ -1462,7 +1462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/folders/:id", async (req, res) => {
+  app.delete("/api/folders/:id", isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
 
@@ -1475,7 +1475,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Documents Management
-  app.get("/api/documents", async (req, res) => {
+  app.get("/api/documents", isAuthenticated, async (req, res) => {
     try {
       const { folderId, teamId } = req.query;
       
@@ -1539,7 +1539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/documents/:id", async (req, res) => {
+  app.delete("/api/documents/:id", isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
 
@@ -1552,7 +1552,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Students Management
-  app.get("/api/students", async (req, res) => {
+  app.get("/api/students", isAuthenticated, async (req, res) => {
     try {
       // Disable caching to ensure fresh data
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
@@ -1575,7 +1575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/students/:id", async (req, res) => {
+  app.delete("/api/students/:id", isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
 
@@ -1594,7 +1594,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Tuition Payments
-  app.get("/api/tuition-payments", async (req, res) => {
+  app.get("/api/tuition-payments", isAuthenticated, async (req, res) => {
     try {
       const { year, month, teamId } = req.query;
 
@@ -1625,7 +1625,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/tuition-payments", async (req, res) => {
+  app.post("/api/tuition-payments", isAuthenticated, async (req, res) => {
     try {
       const { studentId, baseAmount, discount, enrollmentOrAnnualFee, spotFee, amount, isPaid, year, month, category } = req.body;
 
@@ -1696,7 +1696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Auto-generate tuition payments for all students
-  app.post("/api/tuition-payments/auto-generate", async (req, res) => {
+  app.post("/api/tuition-payments/auto-generate", isAuthenticated, async (req, res) => {
     try {
       const { teamId } = req.body;
 
@@ -1926,8 +1926,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Coach Profile Management
-  app.get("/api/coach/:coachId", async (req, res) => {
+  // Coach Profile Management (duplicate - consider removing)
+  app.get("/api/coach/:coachId", isAuthenticated, async (req, res) => {
     try {
       const { coachId } = req.params;
       
@@ -1946,7 +1946,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/coach/:coachId", async (req, res) => {
+  app.put("/api/coach/:coachId", isAuthenticated, async (req, res) => {
     try {
       const { coachId } = req.params;
       const { lastName, firstName, lastNameKana, firstNameKana, photoUrl, bio, position } = req.body;
@@ -1977,7 +1977,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/coach/:coachId/password", async (req, res) => {
+  app.put("/api/coach/:coachId/password", isAuthenticated, async (req, res) => {
     try {
       const { coachId } = req.params;
       const { currentPassword, newPassword } = req.body;
@@ -2014,7 +2014,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/coach/:coachId/email", async (req, res) => {
+  app.put("/api/coach/:coachId/email", isAuthenticated, async (req, res) => {
     try {
       const { coachId } = req.params;
       const { newEmail, currentPassword } = req.body;
@@ -2064,7 +2064,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get team coaches (for student view)
-  app.get("/api/team/:teamId/coaches", async (req, res) => {
+  app.get("/api/team/:teamId/coaches", isAuthenticated, async (req, res) => {
     try {
       const { teamId } = req.params;
       
@@ -2286,7 +2286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Activity Logs
-  app.get("/api/activity-logs/:teamId", async (req, res) => {
+  app.get("/api/activity-logs/:teamId", isAuthenticated, async (req, res) => {
     try {
       const { teamId } = req.params;
       const limit = parseInt(req.query.limit as string) || 20;
@@ -2304,7 +2304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/activity-logs", async (req, res) => {
+  app.post("/api/activity-logs", isAuthenticated, async (req, res) => {
     try {
       const newLog = await db.insert(activityLogs).values(req.body).returning();
       res.json(newLog[0]);
@@ -2315,7 +2315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Coach Categories
-  app.get("/api/coach-categories/:coachId", async (req, res) => {
+  app.get("/api/coach-categories/:coachId", isAuthenticated, async (req, res) => {
     try {
       const { coachId } = req.params;
       const coachCats = await db.select()
@@ -2328,7 +2328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/coach-categories", async (req, res) => {
+  app.post("/api/coach-categories", isAuthenticated, async (req, res) => {
     try {
       const { coachId, categoryId } = req.body;
       
@@ -2363,7 +2363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/coach-categories/:id", async (req, res) => {
+  app.delete("/api/coach-categories/:id", isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
       await db.delete(coachCategories).where(eq(coachCategories.id, id));

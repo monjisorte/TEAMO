@@ -104,6 +104,7 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
 
       if (response.ok) {
         await queryClient.invalidateQueries({ queryKey: [`/api/student/${studentId}/attendance`] });
+        await queryClient.invalidateQueries({ queryKey: ["/api/attendances"] });
         toast({
           title: "保存成功",
           description: "出欠情報を保存しました",
