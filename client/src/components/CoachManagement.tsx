@@ -28,6 +28,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { getFullName, getInitials } from "@/lib/nameUtils";
 
 interface Coach {
   id: string;
@@ -176,10 +177,6 @@ export function CoachManagement() {
     }
   };
 
-  const getInitials = (name: string) => {
-    return name.slice(0, 2);
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -260,9 +257,7 @@ export function CoachManagement() {
 
       <div className="grid gap-6">
         {[...coaches].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((coach) => {
-          const fullName = coach.lastName && coach.firstName
-            ? `${coach.lastName} ${coach.firstName}`
-            : coach.name;
+          const fullName = getFullName(coach.lastName, coach.firstName, coach.name);
           
           const fullNameKana = coach.lastNameKana && coach.firstNameKana
             ? `${coach.lastNameKana} ${coach.firstNameKana}`
@@ -275,7 +270,7 @@ export function CoachManagement() {
                   <Avatar className="h-20 w-20 border-2 border-primary/20">
                     <AvatarImage src={coach.photoUrl || ""} alt={fullName} />
                     <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white font-semibold text-xl">
-                      {getInitials(fullName)}
+                      {getInitials(coach.lastName, coach.firstName, coach.name)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0 space-y-2">

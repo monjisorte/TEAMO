@@ -23,6 +23,7 @@ import type { Student, Category, StudentCategory } from "@shared/schema";
 import { Users, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { getFullName, getInitials } from "@/lib/nameUtils";
 
 interface MembersPageProps {
   teamId: string;
@@ -268,9 +269,9 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                 <div className="flex items-start gap-3 md:gap-4">
                   <div className="relative shrink-0">
                     <Avatar className="w-12 h-12 md:w-16 md:h-16 ring-2 ring-blue-50">
-                      <AvatarImage src={student.photoUrl || undefined} alt={student.name} />
+                      <AvatarImage src={student.photoUrl || undefined} alt={getFullName(student.lastName, student.firstName, student.name)} />
                       <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-sm md:text-lg">
-                        {student.name.slice(0, 2)}
+                        {getInitials(student.lastName, student.firstName, student.name)}
                       </AvatarFallback>
                     </Avatar>
                   </div>
@@ -279,7 +280,7 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                       <div>
                         <p className="text-xs text-muted-foreground mb-0.5">名前</p>
                         <p className="text-sm md:text-base font-bold truncate" data-testid={`text-member-name-${student.id}`}>
-                          {student.name}
+                          {getFullName(student.lastName, student.firstName, student.name)}
                         </p>
                       </div>
                       <div>

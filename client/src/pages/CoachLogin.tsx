@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ClubRegistration } from "@/components/ClubRegistration";
+import { getFullName } from "@/lib/nameUtils";
 
 const loginSchema = z.object({
   email: z.string().email("有効なメールアドレスを入力してください"),
@@ -45,7 +46,7 @@ export default function CoachLogin({ onLoginSuccess }: CoachLoginProps) {
         onLoginSuccess(result.coach);
         toast({
           title: "ログイン成功",
-          description: `ようこそ、${result.coach.name}さん`,
+          description: `ようこそ、${getFullName(result.coach.lastName, result.coach.firstName, result.coach.name)}さん`,
         });
       } else {
         toast({

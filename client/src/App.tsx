@@ -38,6 +38,7 @@ import { PlayerSidebar } from "@/components/PlayerSidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
+import { getFullName } from "@/lib/nameUtils";
 
 interface PlayerData {
   id: string;
@@ -242,9 +243,7 @@ function CoachPortalContent({ coachId, onLogout }: { coachId: string; onLogout: 
   };
 
   // プロフィール設定の姓名を優先的に使用
-  const displayName = coach.lastName && coach.firstName
-    ? `${coach.lastName} ${coach.firstName}`
-    : coach.name;
+  const displayName = getFullName(coach.lastName, coach.firstName, coach.name);
 
   return (
     <SidebarProvider style={style as React.CSSProperties}>

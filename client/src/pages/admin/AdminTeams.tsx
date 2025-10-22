@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Users, Calendar, UserCircle, MapPin, Mail } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getFullName, getInitials } from "@/lib/nameUtils";
 
 interface TeamWithStats {
   id: string;
@@ -167,9 +168,7 @@ export default function AdminTeams() {
                 </h3>
                 <div className="space-y-2">
                   {teamDetails.coaches.map((coach) => {
-                    const displayName = coach.lastName && coach.firstName
-                      ? `${coach.lastName} ${coach.firstName}`
-                      : coach.name;
+                    const displayName = getFullName(coach.lastName, coach.firstName, coach.name);
                     
                     return (
                       <Card key={coach.id} data-testid={`card-coach-${coach.id}`}>
@@ -177,7 +176,7 @@ export default function AdminTeams() {
                           <Avatar>
                             <AvatarImage src={coach.photoUrl} />
                             <AvatarFallback>
-                              {displayName.slice(0, 2)}
+                              {getInitials(coach.lastName, coach.firstName, coach.name)}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1">

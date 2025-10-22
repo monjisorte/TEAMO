@@ -12,6 +12,7 @@ import { RefreshCw, Settings, ChevronDown } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { getFullName } from "@/lib/nameUtils";
 
 export default function TuitionPage() {
   const { toast } = useToast();
@@ -630,7 +631,7 @@ export default function TuitionPage() {
                       <div className="flex-1 space-y-3">
                         <div>
                           <div className="text-xs font-medium text-muted-foreground mb-1.5">名前</div>
-                          <div className="text-lg font-semibold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">{student.name}</div>
+                          <div className="text-lg font-semibold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">{getFullName(student.lastName, student.firstName, student.name)}</div>
                         </div>
                         <div>
                           <div className="text-xs font-medium text-muted-foreground mb-1.5">区分</div>

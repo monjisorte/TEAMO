@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { getFullName } from "@/lib/nameUtils";
 
 const loginSchema = z.object({
   email: z.string().email("有効なメールアドレスを入力してください"),
@@ -77,7 +78,7 @@ export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
         onLoginSuccess(result.student);
         toast({
           title: "ログイン成功",
-          description: `ようこそ、${result.student.name}さん`,
+          description: `ようこそ、${getFullName(result.student.lastName, result.student.firstName, result.student.name)}さん`,
         });
       } else {
         toast({
