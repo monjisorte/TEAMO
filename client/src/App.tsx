@@ -42,27 +42,26 @@ import { getFullName } from "@/lib/nameUtils";
 
 interface PlayerData {
   id: string;
-  name: string;
+  lastName: string;
+  firstName: string;
   email: string;
   teamId: string;
-  lastName?: string;
-  firstName?: string;
   lastNameKana?: string;
   firstNameKana?: string;
 }
 
 interface CoachData {
   id: string;
-  name: string;
+  lastName: string;
+  firstName: string;
   email: string;
   teamId: string;
-  lastName?: string;
-  firstName?: string;
   lastNameKana?: string;
   firstNameKana?: string;
   photoUrl?: string;
   bio?: string;
   position?: string;
+  role?: string;
 }
 
 interface AdminData {
@@ -130,9 +129,7 @@ function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogou
               <SidebarTrigger data-testid="button-player-sidebar-toggle" />
               <div>
                 <h1 className="text-lg font-semibold" data-testid="text-player-name">
-                  {player.lastName && player.firstName 
-                    ? `${player.lastName}${player.firstName}さん` 
-                    : `${player.name}さん`}
+                  {getFullName(player.lastName, player.firstName)}さん
                 </h1>
                 <p className="text-xs text-muted-foreground">{player.email}</p>
               </div>
@@ -243,7 +240,7 @@ function CoachPortalContent({ coachId, onLogout }: { coachId: string; onLogout: 
   };
 
   // プロフィール設定の姓名を優先的に使用
-  const displayName = getFullName(coach.lastName, coach.firstName, coach.name);
+  const displayName = getFullName(coach.lastName, coach.firstName);
 
   return (
     <SidebarProvider style={style as React.CSSProperties}>
@@ -436,6 +433,12 @@ function App() {
               window.location.href = "/team";
               return null;
             }}
+          </Route>
+          <Route path="/coach/login">
+            {() => <CoachPortal />}
+          </Route>
+          <Route path="/coach/:rest*">
+            {() => <CoachPortal />}
           </Route>
           <Route path="/team">
             {() => <CoachPortal />}

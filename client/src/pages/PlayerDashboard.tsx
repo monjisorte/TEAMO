@@ -9,9 +9,10 @@ import AttendanceView from "@/components/player/AttendanceView";
 import PlayerCalendar from "@/components/player/PlayerCalendar";
 import SharedDocuments from "@/components/player/SharedDocuments";
 import type { Category } from "@shared/schema";
+import { getFullName } from "@/lib/nameUtils";
 
 interface PlayerDashboardProps {
-  player: { id: string; name: string; email: string; teamId: string };
+  player: { id: string; lastName: string; firstName: string; email: string; teamId: string };
   onLogout: () => void;
 }
 
@@ -44,7 +45,7 @@ export default function PlayerDashboard({ player, onLogout }: PlayerDashboardPro
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold" data-testid="text-player-name">
-              {player.name}さん
+              {getFullName(player.lastName, player.firstName)}さん
             </h1>
             <p className="text-sm text-muted-foreground">{player.email}</p>
           </div>

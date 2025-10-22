@@ -257,7 +257,7 @@ export function CoachManagement() {
 
       <div className="grid gap-6">
         {[...coaches].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((coach) => {
-          const fullName = getFullName(coach.lastName, coach.firstName, coach.name);
+          const fullName = getFullName(coach.lastName, coach.firstName);
           
           const fullNameKana = coach.lastNameKana && coach.firstNameKana
             ? `${coach.lastNameKana} ${coach.firstNameKana}`
@@ -270,7 +270,7 @@ export function CoachManagement() {
                   <Avatar className="h-20 w-20 border-2 border-primary/20">
                     <AvatarImage src={coach.photoUrl || ""} alt={fullName} />
                     <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white font-semibold text-xl">
-                      {getInitials(coach.lastName, coach.firstName, coach.name)}
+                      {getInitials(coach.lastName, coach.firstName)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0 space-y-2">

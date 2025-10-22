@@ -269,9 +269,9 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                 <div className="flex items-start gap-3 md:gap-4">
                   <div className="relative shrink-0">
                     <Avatar className="w-12 h-12 md:w-16 md:h-16 ring-2 ring-blue-50">
-                      <AvatarImage src={student.photoUrl || undefined} alt={getFullName(student.lastName, student.firstName, student.name)} />
+                      <AvatarImage src={student.photoUrl || undefined} alt={getFullName(student.lastName, student.firstName)} />
                       <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-sm md:text-lg">
-                        {getInitials(student.lastName, student.firstName, student.name)}
+                        {getInitials(student.lastName, student.firstName)}
                       </AvatarFallback>
                     </Avatar>
                   </div>
@@ -280,7 +280,7 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                       <div>
                         <p className="text-xs text-muted-foreground mb-0.5">名前</p>
                         <p className="text-sm md:text-base font-bold truncate" data-testid={`text-member-name-${student.id}`}>
-                          {getFullName(student.lastName, student.firstName, student.name)}
+                          {getFullName(student.lastName, student.firstName)}
                         </p>
                       </div>
                       <div>
@@ -427,7 +427,7 @@ export default function MembersPage({ teamId }: MembersPageProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>本当に退会しますか？</AlertDialogTitle>
             <AlertDialogDescription>
-              {selectedStudent?.name}さんを退会させます。この操作は取り消せません。
+              {selectedStudent && getFullName(selectedStudent.lastName, selectedStudent.firstName)}さんを退会させます。この操作は取り消せません。
               <br />
               <br />
               実行するには、下の入力欄に <strong>delete</strong> と入力してください。

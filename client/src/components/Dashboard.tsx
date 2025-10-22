@@ -101,8 +101,8 @@ export function Dashboard() {
   const sortedStudents = [...teamStudents].sort((a, b) => {
     const categoryCompare = (a.categoryId || "").localeCompare(b.categoryId || "");
     if (categoryCompare !== 0) return categoryCompare;
-    const nameA = getFullName(a.lastName, a.firstName, a.name);
-    const nameB = getFullName(b.lastName, b.firstName, b.name);
+    const nameA = getFullName(a.lastName, a.firstName);
+    const nameB = getFullName(b.lastName, b.firstName);
     return nameA.localeCompare(nameB);
   });
 
@@ -168,7 +168,7 @@ export function Dashboard() {
       setMoveParticipantData({
         attendance,
         fromSchedule: selectedSchedule,
-        studentName: getFullName(student.lastName, student.firstName, student.name),
+        studentName: getFullName(student.lastName, student.firstName),
       });
       setTargetScheduleId("");
     }
@@ -452,7 +452,7 @@ export function Dashboard() {
                   >
                     <div className="flex items-center gap-4 flex-1">
                       <div className="flex flex-col">
-                        <span className="font-semibold text-base">{getFullName(student.lastName, student.firstName, student.name)}</span>
+                        <span className="font-semibold text-base">{getFullName(student.lastName, student.firstName)}</span>
                         <span className="text-xs text-muted-foreground">
                           登録日: {student.createdAt ? new Date(student.createdAt).toLocaleDateString('ja-JP') : "不明"}
                         </span>
@@ -650,7 +650,7 @@ export function Dashboard() {
                           data-testid={`participant-${student.id}`}
                         >
                           <span className="w-6 text-center font-semibold">{statusIcon}</span>
-                          <span className="flex-1">{getFullName(student.lastName, student.firstName, student.name)}</span>
+                          <span className="flex-1">{getFullName(student.lastName, student.firstName)}</span>
                           {attendance.comment && (
                             <span className="text-xs text-muted-foreground truncate max-w-[120px]">
                               {attendance.comment}

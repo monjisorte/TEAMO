@@ -168,7 +168,7 @@ export default function AdminTeams() {
                 </h3>
                 <div className="space-y-2">
                   {teamDetails.coaches.map((coach) => {
-                    const displayName = getFullName(coach.lastName, coach.firstName, coach.name);
+                    const displayName = getFullName(coach.lastName, coach.firstName);
                     
                     return (
                       <Card key={coach.id} data-testid={`card-coach-${coach.id}`}>
@@ -176,7 +176,7 @@ export default function AdminTeams() {
                           <Avatar>
                             <AvatarImage src={coach.photoUrl} />
                             <AvatarFallback>
-                              {getInitials(coach.lastName, coach.firstName, coach.name)}
+                              {getInitials(coach.lastName, coach.firstName)}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1">

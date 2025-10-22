@@ -631,7 +631,7 @@ export default function TuitionPage() {
                       <div className="flex-1 space-y-3">
                         <div>
                           <div className="text-xs font-medium text-muted-foreground mb-1.5">名前</div>
-                          <div className="text-lg font-semibold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">{getFullName(student.lastName, student.firstName, student.name)}</div>
+                          <div className="text-lg font-semibold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">{getFullName(student.lastName, student.firstName)}</div>
                         </div>
                         <div>
                           <div className="text-xs font-medium text-muted-foreground mb-1.5">区分</div>

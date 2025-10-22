@@ -74,7 +74,7 @@ export function CalendarView({ schedules, categories, attendances, students, onS
     if (!students || students.length === 0) return "不明";
     const student = students.find(s => s.id === studentId);
     if (!student) return "不明";
-    return getFullName(student.lastName, student.firstName, student.name);
+    return getFullName(student.lastName, student.firstName);
   };
 
   const handleDateClick = (day: number, monthOffset: number) => {
@@ -98,7 +98,7 @@ export function CalendarView({ schedules, categories, attendances, students, onS
       setMoveParticipantData({
         attendance,
         fromSchedule,
-        studentName: getFullName(student.lastName, student.firstName, student.name),
+        studentName: getFullName(student.lastName, student.firstName),
       });
       setTargetScheduleId("");
     }

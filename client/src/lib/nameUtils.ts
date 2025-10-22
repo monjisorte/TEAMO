@@ -3,8 +3,7 @@
  */
 export function getFullName(
   lastName: string | null | undefined,
-  firstName: string | null | undefined,
-  fallbackName?: string | null
+  firstName: string | null | undefined
 ): string {
   if (lastName && firstName) {
     return `${lastName} ${firstName}`;
@@ -15,9 +14,6 @@ export function getFullName(
   if (firstName) {
     return firstName;
   }
-  if (fallbackName) {
-    return fallbackName;
-  }
   return "名前未設定";
 }
 
@@ -26,8 +22,7 @@ export function getFullName(
  */
 export function getInitials(
   lastName: string | null | undefined,
-  firstName: string | null | undefined,
-  fallbackName?: string | null
+  firstName: string | null | undefined
 ): string {
   if (lastName && firstName) {
     return `${lastName.charAt(0)}${firstName.charAt(0)}`;
@@ -37,9 +32,6 @@ export function getInitials(
   }
   if (firstName) {
     return firstName.charAt(0);
-  }
-  if (fallbackName && fallbackName.length > 0) {
-    return fallbackName.substring(0, 2);
   }
   return "?";
 }

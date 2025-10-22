@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, User } from "lucide-react";
 import type { Coach } from "@shared/schema";
+import { getFullName } from "@/lib/nameUtils";
 
 interface PlayerCoachesPageProps {
   teamId: string;
@@ -49,9 +50,7 @@ export default function PlayerCoachesPage({ teamId }: PlayerCoachesPageProps) {
 
       <div className="grid gap-6">
         {sortedCoaches.map((coach) => {
-          const fullName = coach.lastName && coach.firstName
-            ? `${coach.lastName} ${coach.firstName}`
-            : coach.name;
+          const fullName = getFullName(coach.lastName, coach.firstName);
           
           const fullNameKana = coach.lastNameKana && coach.firstNameKana
             ? `${coach.lastNameKana} ${coach.firstNameKana}`

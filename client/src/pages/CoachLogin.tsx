@@ -20,7 +20,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 interface CoachLoginProps {
-  onLoginSuccess: (coach: { id: string; name: string; email: string; teamId: string }) => void;
+  onLoginSuccess: (coach: { id: string; lastName: string; firstName: string; email: string; teamId: string; role?: string }) => void;
 }
 
 export default function CoachLogin({ onLoginSuccess }: CoachLoginProps) {
@@ -46,7 +46,7 @@ export default function CoachLogin({ onLoginSuccess }: CoachLoginProps) {
         onLoginSuccess(result.coach);
         toast({
           title: "ログイン成功",
-          description: `ようこそ、${getFullName(result.coach.lastName, result.coach.firstName, result.coach.name)}さん`,
+          description: `ようこそ、${getFullName(result.coach.lastName, result.coach.firstName)}さん`,
         });
       } else {
         toast({

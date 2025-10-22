@@ -3,6 +3,16 @@
 ## Overview
 This application is a comprehensive sports team management platform designed for coaches to efficiently manage schedules, track attendance, and organize team members. Built in Japanese with a modern, gradient-rich UI, it targets sports clubs, teams, and coaching staff. Key capabilities include managing categories (age groups), venues, coaches, schedules (with recurring options and file attachments), student attendance, shared documents, and tuition payments. It also features a multi-step club registration process and a dashboard for monitoring team activities. The project's ambition is to provide an intuitive and elegant solution for sports team management, enhancing user experience and operational efficiency.
 
+## Recent Changes (October 22, 2025)
+*   **Database Migration Completed:** Successfully migrated from single `name` field to structured `lastName` + `firstName` fields across students and coaches tables.
+*   **Name Handling System:** Implemented `nameUtils.ts` with `getFullName()` and `getInitials()` helper functions for consistent name display throughout the application.
+*   **Authentication Updates:** Updated all registration and login flows (both player and coach) to use separate name fields, including API endpoints and frontend components.
+*   **Type System Updates:** Updated TypeScript interfaces (PlayerData, CoachData) across frontend and backend to enforce the new name structure.
+*   **Backend API Changes:** All authentication endpoints now return and accept `lastName` and `firstName` instead of a single `name` field.
+*   **Routing Improvements:** Added `/coach/login` and `/coach/*` routes to properly render CoachPortal, preventing fallback to PlayerPortal.
+*   **Frontend Component Updates:** Systematically updated all components (Dashboard, CalendarView, PlayerMembersPage, PlayerCoachesPage, MembersPage, TuitionPage, CoachManagement, AdminTeams, PlayerDashboard, TeamInfoPage) to use `getFullName()` helper for consistent name display.
+*   **Architecture Verification:** Confirmed zero references to legacy `name` field remain in codebase; all authentication flows tested and working correctly.
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
@@ -14,7 +24,7 @@ The application features a modern, gradient-based design system inspired by Line
 ### Technical Implementations
 *   **Frontend:** React 18 with TypeScript, Wouter for routing, TanStack Query for server state management, Radix UI primitives with shadcn/ui for components, and Tailwind CSS for styling. Vite is used for building.
 *   **Backend:** Node.js with TypeScript, Express.js for API handling, and Drizzle ORM for database interaction.
-*   **Data Models:** Defined using Drizzle ORM, including Users, Teams, Categories, Students, Schedules, Attendance, Venues, SharedDocuments, and TuitionPayments. Models feature UUID primary keys, team isolation via `teamId`, and support for complex features like recurring schedules, optional venues, and detailed tuition payment tracking. Zod is integrated for runtime validation.
+*   **Data Models:** Defined using Drizzle ORM, including Users, Teams, Categories, Students, Schedules, Attendance, Venues, SharedDocuments, and TuitionPayments. Models feature UUID primary keys, team isolation via `teamId`, and support for complex features like recurring schedules, optional venues, and detailed tuition payment tracking. Name fields are structured as `lastName` and `firstName` (both required) with optional `lastNameKana` and `firstNameKana` fields for Japanese phonetic readings. Zod is integrated for runtime validation.
 *   **Key Features:**
     *   **Coach Interface:** Comprehensive management of schedules (list and calendar views, recurring events, file attachments, multi-category selection, optional venues), venues (with Google Maps), categories, teams, and coaches. A dashboard provides real-time statistics. Shared documents management supports folder hierarchies and file uploads. Tuition management includes automatic payment generation, annual fees, sibling discounts, and payment status tracking. Participant moving between events is supported.
     *   **Player Interface:** Secure authentication, team registration via code, category subscription for schedule filtering, attendance management (○△× status), calendar views, shared documents access, contact form, and profile management (personal info, photo upload, category selection). Coach-specified events are visible but attendance modification is restricted.

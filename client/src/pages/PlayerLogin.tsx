@@ -19,7 +19,8 @@ const loginSchema = z.object({
 });
 
 const registerSchema = z.object({
-  name: z.string().min(1, "名前を入力してください"),
+  lastName: z.string().min(1, "苗字を入力してください"),
+  firstName: z.string().min(1, "名前を入力してください"),
   email: z.string().email("有効なメールアドレスを入力してください"),
   password: z.string().min(6, "パスワードは6文字以上である必要があります"),
   teamCode: z.string().length(8, "チームIDは8文字です"),
@@ -34,7 +35,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 type ResetRequestFormValues = z.infer<typeof resetRequestSchema>;
 
 interface PlayerLoginProps {
-  onLoginSuccess: (player: { id: string; name: string; email: string; teamId: string }) => void;
+  onLoginSuccess: (player: { id: string; lastName: string; firstName: string; email: string; teamId: string }) => void;
 }
 
 export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
@@ -53,7 +54,8 @@ export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      name: "",
+      lastName: "",
+      firstName: "",
       email: "",
       password: "",
       teamCode: "",
@@ -78,7 +80,7 @@ export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
         onLoginSuccess(result.student);
         toast({
           title: "ログイン成功",
-          description: `ようこそ、${getFullName(result.student.lastName, result.student.firstName, result.student.name)}さん`,
+          description: `ようこそ、${getFullName(result.student.lastName, result.student.firstName)}さん`,
         });
       } else {
         toast({
@@ -243,14 +245,31 @@ export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
                 <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
                   <FormField
                     control={registerForm.control}
-                    name="name"
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>苗字</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="山田" 
+                            data-testid="input-register-lastname"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={registerForm.control}
+                    name="firstName"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>名前</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="山田太郎" 
-                            data-testid="input-register-name"
+                            placeholder="太郎" 
+                            data-testid="input-register-firstname"
                             {...field} 
                           />
                         </FormControl>

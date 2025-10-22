@@ -29,14 +29,14 @@ export default function TeamInfoPage() {
   
   // Get coach's teamId from localStorage
   const [teamId, setTeamId] = useState<string | null>(null);
-  const [coachData, setCoachData] = useState<{ name: string; email: string } | null>(null);
+  const [coachData, setCoachData] = useState<{ lastName: string; firstName: string; email: string } | null>(null);
 
   useEffect(() => {
     const savedCoach = localStorage.getItem("coachData");
     if (savedCoach) {
       const coach = JSON.parse(savedCoach);
       setTeamId(coach.teamId);
-      setCoachData({ name: coach.name, email: coach.email });
+      setCoachData({ lastName: coach.lastName, firstName: coach.firstName, email: coach.email });
     }
   }, []);
 

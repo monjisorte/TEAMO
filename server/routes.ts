@@ -565,9 +565,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }).returning();
 
       // Create coach account for the owner
+      // Split owner name into lastName and firstName
+      const nameParts = ownerName.split(/\s+/);
+      const lastName = nameParts[0] || ownerName;
+      const firstName = nameParts.slice(1).join(' ') || ownerName;
+      
       const hashedPassword = await hashPassword(password);
       const newCoach = await db.insert(coaches).values({
-        name: ownerName,
+        lastName,
+        firstName,
         email: ownerEmail,
         password: hashedPassword,
         teamId: newTeam[0].id,
@@ -578,7 +584,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         team: newTeam[0],
         coach: {
           id: newCoach[0].id,
-          name: newCoach[0].name,
+          lastName: newCoach[0].lastName,
+          firstName: newCoach[0].firstName,
           email: newCoach[0].email,
           teamId: newCoach[0].teamId,
         },
@@ -592,9 +599,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Student Authentication Endpoints
   app.post("/api/student/register", async (req, res) => {
     try {
-      const { name, email, password, teamCode } = req.body;
+      const { lastName, firstName, email, password, teamCode } = req.body;
 
-      if (!name || !email || !password || !teamCode) {
+      if (!lastName || !firstName || !email || !password || !teamCode) {
         return res.status(400).json({ error: "All fields are required" });
       }
 
@@ -613,13 +620,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash password and create student
       const hashedPassword = await hashPassword(password);
       const newStudent = await db.insert(students).values({
-        name,
+        lastName,
+        firstName,
         email,
         password: hashedPassword,
         teamId: team[0].id,
       }).returning();
 
-      res.status(201).json({ student: { id: newStudent[0].id, name: newStudent[0].name, email: newStudent[0].email } });
+      res.status(201).json({ student: { id: newStudent[0].id, lastName: newStudent[0].lastName, firstName: newStudent[0].firstName, email: newStudent[0].email, teamId: newStudent[0].teamId } });
     } catch (error) {
       console.error("Error registering student:", error);
       res.status(500).json({ error: "Internal server error" });
@@ -649,7 +657,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json({ 
         student: { 
           id: student[0].id, 
-          name: student[0].name, 
+          lastName: student[0].lastName,
+          firstName: student[0].firstName,
           email: student[0].email,
           teamId: student[0].teamId 
         } 
@@ -798,10 +807,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/coach/register", async (req, res) => {
     try {
       console.log("Coach register request received:", req.body);
-      const { name, email, password, teamId } = req.body;
+      const { lastName, firstName, email, password, teamId } = req.body;
 
-      if (!name || !email || !password || !teamId) {
-        console.log("Missing required fields:", { name: !!name, email: !!email, password: !!password, teamId: !!teamId });
+      if (!lastName || !firstName || !email || !password || !teamId) {
+        console.log("Missing required fields:", { lastName: !!lastName, firstName: !!firstName, email: !!email, password: !!password, teamId: !!teamId });
         return res.status(400).json({ error: "All fields are required" });
       }
 
@@ -814,13 +823,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash password and create coach
       const hashedPassword = await hashPassword(password);
       const newCoach = await db.insert(coaches).values({
-        name,
+        lastName,
+        firstName,
         email,
         password: hashedPassword,
         teamId,
       }).returning();
 
-      res.status(201).json({ coach: { id: newCoach[0].id, name: newCoach[0].name, email: newCoach[0].email } });
+      res.status(201).json({ coach: { id: newCoach[0].id, lastName: newCoach[0].lastName, firstName: newCoach[0].firstName, email: newCoach[0].email, teamId: newCoach[0].teamId } });
     } catch (error) {
       console.error("Error registering coach:", error);
       res.status(500).json({ error: "Internal server error" });
@@ -850,7 +860,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json({ 
         coach: { 
           id: coach[0].id, 
-          name: coach[0].name, 
+          lastName: coach[0].lastName,
+          firstName: coach[0].firstName,
           email: coach[0].email,
           teamId: coach[0].teamId,
           role: coach[0].role
@@ -886,7 +897,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const teamCoaches = await db.select({
         id: coaches.id,
-        name: coaches.name,
         email: coaches.email,
         role: coaches.role,
         createdAt: coaches.createdAt,
@@ -896,6 +906,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         firstNameKana: coaches.firstNameKana,
         photoUrl: coaches.photoUrl,
         bio: coaches.bio,
+        position: coaches.position,
       }).from(coaches).where(eq(coaches.teamId, teamId));
 
       res.json(teamCoaches);
