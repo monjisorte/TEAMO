@@ -71,6 +71,11 @@ interface AdminData {
 }
 
 function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogout: () => void }) {
+  // Set page title for player portal
+  useEffect(() => {
+    document.title = "TEAMO【ティーモ】 クラブ運営サポートサイト";
+  }, []);
+
   // Fetch latest player data from server
   const { data: player, isLoading: playerLoading, isError } = useQuery<PlayerData>({
     queryKey: [`/api/student/${playerId}`],
@@ -204,6 +209,11 @@ function PlayerPortal() {
 }
 
 function CoachPortalContent({ coachId, onLogout }: { coachId: string; onLogout: () => void }) {
+  // Set page title for coach portal
+  useEffect(() => {
+    document.title = "TEAMO：コーチモード";
+  }, []);
+
   // Fetch latest coach data from server
   const { data: coach, isLoading: coachLoading } = useQuery<CoachData>({
     queryKey: [`/api/coach/${coachId}`],
