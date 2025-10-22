@@ -301,7 +301,7 @@ export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
                         <FormLabel>チームID</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="8文字のチームID" 
+                            placeholder="チームから共有されたチームID" 
                             maxLength={8}
                             data-testid="input-register-teamcode"
                             {...field} 
