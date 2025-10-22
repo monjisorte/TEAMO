@@ -819,7 +819,7 @@ export function ScheduleList() {
                                             setScheduleToDelete(schedule);
                                             setShowRecurringDeleteDialog(true);
                                           } else {
-                                            handleDeleteSchedule(schedule.id);
+                                            handleDeleteSchedule(schedule);
                                           }
                                         }}
                                         data-testid={`button-delete-schedule-${schedule.id}`}
