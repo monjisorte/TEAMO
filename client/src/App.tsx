@@ -16,7 +16,6 @@ import CoachesPage from "@/pages/CoachesPage";
 import RegisterPage from "@/pages/RegisterPage";
 import TeamInfoPage from "@/pages/TeamInfoPage";
 import DocumentsPage from "@/pages/DocumentsPage";
-import LandingPage from "@/pages/LandingPage";
 import TuitionPage from "@/pages/TuitionPage";
 import LineNotificationsPage from "@/pages/LineNotificationsPage";
 import PlayerLogin from "@/pages/PlayerLogin";
@@ -28,7 +27,6 @@ import PlayerProfilePage from "@/pages/PlayerProfilePage";
 import PlayerMembersPage from "@/pages/player/PlayerMembersPage";
 import PlayerCoachesPage from "@/pages/player/PlayerCoachesPage";
 import CoachLogin from "@/pages/CoachLogin";
-import TeamSelection from "@/pages/TeamSelection";
 import MembersPage from "@/pages/MembersPage";
 import CoachProfilePage from "@/pages/CoachProfilePage";
 import AdminLogin from "@/pages/AdminLogin";
@@ -39,19 +37,7 @@ import AdminAccounts from "@/pages/admin/AdminAccounts";
 import { PlayerSidebar } from "@/components/PlayerSidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogOut } from "lucide-react";
-
-// Redirect component for internal routing
-function Redirect({ to }: { to: string }) {
-  const [, setLocation] = useLocation();
-  
-  useEffect(() => {
-    setLocation(to);
-  }, [to, setLocation]);
-  
-  return null;
-}
 
 interface PlayerData {
   id: string;
@@ -64,19 +50,11 @@ interface PlayerData {
   firstNameKana?: string;
 }
 
-interface Team {
-  teamId: string;
-  teamName: string;
-  teamCode: string;
-  role: string;
-}
-
 interface CoachData {
   id: string;
   name: string;
   email: string;
-  teamId?: string; // Optional now, set after team selection
-  teams?: Team[]; // Array of teams the coach belongs to
+  teamId: string;
   lastName?: string;
   firstName?: string;
   lastNameKana?: string;
@@ -215,7 +193,7 @@ function PlayerPortal() {
   const handleLogout = () => {
     localStorage.removeItem("playerData");
     setPlayerId(null);
-    setLocation("/");
+    window.location.href = "https://teamo.cloud";
   };
 
   if (!playerId) {
@@ -225,7 +203,7 @@ function PlayerPortal() {
   return <PlayerPortalContent playerId={playerId} onLogout={handleLogout} />;
 }
 
-function CoachPortalContent({ coachId, teamId, onLogout }: { coachId: string; teamId: string; onLogout: () => void }) {
+function CoachPortalContent({ coachId, onLogout }: { coachId: string; onLogout: () => void }) {
   // Fetch latest coach data from server
   const { data: coach, isLoading: coachLoading } = useQuery<CoachData>({
     queryKey: [`/api/coach/${coachId}`],
@@ -235,10 +213,10 @@ function CoachPortalContent({ coachId, teamId, onLogout }: { coachId: string; te
   // Fetch team info
   const { data: teams } = useQuery<Array<{ id: string; name: string }>>({
     queryKey: ["/api/teams"],
-    enabled: !!teamId,
+    enabled: !!coach?.teamId,
   });
 
-  const team = teams?.find(t => t.id === teamId);
+  const team = teams?.find(t => t.id === coach?.teamId);
   const teamName = team?.name || "チーム";
 
   if (coachLoading || !coach) {
@@ -261,7 +239,7 @@ function CoachPortalContent({ coachId, teamId, onLogout }: { coachId: string; te
   return (
     <SidebarProvider style={style as React.CSSProperties}>
       <div className="flex h-screen w-full">
-        <AppSidebar teamId={teamId} teamName={teamName} />
+        <AppSidebar teamId={coach.teamId} teamName={teamName} />
         <div className="flex flex-col flex-1 min-w-0">
           <header className="flex items-center justify-between px-2 md:px-8 py-4 border-b bg-card/50 backdrop-blur-sm">
             <div className="flex items-center gap-2 md:gap-4">
@@ -287,7 +265,7 @@ function CoachPortalContent({ coachId, teamId, onLogout }: { coachId: string; te
             </div>
           </header>
           <main className="flex-1 overflow-auto p-4 md:p-8 pb-16 md:pb-24">
-            <CoachRouter teamId={teamId} />
+            <CoachRouter teamId={coach.teamId} />
           </main>
         </div>
       </div>
@@ -297,9 +275,6 @@ function CoachPortalContent({ coachId, teamId, onLogout }: { coachId: string; te
 
 function CoachPortal() {
   const [coachId, setCoachId] = useState<string | null>(null);
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
-  const [initialCoachData, setInitialCoachData] = useState<CoachData | null>(null);
-  const [needsTeamValidation, setNeedsTeamValidation] = useState(false);
   const [, setLocation] = useLocation();
 
   useEffect(() => {
@@ -307,195 +282,26 @@ function CoachPortal() {
     if (savedCoach) {
       const coachData = JSON.parse(savedCoach);
       setCoachId(coachData.id);
-      if (coachData.teamId) {
-        setSelectedTeamId(coachData.teamId);
-        // Mark that we need to validate this teamId
-        setNeedsTeamValidation(true);
-      }
     }
   }, []);
 
   const handleLoginSuccess = (coachData: CoachData) => {
-    setInitialCoachData(coachData);
+    localStorage.setItem("coachData", JSON.stringify(coachData));
     setCoachId(coachData.id);
-    
-    // If coach has only one team, auto-select it
-    if (coachData.teams && coachData.teams.length === 1) {
-      const team = coachData.teams[0];
-      const coachDataWithTeam = { ...coachData, teamId: team.teamId };
-      localStorage.setItem("coachData", JSON.stringify(coachDataWithTeam));
-      setSelectedTeamId(team.teamId);
-      setLocation("/team");
-    }
-    // If coach has multiple teams, show team selection
-    else if (coachData.teams && coachData.teams.length > 1) {
-      // Don't set teamId yet, show team selection screen
-    }
-  };
-
-  const handleTeamSelect = (team: Team) => {
-    if (!initialCoachData) return;
-    
-    const coachDataWithTeam = { ...initialCoachData, teamId: team.teamId };
-    localStorage.setItem("coachData", JSON.stringify(coachDataWithTeam));
-    setSelectedTeamId(team.teamId);
-    setNeedsTeamValidation(false);
     setLocation("/team");
   };
 
   const handleLogout = () => {
     localStorage.removeItem("coachData");
     setCoachId(null);
-    setSelectedTeamId(null);
-    setInitialCoachData(null);
-    setLocation("/");
+    setLocation("/login");
   };
 
-  // Not logged in
   if (!coachId) {
     return <CoachLogin onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // Logged in but teamId needs validation or is missing - need to fetch teams first
-  if (coachId && (!selectedTeamId || needsTeamValidation) && !initialCoachData) {
-    // This happens when user has old localStorage without teamId
-    // Or when we need to validate the cached teamId
-    return <CoachLoginRedirect 
-      coachId={coachId} 
-      onLogout={handleLogout} 
-      onTeamsLoaded={(coach) => {
-        setInitialCoachData(coach);
-        setNeedsTeamValidation(false);
-        
-        // Validate cached teamId if present
-        if (selectedTeamId && coach.teams) {
-          const isValidTeam = coach.teams.some(t => t.teamId === selectedTeamId);
-          if (!isValidTeam) {
-            // Cached teamId is invalid, clear it
-            setSelectedTeamId(null);
-            const coachDataWithoutTeam = { ...coach };
-            delete coachDataWithoutTeam.teamId;
-            localStorage.setItem("coachData", JSON.stringify(coachDataWithoutTeam));
-            return;
-          }
-        }
-        
-        // Auto-select if only one team
-        if (coach.teams && coach.teams.length === 1 && !selectedTeamId) {
-          const team = coach.teams[0];
-          const coachDataWithTeam = { ...coach, teamId: team.teamId };
-          localStorage.setItem("coachData", JSON.stringify(coachDataWithTeam));
-          setSelectedTeamId(team.teamId);
-        }
-      }} 
-    />;
-  }
-
-  // Handle zero teams case (after teams loaded)
-  if (coachId && initialCoachData?.teams && initialCoachData.teams.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-screen p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-2xl text-center text-destructive">
-              チームが見つかりません
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-center">
-            <p className="text-muted-foreground">
-              このアカウントはどのチームにも所属していません。
-            </p>
-            <p className="text-muted-foreground">
-              チームの管理者に連絡して、チームに追加してもらってください。
-            </p>
-            <Button onClick={handleLogout} data-testid="button-logout-no-teams">
-              ログアウト
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Logged in but no team selected (multiple teams)
-  if (coachId && !selectedTeamId && initialCoachData?.teams && initialCoachData.teams.length > 0) {
-    return <TeamSelection coach={{ ...initialCoachData, teams: initialCoachData.teams }} onTeamSelect={handleTeamSelect} />;
-  }
-
-  // Logged in and team selected (validation complete)
-  if (coachId && selectedTeamId && !needsTeamValidation) {
-    return <CoachPortalContent coachId={coachId} teamId={selectedTeamId} onLogout={handleLogout} />;
-  }
-
-  // Loading state
-  return (
-    <div className="flex items-center justify-center h-screen">
-      <p className="text-muted-foreground">読み込み中...</p>
-    </div>
-  );
-}
-
-// Helper component to fetch teams for logged-in coach without teamId
-function CoachLoginRedirect({ coachId, onLogout, onTeamsLoaded }: {
-  coachId: string;
-  onLogout: () => void;
-  onTeamsLoaded: (coach: CoachData) => void;
-}) {
-  const { data: coachTeams, isLoading } = useQuery<Team[]>({
-    queryKey: [`/api/coaches/${coachId}/teams`],
-    enabled: !!coachId,
-  });
-
-  const { data: coach } = useQuery<CoachData>({
-    queryKey: [`/api/coach/${coachId}`],
-    enabled: !!coachId,
-  });
-
-  useEffect(() => {
-    if (coach && coachTeams !== undefined) {
-      onTeamsLoaded({ ...coach, teams: coachTeams });
-    }
-  }, [coach, coachTeams, onTeamsLoaded]);
-
-  if (isLoading || !coach || coachTeams === undefined) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-muted-foreground">チーム情報を読み込み中...</p>
-      </div>
-    );
-  }
-
-  // Handle zero teams case
-  if (coachTeams.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-screen p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-2xl text-center text-destructive">
-              チームが見つかりません
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-center">
-            <p className="text-muted-foreground">
-              このアカウントはどのチームにも所属していません。
-            </p>
-            <p className="text-muted-foreground">
-              チームの管理者に連絡して、チームに追加してもらってください。
-            </p>
-            <Button onClick={onLogout} data-testid="button-logout-no-teams">
-              ログアウト
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center justify-center h-screen">
-      <p className="text-muted-foreground">読み込み中...</p>
-    </div>
-  );
+  return <CoachPortalContent coachId={coachId} onLogout={handleLogout} />;
 }
 
 function CoachRouter({ teamId }: { teamId: string }) {
@@ -592,7 +398,7 @@ function AdminPortal() {
   const handleLogout = () => {
     localStorage.removeItem("adminData");
     setAdminId(null);
-    setLocation("/");
+    setLocation("/admins/login");
   };
 
   if (!adminId) {
@@ -616,19 +422,17 @@ function App() {
             {() => <PasswordReset />}
           </Route>
           <Route path="/login">
-            {() => <Redirect to="/team" />}
-          </Route>
-          <Route path="/team/:rest*">
-            {() => <CoachPortal />}
+            {() => {
+              // Redirect /login to /team
+              window.location.href = "/team";
+              return null;
+            }}
           </Route>
           <Route path="/team">
             {() => <CoachPortal />}
           </Route>
-          <Route path="/player/:rest*">
-            {() => <PlayerPortal />}
-          </Route>
-          <Route path="/player">
-            {() => <PlayerPortal />}
+          <Route path="/team/:rest*">
+            {() => <CoachPortal />}
           </Route>
           <Route path="/admins/setup">
             {() => <AdminSetup />}
@@ -636,14 +440,14 @@ function App() {
           <Route path="/admins/login">
             {() => <AdminPortal />}
           </Route>
-          <Route path="/admins/:rest*">
-            {() => <AdminPortal />}
-          </Route>
           <Route path="/admins">
             {() => <AdminPortal />}
           </Route>
-          <Route path="/">
-            {() => <LandingPage />}
+          <Route path="/admins/:rest*">
+            {() => <AdminPortal />}
+          </Route>
+          <Route>
+            {() => <PlayerPortal />}
           </Route>
         </Switch>
         <Toaster />
