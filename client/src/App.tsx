@@ -609,9 +609,6 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Switch>
-          <Route path="~/">
-            {() => <LandingPage />}
-          </Route>
           <Route path="/register">
             {() => <RegisterPage />}
           </Route>
@@ -621,16 +618,16 @@ function App() {
           <Route path="/login">
             {() => <Redirect to="/team" />}
           </Route>
-          <Route path="/team">
-            {() => <CoachPortal />}
-          </Route>
           <Route path="/team/:rest*">
             {() => <CoachPortal />}
           </Route>
-          <Route path="/player">
-            {() => <PlayerPortal />}
+          <Route path="/team">
+            {() => <CoachPortal />}
           </Route>
           <Route path="/player/:rest*">
+            {() => <PlayerPortal />}
+          </Route>
+          <Route path="/player">
             {() => <PlayerPortal />}
           </Route>
           <Route path="/admins/setup">
@@ -639,11 +636,14 @@ function App() {
           <Route path="/admins/login">
             {() => <AdminPortal />}
           </Route>
+          <Route path="/admins/:rest*">
+            {() => <AdminPortal />}
+          </Route>
           <Route path="/admins">
             {() => <AdminPortal />}
           </Route>
-          <Route path="/admins/:rest*">
-            {() => <AdminPortal />}
+          <Route path="/">
+            {() => <LandingPage />}
           </Route>
         </Switch>
         <Toaster />
