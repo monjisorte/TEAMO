@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Student, Category, StudentCategory } from "@shared/schema";
 import { Users } from "lucide-react";
+import { getFullName, getInitials } from "@/lib/nameUtils";
 
 interface PlayerMembersPageProps {
   teamId: string;
@@ -115,15 +116,15 @@ export default function PlayerMembersPage({ teamId }: PlayerMembersPageProps) {
               <CardContent className="p-3">
                 <div className="flex items-start gap-3">
                   <Avatar className="h-20 w-20 ring-2 ring-blue-50 shrink-0">
-                    <AvatarImage src={student.photoUrl || undefined} alt={student.name} />
+                    <AvatarImage src={student.photoUrl || undefined} alt={getFullName(student.lastName, student.firstName, student.name)} />
                     <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-lg">
-                      {student.name.slice(0, 2)}
+                      {getInitials(student.lastName, student.firstName, student.name)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="space-y-1.5 flex-1">
                     <div>
                       <p className="text-xs md:text-sm font-medium" data-testid={`text-member-name-${student.id}`}>
-                        名前　<span className="font-bold text-base md:text-lg">{student.name}</span>
+                        名前　<span className="font-bold text-base md:text-lg">{getFullName(student.lastName, student.firstName, student.name)}</span>
                       </p>
                     </div>
                     <div>

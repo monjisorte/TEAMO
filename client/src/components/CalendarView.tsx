@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import type { Schedule, Category, Attendance, Student } from "@shared/schema";
+import { getFullName } from "@/lib/nameUtils";
 
 interface CalendarViewProps {
   schedules: Schedule[];
@@ -72,7 +73,8 @@ export function CalendarView({ schedules, categories, attendances, students, onS
   const getStudentName = (studentId: string) => {
     if (!students || students.length === 0) return "不明";
     const student = students.find(s => s.id === studentId);
-    return student?.name || "不明";
+    if (!student) return "不明";
+    return getFullName(student.lastName, student.firstName, student.name);
   };
 
   const handleDateClick = (day: number, monthOffset: number) => {
@@ -96,7 +98,7 @@ export function CalendarView({ schedules, categories, attendances, students, onS
       setMoveParticipantData({
         attendance,
         fromSchedule,
-        studentName: student.name,
+        studentName: getFullName(student.lastName, student.firstName, student.name),
       });
       setTargetScheduleId("");
     }

@@ -23,6 +23,7 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Schedule, Student, Category, Attendance, ScheduleFile, ActivityLog } from "@shared/schema";
+import { getFullName } from "@/lib/nameUtils";
 
 interface DashboardStats {
   upcomingEvents: number;
@@ -97,9 +98,13 @@ export function Dashboard() {
 
   // カテゴリ順にソートした生徒リスト
   const teamStudents = students.filter(s => s.teamId === teamId);
-  const sortedStudents = [...teamStudents].sort((a, b) => 
-    (a.categoryId || "").localeCompare(b.categoryId || "") || a.name.localeCompare(b.name)
-  );
+  const sortedStudents = [...teamStudents].sort((a, b) => {
+    const categoryCompare = (a.categoryId || "").localeCompare(b.categoryId || "");
+    if (categoryCompare !== 0) return categoryCompare;
+    const nameA = getFullName(a.lastName, a.firstName, a.name);
+    const nameB = getFullName(b.lastName, b.firstName, b.name);
+    return nameA.localeCompare(nameB);
+  });
 
   const getCategoryName = (categoryId: string | null | undefined) => {
     if (!categoryId) return "";
@@ -163,7 +168,7 @@ export function Dashboard() {
       setMoveParticipantData({
         attendance,
         fromSchedule: selectedSchedule,
-        studentName: student.name,
+        studentName: getFullName(student.lastName, student.firstName, student.name),
       });
       setTargetScheduleId("");
     }
@@ -447,7 +452,7 @@ export function Dashboard() {
                   >
                     <div className="flex items-center gap-4 flex-1">
                       <div className="flex flex-col">
-                        <span className="font-semibold text-base">{student.name}</span>
+                        <span className="font-semibold text-base">{getFullName(student.lastName, student.firstName, student.name)}</span>
                         <span className="text-xs text-muted-foreground">
                           登録日: {student.createdAt ? new Date(student.createdAt).toLocaleDateString('ja-JP') : "不明"}
                         </span>
@@ -645,7 +650,7 @@ export function Dashboard() {
                           data-testid={`participant-${student.id}`}
                         >
                           <span className="w-6 text-center font-semibold">{statusIcon}</span>
-                          <span className="flex-1">{student.name}</span>
+                          <span className="flex-1">{getFullName(student.lastName, student.firstName, student.name)}</span>
                           {attendance.comment && (
                             <span className="text-xs text-muted-foreground truncate max-w-[120px]">
                               {attendance.comment}
