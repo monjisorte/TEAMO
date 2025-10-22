@@ -63,7 +63,7 @@ export function Dashboard() {
   // Fetch team members for the dialog
   const { data: students = [] } = useQuery<Student[]>({
     queryKey: ["/api/students"],
-    enabled: showMembersDialog && !!teamId,
+    enabled: (showMembersDialog || showScheduleDialog) && !!teamId,
   });
 
   // Fetch categories to map categoryId to category name
