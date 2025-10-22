@@ -423,10 +423,31 @@ function CoachPortal() {
     return <CoachPortalContent coachId={coachId} teamId={selectedTeamId} onLogout={handleLogout} />;
   }
 
-  // Loading state
+  // Loading state - Add debug info
   return (
     <div className="flex items-center justify-center h-screen">
-      <p className="text-muted-foreground">読み込み中...</p>
+      <div className="text-center space-y-4">
+        <p className="text-muted-foreground">読み込み中...</p>
+        {process.env.NODE_ENV === 'development' && (
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>coachId: {coachId || 'なし'}</p>
+            <p>selectedTeamId: {selectedTeamId || 'なし'}</p>
+            <p>needsTeamValidation: {needsTeamValidation ? 'はい' : 'いいえ'}</p>
+            <p>initialCoachData: {initialCoachData ? 'あり' : 'なし'}</p>
+            <p>teams: {initialCoachData?.teams?.length || '0'}</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                localStorage.clear();
+                window.location.reload();
+              }}
+            >
+              localStorageをクリア
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
