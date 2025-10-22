@@ -598,6 +598,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Switch>
+          <Route path="~/">
+            {() => <LandingPage />}
+          </Route>
           <Route path="/register">
             {() => <RegisterPage />}
           </Route>
@@ -634,9 +637,6 @@ function App() {
           </Route>
           <Route path="/admins/:rest*">
             {() => <AdminPortal />}
-          </Route>
-          <Route path="/">
-            {() => <LandingPage />}
           </Route>
         </Switch>
         <Toaster />
