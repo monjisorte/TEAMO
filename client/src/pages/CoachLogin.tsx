@@ -134,15 +134,6 @@ export default function CoachLogin({ onLoginSuccess }: CoachLoginProps) {
                   >
                     {isLoading ? "ログイン中..." : "ログイン"}
                   </Button>
-                  <div className="text-center mt-4">
-                    <a
-                      href="/"
-                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline block"
-                      data-testid="link-player-portal"
-                    >
-                      選手ポータルはこちら →
-                    </a>
-                  </div>
                 </form>
               </Form>
             </TabsContent>

@@ -6,19 +6,9 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-// Redirect replit.app domain to custom domain (production only)
+// Redirect replit.app domain to custom domain
 app.use((req, res, next) => {
-  // Only redirect in production environment
-  if (process.env.NODE_ENV !== 'production') {
-    return next();
-  }
-  
   const host = req.get('host') || '';
-  // Skip redirect for API routes and static assets
-  if (req.path.startsWith('/api') || req.path.startsWith('/objects')) {
-    return next();
-  }
-  
   if (host.includes('replit.app') || host.includes('replit.dev')) {
     const protocol = req.protocol || 'https';
     const newUrl = `https://teamo.cloud${req.originalUrl}`;

@@ -295,18 +295,10 @@ function CoachPortal() {
     if (savedCoach) {
       const coachData = JSON.parse(savedCoach);
       setCoachId(coachData.id);
-      
-      // If we have teams in localStorage, use them
-      if (coachData.teams) {
-        setInitialCoachData(coachData);
-      }
-      
       if (coachData.teamId) {
         setSelectedTeamId(coachData.teamId);
-        // Only mark for validation if we don't have teams data
-        if (!coachData.teams) {
-          setNeedsTeamValidation(true);
-        }
+        // Mark that we need to validate this teamId
+        setNeedsTeamValidation(true);
       }
     }
   }, []);
@@ -423,31 +415,10 @@ function CoachPortal() {
     return <CoachPortalContent coachId={coachId} teamId={selectedTeamId} onLogout={handleLogout} />;
   }
 
-  // Loading state - Add debug info
+  // Loading state
   return (
     <div className="flex items-center justify-center h-screen">
-      <div className="text-center space-y-4">
-        <p className="text-muted-foreground">読み込み中...</p>
-        {process.env.NODE_ENV === 'development' && (
-          <div className="text-xs text-muted-foreground space-y-1">
-            <p>coachId: {coachId || 'なし'}</p>
-            <p>selectedTeamId: {selectedTeamId || 'なし'}</p>
-            <p>needsTeamValidation: {needsTeamValidation ? 'はい' : 'いいえ'}</p>
-            <p>initialCoachData: {initialCoachData ? 'あり' : 'なし'}</p>
-            <p>teams: {initialCoachData?.teams?.length || '0'}</p>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => {
-                localStorage.clear();
-                window.location.reload();
-              }}
-            >
-              localStorageをクリア
-            </Button>
-          </div>
-        )}
-      </div>
+      <p className="text-muted-foreground">読み込み中...</p>
     </div>
   );
 }

@@ -220,22 +220,15 @@ export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
                   >
                     {isLoading ? "ログイン中..." : "ログイン"}
                   </Button>
-                  <div className="text-center mt-4 space-y-2">
+                  <div className="text-center mt-4">
                     <button
                       type="button"
                       onClick={() => setShowPasswordResetDialog(true)}
-                      className="text-sm text-muted-foreground hover:text-primary underline block w-full"
+                      className="text-sm text-muted-foreground hover:text-primary underline"
                       data-testid="link-forgot-password"
                     >
                       パスワードを忘れた場合
                     </button>
-                    <a
-                      href="/team"
-                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline block"
-                      data-testid="link-coach-portal"
-                    >
-                      コーチポータルはこちら →
-                    </a>
                   </div>
                 </form>
               </Form>
