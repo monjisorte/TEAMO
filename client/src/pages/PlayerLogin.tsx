@@ -326,9 +326,9 @@ export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
             <p className="text-sm text-muted-foreground">
               コーチの方は
               <Link href="/team">
-                <a className="ml-1 text-primary hover:underline font-medium" data-testid="link-coach-login">
+                <span className="ml-1 text-primary hover:underline font-medium cursor-pointer" data-testid="link-coach-login">
                   こちらからログイン
-                </a>
+                </span>
               </Link>
             </p>
           </div>
