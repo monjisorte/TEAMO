@@ -3,6 +3,13 @@
 ## Overview
 This application is a comprehensive sports team management platform designed for coaches to efficiently manage schedules, track attendance, and organize team members. Built in Japanese with a modern, gradient-rich UI, it targets sports clubs, teams, and coaching staff. Key capabilities include managing categories (age groups), venues, coaches, schedules (with recurring options and file attachments), student attendance, shared documents, and tuition payments. It also features a multi-step club registration process and a dashboard for monitoring team activities. The project's ambition is to provide an intuitive and elegant solution for sports team management, enhancing user experience and operational efficiency.
 
+## Recent Changes (October 2025)
+**Multi-Team Support for Coaches** - Implemented comprehensive support for coaches managing multiple teams with a single shared profile.
+- **Team Selection Flow**: Coaches with multiple teams see a TeamSelection screen after login, single-team coaches are auto-selected to their dashboard
+- **Data Model**: coach_teams junction table stores team memberships with role (owner/coach/assistant), coaches table no longer has direct teamId
+- **Validation & Error Handling**: Cached teamId validation prevents dashboard access with invalid teams, zero-team accounts show helpful error message with logout option
+- **Migration Support**: Existing coaches automatically migrated to coach_teams structure, backward-compatible localStorage handling
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 

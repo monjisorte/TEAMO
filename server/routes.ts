@@ -8,7 +8,7 @@ import {
 } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { db } from "./db";
-import { teams, students, coaches, studentCategories, attendances, schedules, categories, sharedDocuments, folders, tuitionPayments, venues, admins, activityLogs, coachCategories, passwordResetTokens } from "@shared/schema";
+import { teams, students, coaches, coachTeams, studentCategories, attendances, schedules, categories, sharedDocuments, folders, tuitionPayments, venues, admins, activityLogs, coachCategories, passwordResetTokens } from "@shared/schema";
 import { eq, and, inArray, isNull, or, count, sql as drizzleSql, desc, gt } from "drizzle-orm";
 import { generateTeamCode, hashPassword, verifyPassword } from "./utils";
 import { Resend } from "resend";
@@ -570,9 +570,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: ownerName,
         email: ownerEmail,
         password: hashedPassword,
+      }).returning();
+
+      // Create coach-team relationship
+      await db.insert(coachTeams).values({
+        coachId: newCoach[0].id,
         teamId: newTeam[0].id,
         role: "owner",
-      }).returning();
+      });
 
       res.status(201).json({
         team: newTeam[0],
@@ -580,7 +585,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: newCoach[0].id,
           name: newCoach[0].name,
           email: newCoach[0].email,
-          teamId: newCoach[0].teamId,
+          teamId: newTeam[0].id,
         },
       });
     } catch (error) {
@@ -798,7 +803,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/coach/register", async (req, res) => {
     try {
       console.log("Coach register request received:", req.body);
-      const { name, email, password, teamId } = req.body;
+      const { name, email, password, teamId, role = "owner" } = req.body;
 
       if (!name || !email || !password || !teamId) {
         console.log("Missing required fields:", { name: !!name, email: !!email, password: !!password, teamId: !!teamId });
@@ -817,8 +822,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name,
         email,
         password: hashedPassword,
-        teamId,
       }).returning();
+
+      // Create coach-team relationship
+      await db.insert(coachTeams).values({
+        coachId: newCoach[0].id,
+        teamId,
+        role,
+      });
 
       res.status(201).json({ coach: { id: newCoach[0].id, name: newCoach[0].name, email: newCoach[0].email } });
     } catch (error) {
@@ -847,13 +858,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
+      // Get coach's teams
+      const coachTeamsList = await db
+        .select({
+          teamId: coachTeams.teamId,
+          teamName: teams.name,
+          teamCode: teams.teamCode,
+          role: coachTeams.role,
+        })
+        .from(coachTeams)
+        .innerJoin(teams, eq(coachTeams.teamId, teams.id))
+        .where(eq(coachTeams.coachId, coach[0].id));
+
       res.status(200).json({ 
         coach: { 
           id: coach[0].id, 
           name: coach[0].name, 
           email: coach[0].email,
-          teamId: coach[0].teamId,
-          role: coach[0].role
+          teams: coachTeamsList,
         } 
       });
     } catch (error) {
@@ -871,10 +893,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Coach not found" });
       }
 
+      // Get coach's teams
+      const coachTeamsList = await db
+        .select({
+          teamId: coachTeams.teamId,
+          teamName: teams.name,
+          teamCode: teams.teamCode,
+          role: coachTeams.role,
+        })
+        .from(coachTeams)
+        .innerJoin(teams, eq(coachTeams.teamId, teams.id))
+        .where(eq(coachTeams.coachId, coach[0].id));
+
       const { password, ...coachData } = coach[0];
-      res.json(coachData);
+      res.json({
+        ...coachData,
+        teams: coachTeamsList,
+      });
     } catch (error) {
       console.error("Error fetching coach profile:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get coach's teams
+  app.get("/api/coaches/:coachId/teams", async (req, res) => {
+    try {
+      const { coachId } = req.params;
+
+      const coachTeamsList = await db
+        .select({
+          teamId: coachTeams.teamId,
+          teamName: teams.name,
+          teamCode: teams.teamCode,
+          role: coachTeams.role,
+        })
+        .from(coachTeams)
+        .innerJoin(teams, eq(coachTeams.teamId, teams.id))
+        .where(eq(coachTeams.coachId, coachId));
+
+      res.json(coachTeamsList);
+    } catch (error) {
+      console.error("Error fetching coach teams:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -888,7 +948,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: coaches.id,
         name: coaches.name,
         email: coaches.email,
-        role: coaches.role,
+        role: coachTeams.role,
         createdAt: coaches.createdAt,
         lastName: coaches.lastName,
         firstName: coaches.firstName,
@@ -896,7 +956,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         firstNameKana: coaches.firstNameKana,
         photoUrl: coaches.photoUrl,
         bio: coaches.bio,
-      }).from(coaches).where(eq(coaches.teamId, teamId));
+      })
+      .from(coachTeams)
+      .innerJoin(coaches, eq(coachTeams.coachId, coaches.id))
+      .where(eq(coachTeams.teamId, teamId));
 
       res.json(teamCoaches);
     } catch (error) {
@@ -1875,7 +1938,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const teamMembers = await db.select().from(students).where(eq(students.teamId, teamId));
 
       // Count coaches
-      const activeCoaches = await db.select().from(coaches).where(eq(coaches.teamId, teamId));
+      const activeCoaches = await db.select().from(coachTeams).where(eq(coachTeams.teamId, teamId));
 
       // Get recent schedules for display
       const recentSchedules = allSchedules
@@ -2068,12 +2131,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { teamId } = req.params;
       
-      const teamCoaches = await db.select().from(coaches).where(eq(coaches.teamId, teamId));
+      const teamCoaches = await db.select({
+        id: coaches.id,
+        name: coaches.name,
+        email: coaches.email,
+        lastName: coaches.lastName,
+        firstName: coaches.firstName,
+        lastNameKana: coaches.lastNameKana,
+        firstNameKana: coaches.firstNameKana,
+        photoUrl: coaches.photoUrl,
+        bio: coaches.bio,
+        role: coachTeams.role,
+      })
+      .from(coachTeams)
+      .innerJoin(coaches, eq(coachTeams.coachId, coaches.id))
+      .where(eq(coachTeams.teamId, teamId));
       
-      // Don't send passwords
-      const coachesData = teamCoaches.map(({ password, ...coach }) => coach);
-      
-      res.json(coachesData);
+      res.json(teamCoaches);
     } catch (error) {
       console.error("Error fetching team coaches:", error);
       res.status(500).json({ error: "Internal server error" });
@@ -2182,8 +2256,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const teamsWithStats = await Promise.all(
         allTeams.map(async (team) => {
           const coachCount = await db.select({ count: count() })
-            .from(coaches)
-            .where(eq(coaches.teamId, team.id));
+            .from(coachTeams)
+            .where(eq(coachTeams.teamId, team.id));
           
           const memberCount = await db.select({ count: count() })
             .from(students)
@@ -2220,11 +2294,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Team not found" });
       }
       
-      const teamCoaches = await db.select().from(coaches).where(eq(coaches.teamId, teamId));
+      const teamCoaches = await db.select({
+        id: coaches.id,
+        name: coaches.name,
+        email: coaches.email,
+        lastName: coaches.lastName,
+        firstName: coaches.firstName,
+        lastNameKana: coaches.lastNameKana,
+        firstNameKana: coaches.firstNameKana,
+        photoUrl: coaches.photoUrl,
+        bio: coaches.bio,
+        role: coachTeams.role,
+      })
+      .from(coachTeams)
+      .innerJoin(coaches, eq(coachTeams.coachId, coaches.id))
+      .where(eq(coachTeams.teamId, teamId));
+      
       const teamMembers = await db.select().from(students).where(eq(students.teamId, teamId));
       
       // Don't send passwords
-      const coachesData = teamCoaches.map(({ password, ...coach }) => coach);
+      const coachesData = teamCoaches;
       const membersData = teamMembers.map(({ password, ...member }) => member);
       
       res.json({

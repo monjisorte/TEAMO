@@ -97,8 +97,6 @@ export const coaches = pgTable("coaches", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
-  teamId: varchar("team_id").notNull(),
-  role: text("role").default("coach"), // "owner", "coach", "assistant" - 権限管理用
   position: text("position"), // 役職名（代表、ヘッドコーチ、U-8担当など）
   lastName: text("last_name"), // 性
   firstName: text("first_name"), // 名
@@ -112,6 +110,19 @@ export const coaches = pgTable("coaches", {
 export const insertCoachSchema = createInsertSchema(coaches).omit({ id: true, createdAt: true });
 export type InsertCoach = z.infer<typeof insertCoachSchema>;
 export type Coach = typeof coaches.$inferSelect;
+
+// Coach-Team relationship table (many-to-many)
+export const coachTeams = pgTable("coach_teams", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  coachId: varchar("coach_id").notNull().references(() => coaches.id),
+  teamId: varchar("team_id").notNull().references(() => teams.id),
+  role: text("role").default("coach"), // "owner", "coach", "assistant" - チームごとの権限
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertCoachTeamSchema = createInsertSchema(coachTeams).omit({ id: true, createdAt: true });
+export type InsertCoachTeam = z.infer<typeof insertCoachTeamSchema>;
+export type CoachTeam = typeof coachTeams.$inferSelect;
 
 export const schedules = pgTable("schedules", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
