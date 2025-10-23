@@ -1,75 +1,30 @@
-import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Copy, Download } from "lucide-react";
+import { Copy, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Team } from "@shared/schema";
-import QRCode from "qrcode";
 
 export default function InvitePage() {
   const { toast } = useToast();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [inviteUrl, setInviteUrl] = useState("");
+  
+  // Get coach's teamId from localStorage
+  const coachData = localStorage.getItem("coachData");
+  const teamId = coachData ? JSON.parse(coachData).teamId : null;
   
   const { data: teams = [], isLoading } = useQuery<Team[]>({
     queryKey: ["/api/teams"],
+    enabled: !!teamId,
   });
 
-  const team = teams[0];
+  const team = teams.find(t => t.id === teamId);
 
-  useEffect(() => {
+  const handleCopyId = () => {
     if (team) {
-      // 生徒登録ページのURLにチームコードをクエリパラメータとして含める
-      const baseUrl = window.location.origin;
-      const url = `${baseUrl}/player?code=${team.teamCode}`;
-      setInviteUrl(url);
-
-      // QRコードを生成
-      if (canvasRef.current) {
-        QRCode.toCanvas(canvasRef.current, url, {
-          width: 300,
-          margin: 2,
-          color: {
-            dark: '#000000',
-            light: '#FFFFFF',
-          },
-        }).catch(err => {
-          console.error("QRコード生成エラー:", err);
-        });
-      }
-    }
-  }, [team]);
-
-  const handleCopyCode = () => {
-    if (team) {
-      navigator.clipboard.writeText(team.teamCode);
+      navigator.clipboard.writeText(team.id);
       toast({
         title: "コピーしました",
-        description: `チームコード: ${team.teamCode}`,
-      });
-    }
-  };
-
-  const handleCopyUrl = () => {
-    navigator.clipboard.writeText(inviteUrl);
-    toast({
-      title: "コピーしました",
-      description: "招待URLをクリップボードにコピーしました",
-    });
-  };
-
-  const handleDownloadQR = () => {
-    if (canvasRef.current) {
-      const url = canvasRef.current.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.download = `team-invite-${team?.teamCode}.png`;
-      link.href = url;
-      link.click();
-      toast({
-        title: "ダウンロード完了",
-        description: "QRコードを保存しました",
+        description: `チームID: ${team.id}`,
       });
     }
   };
