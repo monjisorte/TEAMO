@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import CategorySelection from "@/components/player/CategorySelection";
-import { Upload, User, Mail, Lock } from "lucide-react";
+import { Upload, User, Mail, Lock, Users, Check, X, Send } from "lucide-react";
 
 interface PlayerProfilePageProps {
   playerId: string;
@@ -56,9 +56,32 @@ const passwordSchema = z.object({
   path: ["confirmPassword"],
 });
 
+const siblingSchema = z.object({
+  siblingEmail: z.string().email("有効なメールアドレスを入力してください"),
+});
+
 type ProfileFormValues = z.infer<typeof profileSchema>;
 type EmailFormValues = z.infer<typeof emailSchema>;
 type PasswordFormValues = z.infer<typeof passwordSchema>;
+type SiblingFormValues = z.infer<typeof siblingSchema>;
+
+interface SiblingLink {
+  id: string;
+  studentId1: string;
+  studentId2: string;
+  status: string;
+  requestedBy: string;
+  createdAt: string;
+  approvedAt: string | null;
+  otherStudent: {
+    id: string;
+    lastName: string;
+    firstName: string;
+    email: string;
+  } | null;
+  isPendingApproval: boolean;
+  isSentRequest: boolean;
+}
 
 export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePageProps) {
   const { toast } = useToast();
@@ -99,6 +122,18 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
       newPassword: "",
       confirmPassword: "",
     },
+  });
+
+  const siblingForm = useForm<SiblingFormValues>({
+    resolver: zodResolver(siblingSchema),
+    defaultValues: {
+      siblingEmail: "",
+    },
+  });
+
+  // Fetch sibling links
+  const { data: siblingLinks = [], refetch: refetchSiblingLinks } = useQuery<SiblingLink[]>({
+    queryKey: [`/api/sibling-links/${playerId}`],
   });
 
   // Update form when player data is loaded
@@ -321,6 +356,96 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
 
   const onPasswordSubmit = (data: PasswordFormValues) => {
     changePasswordMutation.mutate(data);
+  };
+
+  // Send sibling link request
+  const sendSiblingRequestMutation = useMutation({
+    mutationFn: async (data: SiblingFormValues) => {
+      const response = await apiRequest("POST", "/api/sibling-links", {
+        studentId: playerId,
+        siblingEmail: data.siblingEmail,
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to send sibling request");
+      }
+      return await response.json();
+    },
+    onSuccess: () => {
+      refetchSiblingLinks();
+      siblingForm.reset();
+      toast({
+        title: "送信完了",
+        description: "兄弟アカウント連携リクエストを送信しました",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "エラー",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Approve sibling link
+  const approveSiblingLinkMutation = useMutation({
+    mutationFn: async (linkId: string) => {
+      const response = await apiRequest("PUT", `/api/sibling-links/${linkId}/approve`, {
+        studentId: playerId,
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to approve sibling link");
+      }
+      return await response.json();
+    },
+    onSuccess: () => {
+      refetchSiblingLinks();
+      toast({
+        title: "承認完了",
+        description: "兄弟アカウント連携を承認しました",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "エラー",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete/reject sibling link
+  const deleteSiblingLinkMutation = useMutation({
+    mutationFn: async (linkId: string) => {
+      const response = await apiRequest("DELETE", `/api/sibling-links/${linkId}`, {
+        studentId: playerId,
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to delete sibling link");
+      }
+      return await response.json();
+    },
+    onSuccess: () => {
+      refetchSiblingLinks();
+      toast({
+        title: "削除完了",
+        description: "兄弟アカウント連携を削除しました",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "エラー",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSiblingSubmit = (data: SiblingFormValues) => {
+    sendSiblingRequestMutation.mutate(data);
   };
 
   if (isLoading) {
@@ -693,6 +818,111 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
               </Button>
             </form>
           </Form>
+        </CardContent>
+      </Card>
+
+      {/* Sibling Account Management Card */}
+      <Card className="border-0 shadow-xl">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-blue-600" />
+            <CardTitle className="text-xl font-bold">兄弟アカウント管理</CardTitle>
+          </div>
+          <CardDescription className="text-sm">
+            兄弟姉妹のアカウントを連携すると、ヘッダーメニューから簡単にアカウントを切り替えることができます
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-3 pt-0 space-y-4">
+          {/* Add Sibling Form */}
+          <div>
+            <h3 className="text-sm font-semibold mb-2">兄弟姉妹を追加</h3>
+            <Form {...siblingForm}>
+              <form onSubmit={siblingForm.handleSubmit(onSiblingSubmit)} className="flex gap-2">
+                <FormField
+                  control={siblingForm.control}
+                  name="siblingEmail"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormControl>
+                        <Input 
+                          type="email"
+                          placeholder="兄弟姉妹のメールアドレス" 
+                          data-testid="input-sibling-email"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button 
+                  type="submit" 
+                  disabled={sendSiblingRequestMutation.isPending}
+                  data-testid="button-send-sibling-request"
+                  size="sm"
+                >
+                  <Send className="w-4 h-4 mr-1" />
+                  {sendSiblingRequestMutation.isPending ? "送信中..." : "送信"}
+                </Button>
+              </form>
+            </Form>
+          </div>
+
+          {/* Sibling Links List */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold">連携中の兄弟姉妹</h3>
+            {siblingLinks.length === 0 ? (
+              <p className="text-sm text-muted-foreground">まだ兄弟姉妹のアカウントが連携されていません</p>
+            ) : (
+              <div className="space-y-2">
+                {siblingLinks.map((link) => (
+                  <Card key={link.id} className="p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate" data-testid={`text-sibling-name-${link.id}`}>
+                          {link.otherStudent ? `${link.otherStudent.lastName} ${link.otherStudent.firstName}` : "不明"}
+                        </p>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {link.otherStudent?.email}
+                        </p>
+                        {link.isPendingApproval && (
+                          <p className="text-xs text-blue-600 font-medium mt-1">承認待ち</p>
+                        )}
+                        {link.isSentRequest && (
+                          <p className="text-xs text-muted-foreground mt-1">申請中</p>
+                        )}
+                        {link.status === "approved" && (
+                          <p className="text-xs text-green-600 font-medium mt-1">承認済み</p>
+                        )}
+                      </div>
+                      <div className="flex gap-1">
+                        {link.isPendingApproval && (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => approveSiblingLinkMutation.mutate(link.id)}
+                            disabled={approveSiblingLinkMutation.isPending}
+                            data-testid={`button-approve-${link.id}`}
+                          >
+                            <Check className="w-3 h-3" />
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => deleteSiblingLinkMutation.mutate(link.id)}
+                          disabled={deleteSiblingLinkMutation.isPending}
+                          data-testid={`button-delete-${link.id}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
