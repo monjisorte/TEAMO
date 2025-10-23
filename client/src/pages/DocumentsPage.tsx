@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -119,7 +119,7 @@ export default function DocumentsPage() {
     };
   };
 
-  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+  const handleUploadComplete = useCallback(async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
     try {
       console.log("Upload complete result:", result);
       
@@ -165,7 +165,7 @@ export default function DocumentsPage() {
         variant: "destructive",
       });
     }
-  };
+  }, [currentFolderId, teamId, toast]);
 
   return (
     <div className="space-y-6">
