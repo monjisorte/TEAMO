@@ -213,6 +213,7 @@ export default function DocumentsPage() {
           </Dialog>
           
           <ObjectUploader
+            key={currentFolderId || 'root'}
             maxNumberOfFiles={1}
             maxFileSize={52428800}
             onGetUploadParameters={handleGetUploadParameters}
