@@ -126,6 +126,11 @@ export default function PlayerMembersPage({ teamId }: PlayerMembersPageProps) {
                       <p className="text-xs md:text-sm font-medium" data-testid={`text-member-name-${student.id}`}>
                         名前　<span className="font-bold text-base md:text-lg">{getFullName(student.lastName, student.firstName)}</span>
                       </p>
+                      {(student.lastNameKana || student.firstNameKana) && (
+                        <p className="text-xs text-muted-foreground ml-8" data-testid={`text-member-kana-${student.id}`}>
+                          {getFullName(student.lastNameKana || "", student.firstNameKana || "")}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <p className="text-xs md:text-sm font-medium" data-testid={`text-jersey-${student.id}`}>

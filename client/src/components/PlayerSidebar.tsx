@@ -98,9 +98,9 @@ export function PlayerSidebar({ teamName, teamId }: PlayerSidebarProps) {
           </div>
           <div>
             <h2 className="font-bold text-base md:text-base bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              {teamName}
+              TEAMO
             </h2>
-            <p className="text-xs text-muted-foreground font-medium">TEAMO</p>
+            <p className="text-xs text-muted-foreground font-medium">{teamName}</p>
           </div>
         </div>
       </SidebarHeader>
