@@ -213,10 +213,19 @@ function CoachPortalContent({ coachId, onLogout }: { coachId: string; onLogout: 
   }, []);
 
   // Fetch latest coach data from server
-  const { data: coach, isLoading: coachLoading } = useQuery<CoachData>({
+  const { data: coach, isLoading: coachLoading, error: coachError } = useQuery<CoachData>({
     queryKey: [`/api/coach/${coachId}`],
     enabled: !!coachId,
+    retry: false,
   });
+
+  // If coach not found (404 or other error), clear localStorage and logout
+  useEffect(() => {
+    if (coachError) {
+      console.error("コーチが見つかりません。ログアウトします。");
+      onLogout();
+    }
+  }, [coachError, onLogout]);
 
   // Fetch team info
   const { data: teams } = useQuery<Array<{ id: string; name: string }>>({
