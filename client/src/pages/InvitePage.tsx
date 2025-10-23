@@ -33,6 +33,17 @@ export default function InvitePage() {
     window.open("https://teamo.cloud/", "_blank");
   };
 
+  const handleCopyMessage = () => {
+    if (team) {
+      const message = `https://teamo.cloud/ から登録をお願いします。チームIDは ${team.teamCode} です。\nログイン後、プロフィールやカテゴリを登録してください。出欠も記入をお願いします。`;
+      navigator.clipboard.writeText(message);
+      toast({
+        title: "コピーしました",
+        description: "登録手順の文面をクリップボードにコピーしました",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -103,34 +114,21 @@ export default function InvitePage() {
         <CardHeader>
           <CardTitle>登録手順</CardTitle>
         </CardHeader>
-        <CardContent>
-          <ol className="space-y-3 list-decimal list-inside text-sm">
-            <li>上記のチームIDをコピーしてメンバーに共有します</li>
-            <li>メンバーに <a href="https://teamo.cloud/" target="_blank" rel="noopener noreferrer" className="text-primary underline font-semibold">https://teamo.cloud/</a> にアクセスしてもらいます</li>
-            <li>チームIDを入力して登録を完了してもらいます</li>
-          </ol>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>チーム情報</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl className="space-y-2">
-            <div className="flex justify-between">
-              <dt className="text-sm font-medium text-muted-foreground">チーム名:</dt>
-              <dd className="text-sm font-semibold" data-testid="text-team-name">{team.name}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-sm font-medium text-muted-foreground">チームID:</dt>
-              <dd className="text-sm font-mono font-bold" data-testid="text-team-id">{team.teamCode}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-sm font-medium text-muted-foreground">連絡先:</dt>
-              <dd className="text-sm" data-testid="text-team-contact">{team.contactEmail}</dd>
-            </div>
-          </dl>
+        <CardContent className="space-y-4">
+          <div className="bg-muted p-4 rounded-lg">
+            <p className="text-sm whitespace-pre-line">
+              https://teamo.cloud/ から登録をお願いします。チームIDは <span className="font-bold text-primary">{team.teamCode}</span> です。{'\n'}
+              ログイン後、プロフィールやカテゴリを登録してください。出欠も記入をお願いします。
+            </p>
+          </div>
+          <Button
+            onClick={handleCopyMessage}
+            className="w-full"
+            data-testid="button-copy-message"
+          >
+            <Copy className="w-4 h-4 mr-2" />
+            文面をコピー
+          </Button>
         </CardContent>
       </Card>
     </div>
