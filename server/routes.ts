@@ -698,11 +698,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send email with Resend
       const resend = new Resend(process.env.RESEND_API_KEY);
-      // Use the current host for development, production domain otherwise
+      // Use the current request host for the reset URL
       const host = req.get('host') || '';
-      const baseUrl = host.includes('replit.dev') 
-        ? `${req.protocol}://${host}` 
-        : 'https://teamo.cloud';
+      const protocol = req.protocol || 'https';
+      const baseUrl = `${protocol}://${host}`;
       const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
 
       console.log("Sending password reset email to:", email);
