@@ -3,7 +3,17 @@
 ## Overview
 This application is a comprehensive sports team management platform designed for coaches to efficiently manage schedules, track attendance, and organize team members. Built in Japanese with a modern, gradient-rich UI, it targets sports clubs, teams, and coaching staff. Key capabilities include managing categories (age groups), venues, coaches, schedules (with recurring options and file attachments), student attendance, shared documents, and tuition payments. It also features a multi-step club registration process and a dashboard for monitoring team activities. The project's ambition is to provide an intuitive and elegant solution for sports team management, enhancing user experience and operational efficiency.
 
-## Recent Changes (October 22, 2025)
+## Recent Changes
+
+### October 23, 2025
+*   **Environment Separation Fixed:** Resolved critical issue where Preview environment was redirecting to production (teamo.cloud), causing development work to affect production database.
+    *   Removed all hardcoded `teamo.cloud` domain references from codebase
+    *   Disabled automatic domain redirect in `server/index.ts` for development environments
+    *   Updated password reset email URLs to use current request host instead of hardcoded production domain
+    *   Modified logout handler to use internal routing instead of external redirect
+    *   Development environment (replit.dev) now correctly isolated from production environment
+
+### October 22, 2025
 *   **Database Migration Completed:** Successfully migrated from single `name` field to structured `lastName` + `firstName` fields across students and coaches tables.
 *   **Name Handling System:** Implemented `nameUtils.ts` with `getFullName()` and `getInitials()` helper functions for consistent name display throughout the application.
 *   **Authentication Updates:** Updated all registration and login flows (both player and coach) to use separate name fields, including API endpoints and frontend components.
