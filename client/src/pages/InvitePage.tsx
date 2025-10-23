@@ -29,6 +29,10 @@ export default function InvitePage() {
     }
   };
 
+  const handleOpenTeamoCloud = () => {
+    window.open("https://teamo.cloud/", "_blank");
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -51,88 +55,60 @@ export default function InvitePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          メンバー招待
+          メンバー登録
         </h1>
         <p className="text-muted-foreground mt-2">
           新しいメンバーをチームに招待します
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>チームコード</CardTitle>
-            <CardDescription>
-              メンバーにこのコードを共有してください
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="flex-1 text-center">
-                <div className="text-4xl font-mono font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent py-4">
-                  {team.teamCode}
-                </div>
-              </div>
-            </div>
-            <Button
-              onClick={handleCopyCode}
-              className="w-full"
-              data-testid="button-copy-code"
-            >
-              <Copy className="w-4 h-4 mr-2" />
-              コードをコピー
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>招待URL</CardTitle>
-            <CardDescription>
-              このURLをメンバーに送信してください
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Input
-              value={inviteUrl}
-              readOnly
-              data-testid="input-invite-url"
-            />
-            <Button
-              onClick={handleCopyUrl}
-              className="w-full"
-              data-testid="button-copy-url"
-            >
-              <Copy className="w-4 h-4 mr-2" />
-              URLをコピー
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
       <Card>
         <CardHeader>
-          <CardTitle>QRコード</CardTitle>
+          <CardTitle>チームID</CardTitle>
           <CardDescription>
-            スマートフォンでスキャンして簡単に登録
+            メンバーにこのIDを共有し、https://teamo.cloud/ から登録してもらってください
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col items-center space-y-4">
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <canvas ref={canvasRef} data-testid="canvas-qr-code" />
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 text-center">
+              <div className="text-2xl md:text-3xl font-mono font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent py-6 break-all">
+                {team.id}
+              </div>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button
-              onClick={handleDownloadQR}
-              data-testid="button-download-qr"
+              onClick={handleCopyId}
+              className="flex-1"
+              data-testid="button-copy-id"
             >
-              <Download className="w-4 h-4 mr-2" />
-              QRコードをダウンロード
+              <Copy className="w-4 h-4 mr-2" />
+              IDをコピー
+            </Button>
+            <Button
+              onClick={handleOpenTeamoCloud}
+              variant="outline"
+              className="flex-1"
+              data-testid="button-open-teamo"
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              登録サイトを開く
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground text-center max-w-md">
-            このQRコードをポスター、チラシ、LINEなどで共有すれば、メンバーはスマートフォンでスキャンするだけで登録ページにアクセスできます。
-          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>登録手順</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ol className="space-y-3 list-decimal list-inside text-sm">
+            <li>上記のチームIDをコピーしてメンバーに共有します</li>
+            <li>メンバーに <a href="https://teamo.cloud/" target="_blank" rel="noopener noreferrer" className="text-primary underline font-semibold">https://teamo.cloud/</a> にアクセスしてもらいます</li>
+            <li>チームIDを入力して登録を完了してもらいます</li>
+          </ol>
         </CardContent>
       </Card>
 
@@ -144,11 +120,15 @@ export default function InvitePage() {
           <dl className="space-y-2">
             <div className="flex justify-between">
               <dt className="text-sm font-medium text-muted-foreground">チーム名:</dt>
-              <dd className="text-sm font-semibold">{team.name}</dd>
+              <dd className="text-sm font-semibold" data-testid="text-team-name">{team.name}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-sm font-medium text-muted-foreground">チームID:</dt>
+              <dd className="text-sm font-mono" data-testid="text-team-id">{team.id}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-sm font-medium text-muted-foreground">連絡先:</dt>
-              <dd className="text-sm">{team.contactEmail}</dd>
+              <dd className="text-sm" data-testid="text-team-contact">{team.contactEmail}</dd>
             </div>
           </dl>
         </CardContent>
