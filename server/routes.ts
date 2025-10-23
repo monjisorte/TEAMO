@@ -2263,9 +2263,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/stats", async (req, res) => {
     try {
       const teamCount = await db.select({ count: count() }).from(teams);
+      const coachCount = await db.select({ count: count() }).from(coaches);
+      const studentCount = await db.select({ count: count() }).from(students);
+      const eventCount = await db.select({ count: count() }).from(schedules);
       
       res.json({
         totalTeams: teamCount[0]?.count || 0,
+        totalCoaches: coachCount[0]?.count || 0,
+        totalStudents: studentCount[0]?.count || 0,
+        totalEvents: eventCount[0]?.count || 0,
       });
     } catch (error) {
       console.error("Error fetching admin stats:", error);

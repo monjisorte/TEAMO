@@ -3,13 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, Calendar, UserCircle, MapPin, Mail } from "lucide-react";
+import { Users, Calendar, UserCircle, MapPin, Mail, Hash } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getFullName, getInitials } from "@/lib/nameUtils";
 
 interface TeamWithStats {
   id: string;
   name: string;
+  teamCode: string;
   sportType: string | null;
   address: string | null;
   contactEmail: string;
@@ -76,16 +77,24 @@ export default function AdminTeams() {
             onClick={() => setSelectedTeamId(team.id)}
             data-testid={`card-team-${team.id}`}
           >
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">{team.name}</CardTitle>
-                {team.sportType && (
-                  <Badge variant="secondary">{team.sportType}</Badge>
-                )}
+            <CardHeader className="space-y-3">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle className="text-xl truncate" title={team.name}>
+                    {team.name}
+                  </CardTitle>
+                  {team.sportType && (
+                    <Badge variant="secondary" className="shrink-0">{team.sportType}</Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Hash className="h-3.5 w-3.5 shrink-0" />
+                  <span className="font-mono" data-testid={`text-team-code-${team.id}`}>{team.teamCode}</span>
+                </div>
               </div>
-              <CardDescription className="flex items-center gap-1 mt-2">
-                <Mail className="h-3 w-3" />
-                {team.contactEmail}
+              <CardDescription className="flex items-center gap-1.5 truncate" title={team.contactEmail}>
+                <Mail className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{team.contactEmail}</span>
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
