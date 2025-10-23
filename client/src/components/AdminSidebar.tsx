@@ -10,7 +10,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Users, Shield, UserCog } from "lucide-react";
+import { LayoutDashboard, Users, Shield, UserCog, Trophy } from "lucide-react";
 
 export function AdminSidebar() {
   const [location] = useLocation();
@@ -26,6 +26,11 @@ export function AdminSidebar() {
       title: "チーム一覧",
       url: "/admins/teams",
       icon: Users,
+    },
+    {
+      title: "スポーツ管理",
+      url: "/admins/sports",
+      icon: Trophy,
     },
     {
       title: "管理者アカウント",

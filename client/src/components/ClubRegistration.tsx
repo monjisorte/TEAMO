@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,12 +9,7 @@ import { CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-
-const SPORTS = [
-  { value: "baseball", label: "野球", icon: "⚾" },
-  { value: "soccer", label: "サッカー", icon: "⚽" },
-  { value: "basketball", label: "バスケットボール", icon: "🏀" },
-];
+import type { Sport } from "@shared/schema";
 
 interface ClubRegistrationProps {
   onRegistrationSuccess?: (coach: { id: string; name: string; email: string; teamId: string }) => void;
@@ -32,6 +28,11 @@ export function ClubRegistration({ onRegistrationSuccess }: ClubRegistrationProp
   const [teamCode, setTeamCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  // Fetch sports list from API
+  const { data: sports = [], isLoading: sportsLoading } = useQuery<Sport[]>({
+    queryKey: ["/api/sports"],
+  });
 
   const handleNext = () => {
     if (step < 4) setStep(step + 1);
@@ -121,7 +122,7 @@ export function ClubRegistration({ onRegistrationSuccess }: ClubRegistrationProp
                   <span className="font-semibold">{formData.clubName}</span>
                 </div>
                 <div className="flex justify-between items-center p-4 rounded-xl bg-muted/30">
-                  <span className="text-muted-foreground">オーナー:</span>
+                  <span className="text-muted-foreground">代表:</span>
                   <span className="font-semibold">{formData.ownerName}</span>
                 </div>
                 <div className="flex justify-between items-center p-4 rounded-xl bg-muted/30">
@@ -130,7 +131,7 @@ export function ClubRegistration({ onRegistrationSuccess }: ClubRegistrationProp
                 </div>
                 <div className="flex justify-between items-center p-4 rounded-xl bg-muted/30">
                   <span className="text-muted-foreground">スポーツ:</span>
-                  <Badge variant="outline" className="rounded-full text-base px-4 py-1">{SPORTS.find(s => s.value === formData.sport)?.label}</Badge>
+                  <Badge variant="outline" className="rounded-full text-base px-4 py-1">{sports.find(s => s.name === formData.sport)?.name}</Badge>
                 </div>
               </div>
             </div>
@@ -158,7 +159,7 @@ export function ClubRegistration({ onRegistrationSuccess }: ClubRegistrationProp
           <CardTitle className="text-3xl">
             {step === 1 && "基本情報"}
             {step === 2 && "スポーツ選択"}
-            {step === 3 && "オーナーアカウント"}
+            {step === 3 && "代表アカウント"}
           </CardTitle>
           <CardDescription className="text-base mt-2">
             ステップ {step} / 3
@@ -178,12 +179,12 @@ export function ClubRegistration({ onRegistrationSuccess }: ClubRegistrationProp
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="address">代表住所 *</Label>
+                <Label htmlFor="address">代表的な練習場所 *</Label>
                 <Input
                   id="address"
                   value={formData.address}
                   onChange={(e) => updateField("address", e.target.value)}
-                  placeholder="例: 東京都渋谷区..."
+                  placeholder="例: 東京都渋谷区〇〇体育館"
                   data-testid="input-address"
                 />
               </div>
@@ -191,24 +192,28 @@ export function ClubRegistration({ onRegistrationSuccess }: ClubRegistrationProp
           )}
 
           {step === 2 && (
-            <div className="space-y-6">
-              <Label className="text-base">スポーツを選択してください *</Label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {SPORTS.map((sport) => (
-                  <Card
-                    key={sport.value}
-                    className={`cursor-pointer hover-elevate active-elevate-2 border-0 shadow-lg transition-all ${
-                      formData.sport === sport.value ? "ring-4 ring-primary shadow-xl scale-105" : ""
-                    }`}
-                    onClick={() => updateField("sport", sport.value)}
-                    data-testid={`card-sport-${sport.value}`}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="sport">スポーツを選択してください *</Label>
+                {sportsLoading ? (
+                  <p className="text-sm text-muted-foreground">読み込み中...</p>
+                ) : (
+                  <Select
+                    value={formData.sport}
+                    onValueChange={(value) => updateField("sport", value)}
                   >
-                    <CardContent className="flex flex-col items-center justify-center p-8">
-                      <div className="text-6xl mb-4">{sport.icon}</div>
-                      <p className="font-semibold text-lg">{sport.label}</p>
-                    </CardContent>
-                  </Card>
-                ))}
+                    <SelectTrigger id="sport" data-testid="select-sport">
+                      <SelectValue placeholder="スポーツを選択" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sports.map((sport) => (
+                        <SelectItem key={sport.id} value={sport.name} data-testid={`option-sport-${sport.id}`}>
+                          {sport.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
           )}
@@ -216,7 +221,7 @@ export function ClubRegistration({ onRegistrationSuccess }: ClubRegistrationProp
           {step === 3 && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="ownerName">オーナー名 *</Label>
+                <Label htmlFor="ownerName">代表者名 *</Label>
                 <Input
                   id="ownerName"
                   value={formData.ownerName}
@@ -226,7 +231,7 @@ export function ClubRegistration({ onRegistrationSuccess }: ClubRegistrationProp
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="ownerEmail">オーナーメールアドレス *</Label>
+                <Label htmlFor="ownerEmail">代表者メールアドレス *</Label>
                 <Input
                   id="ownerEmail"
                   type="email"

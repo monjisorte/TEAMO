@@ -17,6 +17,17 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+export const sports = pgTable("sports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  order: integer("order").notNull().default(0), // 表示順
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertSportSchema = createInsertSchema(sports).omit({ id: true, createdAt: true });
+export type InsertSport = z.infer<typeof insertSportSchema>;
+export type Sport = typeof sports.$inferSelect;
+
 export const categories = pgTable("categories", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   teamId: varchar("team_id").notNull(),

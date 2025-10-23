@@ -8,8 +8,8 @@ import {
 } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { db } from "./db";
-import { teams, students, coaches, studentCategories, attendances, schedules, categories, sharedDocuments, folders, tuitionPayments, venues, admins, activityLogs, coachCategories, passwordResetTokens } from "@shared/schema";
-import { eq, and, inArray, isNull, or, count, sql as drizzleSql, desc, gt } from "drizzle-orm";
+import { teams, students, coaches, studentCategories, attendances, schedules, categories, sharedDocuments, folders, tuitionPayments, venues, admins, activityLogs, coachCategories, passwordResetTokens, sports, insertSportSchema } from "@shared/schema";
+import { eq, and, inArray, isNull, or, count, sql as drizzleSql, desc, gt, asc } from "drizzle-orm";
 import { generateTeamCode, hashPassword, verifyPassword } from "./utils";
 import { Resend } from "resend";
 import crypto from "crypto";
@@ -429,6 +429,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       console.error("Error creating/updating attendance:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Sports Endpoints
+  app.get("/api/sports", async (req, res) => {
+    try {
+      const allSports = await db.select()
+        .from(sports)
+        .orderBy(asc(sports.order), asc(sports.name));
+      res.json(allSports);
+    } catch (error) {
+      console.error("Error fetching sports:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/sports", isAuthenticated, async (req, res) => {
+    try {
+      const { name, order } = req.body;
+
+      if (!name) {
+        return res.status(400).json({ error: "Name is required" });
+      }
+
+      // Validate with insertSportSchema
+      const validatedData = insertSportSchema.parse({
+        name,
+        order: order ?? 0,
+      });
+
+      const newSport = await db.insert(sports).values(validatedData).returning();
+
+      res.status(201).json(newSport[0]);
+    } catch (error: unknown) {
+      console.error("Error creating sport:", error);
+      if (error instanceof Error && error.name === "ZodError") {
+        return res.status(400).json({ error: "Invalid data", details: (error as any).errors });
+      }
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/sports/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, order } = req.body;
+
+      if (!name) {
+        return res.status(400).json({ error: "Name is required" });
+      }
+
+      // Validate with insertSportSchema
+      const validatedData = insertSportSchema.parse({
+        name,
+        order: order ?? 0,
+      });
+
+      const updatedSport = await db.update(sports)
+        .set(validatedData)
+        .where(eq(sports.id, id))
+        .returning();
+
+      if (updatedSport.length === 0) {
+        return res.status(404).json({ error: "Sport not found" });
+      }
+
+      res.status(200).json(updatedSport[0]);
+    } catch (error: unknown) {
+      console.error("Error updating sport:", error);
+      if (error instanceof Error && error.name === "ZodError") {
+        return res.status(400).json({ error: "Invalid data", details: (error as any).errors });
+      }
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/sports/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await db.delete(sports).where(eq(sports.id, id));
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error deleting sport:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
