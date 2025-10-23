@@ -38,6 +38,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CalendarView } from "@/components/CalendarView";
 import type { Schedule, Category, Student, Attendance, CoachCategory } from "@shared/schema";
+import { getFullName } from "@/lib/nameUtils";
 
 // 時間（0-23）のオプションを生成
 const generateHourOptions = () => {
@@ -929,7 +930,7 @@ export function ScheduleList() {
                               >
                                 <span className="text-green-600 dark:text-green-400">○</span>
                                 <span>
-                                  {participant.student!.name}
+                                  {getFullName(participant.student!.lastName, participant.student!.firstName)}
                                   {participant.comment && <span className="text-muted-foreground">（{participant.comment}）</span>}
                                 </span>
                               </div>
@@ -953,7 +954,7 @@ export function ScheduleList() {
                               >
                                 <span className="text-red-600 dark:text-red-400">×</span>
                                 <span>
-                                  {participant.student!.name}
+                                  {getFullName(participant.student!.lastName, participant.student!.firstName)}
                                   {participant.comment && <span className="text-muted-foreground">（{participant.comment}）</span>}
                                 </span>
                               </div>
@@ -977,7 +978,7 @@ export function ScheduleList() {
                               >
                                 <span className="text-yellow-600 dark:text-yellow-400">△</span>
                                 <span>
-                                  {participant.student!.name}
+                                  {getFullName(participant.student!.lastName, participant.student!.firstName)}
                                   {participant.comment && <span className="text-muted-foreground">（{participant.comment}）</span>}
                                 </span>
                               </div>
