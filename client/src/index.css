@@ -315,4 +315,10 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
+
+  /* Custom text size adjustments */
+  .text-lg {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
 }
