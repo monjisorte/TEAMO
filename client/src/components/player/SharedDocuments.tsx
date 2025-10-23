@@ -186,7 +186,8 @@ export default function SharedDocuments({ teamId }: SharedDocumentsProps) {
                   return (
                     <iframe
                       src={fileUrl}
-                      className="w-full h-[600px] rounded-lg border"
+                      className="w-full rounded-lg border"
+                      style={{ height: 'calc(90vh - 200px)', minHeight: '600px' }}
                       title={previewDocument.title}
                       data-testid="preview-pdf"
                     />
@@ -226,7 +227,8 @@ export default function SharedDocuments({ teamId }: SharedDocumentsProps) {
                   return (
                     <iframe
                       src={fileUrl}
-                      className="w-full h-[600px] rounded-lg border"
+                      className="w-full rounded-lg border"
+                      style={{ height: 'calc(90vh - 200px)', minHeight: '600px' }}
                       title={previewDocument.title}
                       data-testid="preview-text"
                     />

@@ -9,17 +9,47 @@ interface PlayerAttendancePageProps {
 }
 
 export default function PlayerAttendancePage({ playerId, teamId }: PlayerAttendancePageProps) {
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [hasCategoriesSelected, setHasCategoriesSelected] = useState(false);
-
-  useEffect(() => {
-    // Check if player has selected categories
-    // This would typically come from the backend or local storage
+  // Initialize from localStorage immediately to avoid flickering
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
     const savedCategories = localStorage.getItem(`player_${playerId}_categories`);
     if (savedCategories) {
-      const categories = JSON.parse(savedCategories);
-      setSelectedCategories(categories);
-      setHasCategoriesSelected(categories.length > 0);
+      try {
+        return JSON.parse(savedCategories);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+  
+  const [hasCategoriesSelected, setHasCategoriesSelected] = useState(() => {
+    const savedCategories = localStorage.getItem(`player_${playerId}_categories`);
+    if (savedCategories) {
+      try {
+        const categories = JSON.parse(savedCategories);
+        return categories.length > 0;
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    // Update state when playerId changes
+    const savedCategories = localStorage.getItem(`player_${playerId}_categories`);
+    if (savedCategories) {
+      try {
+        const categories = JSON.parse(savedCategories);
+        setSelectedCategories(categories);
+        setHasCategoriesSelected(categories.length > 0);
+      } catch {
+        setSelectedCategories([]);
+        setHasCategoriesSelected(false);
+      }
+    } else {
+      setSelectedCategories([]);
+      setHasCategoriesSelected(false);
     }
   }, [playerId]);
 
