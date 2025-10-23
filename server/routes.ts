@@ -1901,9 +1901,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             entranceFee = team[0].entranceFee || 0;
           }
 
-          // Apply sibling discount if applicable
+          // Check if student has approved sibling links
+          const approvedSiblingLinks = await db.select()
+            .from(siblingLinks)
+            .where(
+              and(
+                or(
+                  eq(siblingLinks.studentId1, student.id),
+                  eq(siblingLinks.studentId2, student.id)
+                ),
+                eq(siblingLinks.status, "approved")
+              )
+            );
+
+          // Apply sibling discount if student has approved siblings
           let discount = 0;
-          if (student.siblingDiscountStatus === "あり") {
+          if (approvedSiblingLinks.length > 0) {
             discount = team[0].siblingDiscount || 0;
           }
 
