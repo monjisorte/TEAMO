@@ -1891,8 +1891,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             insuranceFee = team[0].insuranceFee || 0;
           }
 
-          // Entrance fee is not auto-generated (set manually)
-          const entranceFee = 0;
+          // Set entrance fee for the registration month only
+          let entranceFee = 0;
+          const registrationDate = new Date(student.createdAt);
+          const registrationYear = registrationDate.getFullYear();
+          const registrationMonth = registrationDate.getMonth() + 1;
+          
+          if (year === registrationYear && month === registrationMonth) {
+            entranceFee = team[0].entranceFee || 0;
+          }
 
           // Apply sibling discount if applicable
           let discount = 0;
