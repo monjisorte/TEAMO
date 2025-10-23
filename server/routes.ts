@@ -1826,13 +1826,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Auto-generate tuition payments for all students
-  app.post("/api/tuition-payments/auto-generate", isAuthenticated, async (req, res) => {
+  // Reset unpaid tuition payments for a specific month
+  app.post("/api/tuition-payments/reset-unpaid", isAuthenticated, async (req, res) => {
     try {
-      const { teamId } = req.body;
+      const { teamId, year, month } = req.body;
 
-      if (!teamId) {
-        return res.status(400).json({ error: "teamId is required" });
+      if (!teamId || !year || !month) {
+        return res.status(400).json({ error: "teamId, year, and month are required" });
       }
 
       // Get team details
@@ -1841,112 +1841,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Team not found" });
       }
 
+      // Delete all unpaid payments for this month
+      await db.delete(tuitionPayments)
+        .where(and(
+          eq(tuitionPayments.teamId, teamId),
+          eq(tuitionPayments.year, year),
+          eq(tuitionPayments.month, month),
+          eq(tuitionPayments.isPaid, false)
+        ));
+
       // Get all students for the team
       const teamStudents = await db.select().from(students).where(eq(students.teamId, teamId));
 
-      const currentDate = new Date();
-      const currentYear = currentDate.getFullYear();
-      const currentMonth = currentDate.getMonth() + 1;
-
-      let generatedCount = 0;
+      let resetCount = 0;
 
       for (const student of teamStudents) {
-        // Get registration date (翌月から課金開始)
-        const registrationDate = new Date(student.createdAt);
-        let startYear = registrationDate.getFullYear();
-        let startMonth = registrationDate.getMonth() + 2; // 翌月から
+        // Check if a paid payment already exists
+        const paidPayment = await db.select()
+          .from(tuitionPayments)
+          .where(and(
+            eq(tuitionPayments.studentId, student.id),
+            eq(tuitionPayments.year, year),
+            eq(tuitionPayments.month, month),
+            eq(tuitionPayments.isPaid, true)
+          ))
+          .limit(1);
 
-        if (startMonth > 12) {
-          startMonth = 1;
-          startYear++;
-        }
-
-        // Generate payments from registration month to current month
-        let year = startYear;
-        let month = startMonth;
-
-        while (year < currentYear || (year === currentYear && month <= currentMonth)) {
-          // Check if payment already exists
-          const existing = await db.select()
-            .from(tuitionPayments)
-            .where(and(
-              eq(tuitionPayments.studentId, student.id),
-              eq(tuitionPayments.year, year),
-              eq(tuitionPayments.month, month)
-            ))
-            .limit(1);
-
-          if (existing.length === 0) {
-            // Determine base amount based on student type
-            let baseAmount = 0;
-            if (student.playerType === "team") {
-              baseAmount = team[0].monthlyFeeMember || 0;
-            } else if (student.playerType === "school") {
-              baseAmount = team[0].monthlyFeeSchool || 0;
-            }
-
-            // Set annual fee for the configured month (default: April)
-            let annualFee = 0;
-            const annualFeeMonth = team[0].annualFeeMonth || 4;
-            if (month === annualFeeMonth) {
-              annualFee = team[0].annualFee || 0;
-            }
-
-            // Set insurance fee for the configured month (default: April)
-            let insuranceFee = 0;
-            const insuranceFeeMonth = team[0].insuranceFeeMonth || 4;
-            if (month === insuranceFeeMonth) {
-              insuranceFee = team[0].insuranceFee || 0;
-            }
-
-            // Entrance fee is not auto-generated (set manually)
-            const entranceFee = 0;
-
-            // Apply sibling discount if applicable
-            let discount = 0;
-            if (student.siblingDiscountStatus === "あり") {
-              discount = team[0].siblingDiscount || 0;
-            }
-
-            const spotFee = 0;
-            const totalAmount = baseAmount - discount + annualFee + entranceFee + insuranceFee + spotFee;
-
-            // Create payment record
-            await db.insert(tuitionPayments).values({
-              studentId: student.id,
-              teamId,
-              year,
-              month,
-              baseAmount,
-              discount,
-              annualFee,
-              entranceFee,
-              insuranceFee,
-              spotFee,
-              amount: totalAmount,
-              isPaid: false,
-              category: student.playerType === "team" ? "team" : student.playerType === "school" ? "school" : null,
-            });
-
-            generatedCount++;
+        // Only create if there's no paid payment
+        if (paidPayment.length === 0) {
+          // Determine base amount based on student type
+          let baseAmount = 0;
+          if (student.playerType === "team") {
+            baseAmount = team[0].monthlyFeeMember || 0;
+          } else if (student.playerType === "school") {
+            baseAmount = team[0].monthlyFeeSchool || 0;
           }
 
-          // Move to next month
-          month++;
-          if (month > 12) {
-            month = 1;
-            year++;
+          // Set annual fee for the configured month (default: April)
+          let annualFee = 0;
+          const annualFeeMonth = team[0].annualFeeMonth || 4;
+          if (month === annualFeeMonth) {
+            annualFee = team[0].annualFee || 0;
           }
+
+          // Set insurance fee for the configured month (default: April)
+          let insuranceFee = 0;
+          const insuranceFeeMonth = team[0].insuranceFeeMonth || 4;
+          if (month === insuranceFeeMonth) {
+            insuranceFee = team[0].insuranceFee || 0;
+          }
+
+          // Entrance fee is not auto-generated (set manually)
+          const entranceFee = 0;
+
+          // Apply sibling discount if applicable
+          let discount = 0;
+          if (student.siblingDiscountStatus === "あり") {
+            discount = team[0].siblingDiscount || 0;
+          }
+
+          const spotFee = 0;
+          const totalAmount = baseAmount - discount + annualFee + entranceFee + insuranceFee + spotFee;
+
+          // Create payment record
+          await db.insert(tuitionPayments).values({
+            studentId: student.id,
+            teamId,
+            year,
+            month,
+            baseAmount,
+            discount,
+            annualFee,
+            entranceFee,
+            insuranceFee,
+            spotFee,
+            amount: totalAmount,
+            isPaid: false,
+            category: student.playerType === "team" ? "team" : student.playerType === "school" ? "school" : null,
+          });
+
+          resetCount++;
         }
       }
 
       res.json({ 
         success: true, 
-        generatedCount,
-        message: `${generatedCount}件の月謝データを生成しました`
+        resetCount,
+        message: `${resetCount}件の未入金データを初期化しました`
       });
     } catch (error) {
-      console.error("Error auto-generating tuition payments:", error);
+      console.error("Error resetting tuition payments:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
