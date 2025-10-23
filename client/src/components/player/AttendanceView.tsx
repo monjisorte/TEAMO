@@ -244,10 +244,23 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
                       </div>
                     )}
                     
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      <span>{schedule.venue || "未定"}</span>
-                    </div>
+                    {schedule.venue ? (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(schedule.venue)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 hover-elevate rounded px-1.5 py-0.5 transition-all"
+                        data-testid={`link-venue-${schedule.id}`}
+                      >
+                        <MapPin className="w-3 h-3" />
+                        <span className="underline decoration-dotted underline-offset-2">{schedule.venue}</span>
+                      </a>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        <span>未定</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
