@@ -309,3 +309,17 @@ export const coachCategories = pgTable("coach_categories", {
 export const insertCoachCategorySchema = createInsertSchema(coachCategories).omit({ id: true, createdAt: true });
 export type InsertCoachCategory = z.infer<typeof insertCoachCategorySchema>;
 export type CoachCategory = typeof coachCategories.$inferSelect;
+
+export const siblingLinks = pgTable("sibling_links", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  studentId1: varchar("student_id_1").notNull(), // First student in the relationship
+  studentId2: varchar("student_id_2").notNull(), // Second student in the relationship
+  status: text("status").notNull().default("pending"), // "pending" or "approved"
+  requestedBy: varchar("requested_by").notNull(), // ID of the student who sent the request
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  approvedAt: timestamp("approved_at"),
+});
+
+export const insertSiblingLinkSchema = createInsertSchema(siblingLinks).omit({ id: true, createdAt: true, approvedAt: true });
+export type InsertSiblingLink = z.infer<typeof insertSiblingLinkSchema>;
+export type SiblingLink = typeof siblingLinks.$inferSelect;

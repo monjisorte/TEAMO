@@ -8,7 +8,7 @@ import {
 } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { db } from "./db";
-import { teams, students, coaches, studentCategories, attendances, schedules, categories, sharedDocuments, folders, tuitionPayments, venues, admins, activityLogs, coachCategories, passwordResetTokens, sports, insertSportSchema } from "@shared/schema";
+import { teams, students, coaches, studentCategories, attendances, schedules, categories, sharedDocuments, folders, tuitionPayments, venues, admins, activityLogs, coachCategories, passwordResetTokens, sports, insertSportSchema, siblingLinks } from "@shared/schema";
 import { eq, and, inArray, isNull, or, count, sql as drizzleSql, desc, gt, asc } from "drizzle-orm";
 import { generateTeamCode, hashPassword, verifyPassword } from "./utils";
 import { Resend } from "resend";
@@ -2511,6 +2511,234 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting coach category:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Sibling Links - Send a link request
+  app.post("/api/sibling-links", isAuthenticated, async (req, res) => {
+    try {
+      const { studentId, siblingEmail } = req.body;
+
+      if (!studentId || !siblingEmail) {
+        return res.status(400).json({ error: "studentId and siblingEmail are required" });
+      }
+
+      // Find the sibling by email
+      const sibling = await db.select()
+        .from(students)
+        .where(eq(students.email, siblingEmail))
+        .limit(1);
+
+      if (sibling.length === 0) {
+        return res.status(404).json({ error: "指定されたメールアドレスの学生が見つかりません" });
+      }
+
+      const siblingId = sibling[0].id;
+
+      // Cannot link to yourself
+      if (siblingId === studentId) {
+        return res.status(400).json({ error: "自分自身を兄弟として登録することはできません" });
+      }
+
+      // Check if teams match
+      const requestingStudent = await db.select()
+        .from(students)
+        .where(eq(students.id, studentId))
+        .limit(1);
+
+      if (requestingStudent.length === 0) {
+        return res.status(404).json({ error: "Student not found" });
+      }
+
+      if (requestingStudent[0].teamId !== sibling[0].teamId) {
+        return res.status(400).json({ error: "異なるチームの学生とは兄弟登録できません" });
+      }
+
+      // Check if link already exists (either direction)
+      const existingLink = await db.select()
+        .from(siblingLinks)
+        .where(
+          or(
+            and(
+              eq(siblingLinks.studentId1, studentId),
+              eq(siblingLinks.studentId2, siblingId)
+            ),
+            and(
+              eq(siblingLinks.studentId1, siblingId),
+              eq(siblingLinks.studentId2, studentId)
+            )
+          )
+        )
+        .limit(1);
+
+      if (existingLink.length > 0) {
+        return res.status(400).json({ error: "既に兄弟として登録済み、または申請中です" });
+      }
+
+      // Create the link request
+      const newLink = await db.insert(siblingLinks).values({
+        studentId1: studentId,
+        studentId2: siblingId,
+        status: "pending",
+        requestedBy: studentId,
+      }).returning();
+
+      res.json(newLink[0]);
+    } catch (error) {
+      console.error("Error creating sibling link:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get sibling links for a student
+  app.get("/api/sibling-links/:studentId", isAuthenticated, async (req, res) => {
+    try {
+      const { studentId } = req.params;
+
+      // Get all links where this student is involved
+      const links = await db.select()
+        .from(siblingLinks)
+        .where(
+          or(
+            eq(siblingLinks.studentId1, studentId),
+            eq(siblingLinks.studentId2, studentId)
+          )
+        );
+
+      // Get student details for each link
+      const enrichedLinks = await Promise.all(links.map(async (link) => {
+        const otherStudentId = link.studentId1 === studentId ? link.studentId2 : link.studentId1;
+        const otherStudent = await db.select()
+          .from(students)
+          .where(eq(students.id, otherStudentId))
+          .limit(1);
+
+        return {
+          ...link,
+          otherStudent: otherStudent[0] || null,
+          isPendingApproval: link.status === "pending" && link.requestedBy !== studentId,
+          isSentRequest: link.status === "pending" && link.requestedBy === studentId,
+        };
+      }));
+
+      res.json(enrichedLinks);
+    } catch (error) {
+      console.error("Error fetching sibling links:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Approve a sibling link
+  app.put("/api/sibling-links/:linkId/approve", isAuthenticated, async (req, res) => {
+    try {
+      const { linkId } = req.params;
+      const { studentId } = req.body;
+
+      if (!studentId) {
+        return res.status(400).json({ error: "studentId is required" });
+      }
+
+      // Get the link
+      const link = await db.select()
+        .from(siblingLinks)
+        .where(eq(siblingLinks.id, linkId))
+        .limit(1);
+
+      if (link.length === 0) {
+        return res.status(404).json({ error: "Link not found" });
+      }
+
+      // Verify this student can approve (must be the recipient, not the requester)
+      if (link[0].requestedBy === studentId) {
+        return res.status(403).json({ error: "自分が送信したリクエストは承認できません" });
+      }
+
+      if (link[0].studentId1 !== studentId && link[0].studentId2 !== studentId) {
+        return res.status(403).json({ error: "この兄弟リンクの承認権限がありません" });
+      }
+
+      // Approve the link
+      const updated = await db.update(siblingLinks)
+        .set({
+          status: "approved",
+          approvedAt: new Date(),
+        })
+        .where(eq(siblingLinks.id, linkId))
+        .returning();
+
+      res.json(updated[0]);
+    } catch (error) {
+      console.error("Error approving sibling link:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Delete/reject a sibling link
+  app.delete("/api/sibling-links/:linkId", isAuthenticated, async (req, res) => {
+    try {
+      const { linkId } = req.params;
+      const { studentId } = req.body;
+
+      if (!studentId) {
+        return res.status(400).json({ error: "studentId is required" });
+      }
+
+      // Get the link to verify permissions
+      const link = await db.select()
+        .from(siblingLinks)
+        .where(eq(siblingLinks.id, linkId))
+        .limit(1);
+
+      if (link.length === 0) {
+        return res.status(404).json({ error: "Link not found" });
+      }
+
+      // Verify this student is part of the link
+      if (link[0].studentId1 !== studentId && link[0].studentId2 !== studentId) {
+        return res.status(403).json({ error: "この兄弟リンクの削除権限がありません" });
+      }
+
+      await db.delete(siblingLinks).where(eq(siblingLinks.id, linkId));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting sibling link:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get approved siblings for switching
+  app.get("/api/siblings/:studentId", isAuthenticated, async (req, res) => {
+    try {
+      const { studentId } = req.params;
+
+      // Get all approved links
+      const approvedLinks = await db.select()
+        .from(siblingLinks)
+        .where(
+          and(
+            or(
+              eq(siblingLinks.studentId1, studentId),
+              eq(siblingLinks.studentId2, studentId)
+            ),
+            eq(siblingLinks.status, "approved")
+          )
+        );
+
+      // Get sibling details
+      const siblings = await Promise.all(approvedLinks.map(async (link) => {
+        const siblingId = link.studentId1 === studentId ? link.studentId2 : link.studentId1;
+        const sibling = await db.select()
+          .from(students)
+          .where(eq(students.id, siblingId))
+          .limit(1);
+
+        return sibling[0] || null;
+      }));
+
+      res.json(siblings.filter(s => s !== null));
+    } catch (error) {
+      console.error("Error fetching siblings:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
