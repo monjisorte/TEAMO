@@ -10,6 +10,7 @@ import type { Schedule, Attendance, Student, Category } from "@shared/schema";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { getFullName } from "@/lib/nameUtils";
 
 interface StudentCalendarProps {
   studentId: string;
@@ -159,7 +160,8 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
 
   const getStudentName = (studentIdParam: string) => {
     const student = students.find(s => s.id === studentIdParam);
-    return student?.name || "不明";
+    if (!student) return "不明";
+    return getFullName(student.lastName, student.firstName);
   };
 
   const getCategoryColor = (categoryId: string) => {

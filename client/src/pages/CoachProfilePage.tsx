@@ -318,7 +318,7 @@ export default function CoachProfilePage() {
 
   const fullName = coach?.lastName && coach?.firstName
     ? `${coach.lastName} ${coach.firstName}`
-    : coach?.name || "コーチ";
+    : "コーチ";
   
   const fullNameKana = coach?.lastNameKana && coach?.firstNameKana
     ? `${coach.lastNameKana} ${coach.firstNameKana}`
