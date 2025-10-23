@@ -39,8 +39,9 @@ import AdminAccounts from "@/pages/admin/AdminAccounts";
 import { PlayerSidebar } from "@/components/PlayerSidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, ChevronDown } from "lucide-react";
 import { getFullName } from "@/lib/nameUtils";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 
 interface PlayerData {
   id: string;
@@ -106,9 +107,21 @@ function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogou
     enabled: !!player?.teamId,
   });
 
+  // Fetch approved siblings for account switching
+  const { data: siblings = [] } = useQuery<PlayerData[]>({
+    queryKey: [`/api/siblings/${playerId}`],
+    enabled: !!playerId,
+  });
+
   const team = teams?.find(t => t.id === player?.teamId);
   const teamName = team?.name || "チーム";
   const teamCode = team?.teamCode || "";
+
+  // Handle sibling account switch
+  const handleSwitchToSibling = (sibling: PlayerData) => {
+    localStorage.setItem("playerData", JSON.stringify(sibling));
+    window.location.reload();
+  };
 
   if (playerLoading || !player) {
     return (
@@ -130,12 +143,46 @@ function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogou
           <header className="flex items-center justify-between px-2 md:px-8 py-4 border-b bg-card/50 backdrop-blur-sm">
             <div className="flex items-center gap-2 md:gap-4">
               <SidebarTrigger data-testid="button-player-sidebar-toggle" />
-              <div>
-                <h1 className="text-lg font-semibold" data-testid="text-player-name">
-                  {getFullName(player.lastName, player.firstName)}さん
-                </h1>
-                <p className="text-xs text-muted-foreground">{player.email}</p>
-              </div>
+              {siblings.length > 0 ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 hover-elevate active-elevate-2 rounded-md px-3 py-2 text-left" data-testid="button-sibling-switcher">
+                      <div>
+                        <h1 className="text-lg font-semibold" data-testid="text-player-name">
+                          {getFullName(player.lastName, player.firstName)}さん
+                        </h1>
+                        <p className="text-xs text-muted-foreground">{player.email}</p>
+                      </div>
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-64">
+                    <div className="px-2 py-1.5">
+                      <p className="text-xs text-muted-foreground font-medium">アカウントを切り替え</p>
+                    </div>
+                    <DropdownMenuSeparator />
+                    {siblings.map((sibling) => (
+                      <DropdownMenuItem 
+                        key={sibling.id} 
+                        onClick={() => handleSwitchToSibling(sibling)}
+                        data-testid={`menu-item-sibling-${sibling.id}`}
+                      >
+                        <div>
+                          <p className="font-medium">{getFullName(sibling.lastName, sibling.firstName)}さん</p>
+                          <p className="text-xs text-muted-foreground">{sibling.email}</p>
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <div>
+                  <h1 className="text-lg font-semibold" data-testid="text-player-name">
+                    {getFullName(player.lastName, player.firstName)}さん
+                  </h1>
+                  <p className="text-xs text-muted-foreground">{player.email}</p>
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
