@@ -6,6 +6,29 @@ This application is a comprehensive sports team management platform designed for
 ## Recent Changes
 
 ### October 23, 2025
+*   **Sibling Account Linking System**:
+    *   Added `siblingLinks` table to database schema for managing sibling relationships between students
+    *   Implemented complete backend API for sibling management:
+        *   POST `/api/sibling-links` - Send sibling link requests via email address
+        *   GET `/api/sibling-links/:studentId` - Retrieve all sibling links (pending and approved)
+        *   PUT `/api/sibling-links/:linkId/approve` - Approve pending sibling requests
+        *   DELETE `/api/sibling-links/:linkId` - Remove or reject sibling links
+        *   GET `/api/siblings/:studentId` - Get approved siblings for account switching
+    *   Added "Sibling Account Management" section to player profile page:
+        *   Add sibling by email address
+        *   View pending approval requests with approve/reject actions
+        *   View sent requests and approved siblings
+        *   Delete existing sibling links
+    *   Implemented sibling account switcher in player portal header:
+        *   Dropdown menu appears when student has approved sibling links
+        *   One-click account switching without re-login
+        *   Seamlessly switches between sibling accounts by updating localStorage and reloading
+    *   Automatic sibling discount application:
+        *   Tuition payment reset endpoint now automatically detects approved sibling relationships
+        *   Students with approved siblings automatically receive configured sibling discount
+        *   No manual siblingDiscountStatus setting required
+    *   **Design Notes**: Optional feature for families with multiple children; only affects users who set up sibling links. Requires same team membership for sibling linking. Link approval is bidirectional (both students must be involved in the relationship).
+
 *   **Tuition Payment System Enhancement**:
     *   Restructured tuition payment tracking from single `enrollmentOrAnnualFee` field to separate fields: `annualFee` (年会費), `entranceFee` (入会金), and `insuranceFee` (保険料)
     *   Updated TuitionPage UI to display three separate input fields for each student's tuition details
