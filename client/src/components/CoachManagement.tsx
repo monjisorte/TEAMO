@@ -32,12 +32,11 @@ import { getFullName, getInitials } from "@/lib/nameUtils";
 
 interface Coach {
   id: string;
-  name: string;
+  lastName: string;
+  firstName: string;
   email: string;
   role: string;
   createdAt: string;
-  lastName?: string;
-  firstName?: string;
   lastNameKana?: string;
   firstNameKana?: string;
   photoUrl?: string;
@@ -50,7 +49,7 @@ export function CoachManagement() {
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedCoach, setSelectedCoach] = useState<Coach | null>(null);
-  const [newCoach, setNewCoach] = useState({ name: "", email: "", password: "" });
+  const [newCoach, setNewCoach] = useState({ lastName: "", firstName: "", email: "", password: "" });
   const [newPassword, setNewPassword] = useState("");
 
   // Get teamId and current coach role from localStorage
@@ -66,12 +65,12 @@ export function CoachManagement() {
 
   // Add coach mutation
   const addCoachMutation = useMutation({
-    mutationFn: async (data: { name: string; email: string; password: string }) => {
+    mutationFn: async (data: { lastName: string; firstName: string; email: string; password: string }) => {
       return await apiRequest("POST", `/api/coach/register`, { ...data, teamId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/teams", teamId, "coaches"] });
-      setNewCoach({ name: "", email: "", password: "" });
+      setNewCoach({ lastName: "", firstName: "", email: "", password: "" });
       setIsAddDialogOpen(false);
       toast({
         title: "成功",
@@ -134,7 +133,7 @@ export function CoachManagement() {
   });
 
   const handleAddCoach = () => {
-    if (newCoach.name && newCoach.email && newCoach.password) {
+    if (newCoach.lastName && newCoach.firstName && newCoach.email && newCoach.password) {
       if (newCoach.password.length < 6) {
         toast({
           title: "エラー",
@@ -144,6 +143,12 @@ export function CoachManagement() {
         return;
       }
       addCoachMutation.mutate(newCoach);
+    } else {
+      toast({
+        title: "エラー",
+        description: "すべての項目を入力してください",
+        variant: "destructive",
+      });
     }
   };
 
@@ -207,13 +212,23 @@ export function CoachManagement() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="coach-name">氏名</Label>
+                <Label htmlFor="coach-last-name">姓</Label>
                 <Input
-                  id="coach-name"
-                  value={newCoach.name}
-                  onChange={(e) => setNewCoach({ ...newCoach, name: e.target.value })}
-                  placeholder="例: 山田太郎"
-                  data-testid="input-coach-name"
+                  id="coach-last-name"
+                  value={newCoach.lastName}
+                  onChange={(e) => setNewCoach({ ...newCoach, lastName: e.target.value })}
+                  placeholder="例: 山田"
+                  data-testid="input-coach-last-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="coach-first-name">名</Label>
+                <Input
+                  id="coach-first-name"
+                  value={newCoach.firstName}
+                  onChange={(e) => setNewCoach({ ...newCoach, firstName: e.target.value })}
+                  placeholder="例: 太郎"
+                  data-testid="input-coach-first-name"
                 />
               </div>
               <div className="space-y-2">
@@ -339,7 +354,7 @@ export function CoachManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle>本当に削除しますか？</AlertDialogTitle>
             <AlertDialogDescription>
-              {selectedCoach?.name}さんを削除すると、このコーチはチームにアクセスできなくなります。
+              {selectedCoach && getFullName(selectedCoach.lastName, selectedCoach.firstName)}さんを削除すると、このコーチはチームにアクセスできなくなります。
               この操作は取り消せません。
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -363,7 +378,7 @@ export function CoachManagement() {
           <DialogHeader>
             <DialogTitle>パスワード設定</DialogTitle>
             <DialogDescription>
-              {selectedCoach?.name}さんの新しいパスワードを設定します
+              {selectedCoach && getFullName(selectedCoach.lastName, selectedCoach.firstName)}さんの新しいパスワードを設定します
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
