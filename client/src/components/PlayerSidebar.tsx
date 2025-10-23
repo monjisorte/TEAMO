@@ -51,6 +51,7 @@ const menuItems = [
 
 interface PlayerSidebarProps {
   teamName: string;
+  teamCode: string;
   teamId: string;
 }
 
@@ -69,7 +70,7 @@ function getTimeAgo(date: Date): string {
   return date.toLocaleDateString("ja-JP", { month: "short", day: "numeric" });
 }
 
-export function PlayerSidebar({ teamName, teamId }: PlayerSidebarProps) {
+export function PlayerSidebar({ teamName, teamCode, teamId }: PlayerSidebarProps) {
   const [location] = useLocation();
   const { setOpenMobile } = useSidebar();
 
@@ -98,9 +99,9 @@ export function PlayerSidebar({ teamName, teamId }: PlayerSidebarProps) {
           </div>
           <div>
             <h2 className="font-bold text-base md:text-base bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              TEAMO
+              {teamName}
             </h2>
-            <p className="text-xs text-muted-foreground font-medium">{teamName}</p>
+            <p className="text-xs text-muted-foreground font-medium">{teamCode}</p>
           </div>
         </div>
       </SidebarHeader>

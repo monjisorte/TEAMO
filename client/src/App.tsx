@@ -101,13 +101,14 @@ function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogou
   }, [isError, onLogout]);
 
   // Fetch team info
-  const { data: teams } = useQuery<Array<{ id: string; name: string }>>({
+  const { data: teams } = useQuery<Array<{ id: string; name: string; teamCode: string }>>({
     queryKey: ["/api/teams"],
     enabled: !!player?.teamId,
   });
 
   const team = teams?.find(t => t.id === player?.teamId);
   const teamName = team?.name || "チーム";
+  const teamCode = team?.teamCode || "";
 
   if (playerLoading || !player) {
     return (
@@ -124,7 +125,7 @@ function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogou
   return (
     <SidebarProvider style={style as React.CSSProperties}>
       <div className="flex h-screen w-full">
-        <PlayerSidebar teamName={teamName} teamId={player.teamId} />
+        <PlayerSidebar teamName={teamName} teamCode={teamCode} teamId={player.teamId} />
         <div className="flex flex-col flex-1 min-w-0">
           <header className="flex items-center justify-between px-2 md:px-8 py-4 border-b bg-card/50 backdrop-blur-sm">
             <div className="flex items-center gap-2 md:gap-4">
