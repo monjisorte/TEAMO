@@ -18,6 +18,7 @@ import TeamInfoPage from "@/pages/TeamInfoPage";
 import DocumentsPage from "@/pages/DocumentsPage";
 import TuitionPage from "@/pages/TuitionPage";
 import LineNotificationsPage from "@/pages/LineNotificationsPage";
+import InvitePage from "@/pages/InvitePage";
 import PlayerLogin from "@/pages/PlayerLogin";
 import PasswordReset from "@/pages/PasswordReset";
 import PlayerAttendancePage from "@/pages/PlayerAttendancePage";
@@ -335,6 +336,7 @@ function CoachRouter({ teamId }: { teamId: string }) {
       <Route path="/team/information2" component={TeamInfoPage} />
       <Route path="/team/line" component={LineNotificationsPage} />
       <Route path="/team/profile" component={CoachProfilePage} />
+      <Route path="/team/invite" component={InvitePage} />
       <Route component={NotFound} />
     </Switch>
   );
