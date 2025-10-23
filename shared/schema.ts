@@ -44,6 +44,7 @@ export const teams = pgTable("teams", {
   name: text("name").notNull(),
   teamCode: text("team_code").notNull().unique(),
   contactEmail: text("contact_email").notNull(),
+  ownerCoachId: varchar("owner_coach_id"), // 代表コーチのID
   ownerName: text("owner_name"),
   ownerEmail: text("owner_email"),
   representativeEmail: text("representative_email"),
@@ -53,6 +54,10 @@ export const teams = pgTable("teams", {
   monthlyFeeSchool: integer("monthly_fee_school"), // スクール生の月会費
   siblingDiscount: integer("sibling_discount"), // 兄弟割引額
   annualFee: integer("annual_fee"), // 年会費
+  entranceFee: integer("entrance_fee"), // 入会金
+  insuranceFee: integer("insurance_fee"), // 保険料
+  annualFeeMonth: integer("annual_fee_month"), // 年会費課金月 (1-12)
+  insuranceFeeMonth: integer("insurance_fee_month"), // 保険料課金月 (1-12)
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

@@ -27,16 +27,30 @@ export default function TeamInfoPage() {
   const [isEditingBasicInfo, setIsEditingBasicInfo] = useState(false);
   const [isEditingFees, setIsEditingFees] = useState(false);
   
-  // Get coach's teamId from localStorage
+  // Get coach's teamId and role from localStorage
   const [teamId, setTeamId] = useState<string | null>(null);
-  const [coachData, setCoachData] = useState<{ lastName: string; firstName: string; email: string } | null>(null);
+  const [coachData, setCoachData] = useState<{ 
+    id: string;
+    lastName: string; 
+    firstName: string; 
+    email: string; 
+    role: string;
+  } | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     const savedCoach = localStorage.getItem("coachData");
     if (savedCoach) {
       const coach = JSON.parse(savedCoach);
       setTeamId(coach.teamId);
-      setCoachData({ lastName: coach.lastName, firstName: coach.firstName, email: coach.email });
+      setCoachData({ 
+        id: coach.id,
+        lastName: coach.lastName, 
+        firstName: coach.firstName, 
+        email: coach.email,
+        role: coach.role,
+      });
+      setIsOwner(coach.role === "owner");
     }
   }, []);
 
@@ -48,6 +62,7 @@ export default function TeamInfoPage() {
   const team = teams.find(t => t.id === teamId);
 
   const [formData, setFormData] = useState({
+    name: team?.name || "",
     representativeEmail: team?.representativeEmail || team?.contactEmail || "",
     address: team?.address || "",
     sportType: team?.sportType || "",
@@ -55,12 +70,17 @@ export default function TeamInfoPage() {
     monthlyFeeSchool: team?.monthlyFeeSchool || 0,
     siblingDiscount: team?.siblingDiscount || 0,
     annualFee: team?.annualFee || 0,
+    entranceFee: team?.entranceFee || 0,
+    insuranceFee: team?.insuranceFee || 0,
+    annualFeeMonth: team?.annualFeeMonth || 4,
+    insuranceFeeMonth: team?.insuranceFeeMonth || 4,
   });
 
   // team データが更新されたら formData も更新
   useEffect(() => {
     if (team) {
       setFormData({
+        name: team.name || "",
         representativeEmail: team.representativeEmail || team.contactEmail || (coachData?.email || ""),
         address: team.address || "",
         sportType: team.sportType || "",
@@ -68,6 +88,10 @@ export default function TeamInfoPage() {
         monthlyFeeSchool: team.monthlyFeeSchool || 0,
         siblingDiscount: team.siblingDiscount || 0,
         annualFee: team.annualFee || 0,
+        entranceFee: team.entranceFee || 0,
+        insuranceFee: team.insuranceFee || 0,
+        annualFeeMonth: team.annualFeeMonth || 4,
+        insuranceFeeMonth: team.insuranceFeeMonth || 4,
       });
     }
   }, [team, coachData]);
@@ -75,7 +99,12 @@ export default function TeamInfoPage() {
   const updateTeamMutation = useMutation({
     mutationFn: async (data: Partial<Team>) => {
       if (!team) throw new Error("No team found");
-      return await apiRequest("PUT", `/api/teams/${team.id}`, data);
+      if (!coachData?.id) throw new Error("Coach ID not found");
+      // Include coachId for server-side authorization
+      return await apiRequest("PUT", `/api/teams/${team.id}`, {
+        ...data,
+        coachId: coachData.id,
+      });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
@@ -97,6 +126,7 @@ export default function TeamInfoPage() {
 
   const handleSaveBasicInfo = () => {
     updateTeamMutation.mutate({
+      name: formData.name,
       representativeEmail: formData.representativeEmail,
       address: formData.address,
       sportType: formData.sportType,
@@ -109,6 +139,10 @@ export default function TeamInfoPage() {
       monthlyFeeSchool: formData.monthlyFeeSchool,
       siblingDiscount: formData.siblingDiscount,
       annualFee: formData.annualFee,
+      entranceFee: formData.entranceFee,
+      insuranceFee: formData.insuranceFee,
+      annualFeeMonth: formData.annualFeeMonth,
+      insuranceFeeMonth: formData.insuranceFeeMonth,
     });
   };
 
@@ -116,6 +150,7 @@ export default function TeamInfoPage() {
     if (team) {
       setFormData({
         ...formData,
+        name: team.name || "",
         representativeEmail: team.representativeEmail || team.contactEmail || "",
         address: team.address || "",
         sportType: team.sportType || "",
@@ -132,6 +167,10 @@ export default function TeamInfoPage() {
         monthlyFeeSchool: team.monthlyFeeSchool || 0,
         siblingDiscount: team.siblingDiscount || 0,
         annualFee: team.annualFee || 0,
+        entranceFee: team.entranceFee || 0,
+        insuranceFee: team.insuranceFee || 0,
+        annualFeeMonth: team.annualFeeMonth || 4,
+        insuranceFeeMonth: team.insuranceFeeMonth || 4,
       });
     }
     setIsEditingFees(false);
@@ -173,10 +212,10 @@ export default function TeamInfoPage() {
             <div>
               <CardTitle>基本情報</CardTitle>
               <CardDescription>
-                チームの基本情報を入力してください
+                {isOwner ? "チームの基本情報を入力してください" : "チームの基本情報（閲覧のみ）"}
               </CardDescription>
             </div>
-            {!isEditingBasicInfo && (
+            {!isEditingBasicInfo && isOwner && (
               <Button
                 variant="outline"
                 size="sm"
@@ -192,6 +231,17 @@ export default function TeamInfoPage() {
         <CardContent className="space-y-4">
           {isEditingBasicInfo ? (
             <>
+              <div>
+                <Label htmlFor="team-name">チーム名</Label>
+                <Input
+                  id="team-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="チーム名を入力"
+                  data-testid="input-team-name"
+                />
+              </div>
+
               <div>
                 <Label htmlFor="rep-email">代表メールアドレス</Label>
                 <Input
@@ -257,6 +307,13 @@ export default function TeamInfoPage() {
           ) : (
             <div className="space-y-3">
               <div>
+                <Label className="text-muted-foreground text-xs">チーム名</Label>
+                <p className="text-sm font-medium" data-testid="text-team-name">
+                  {team.name || "未設定"}
+                </p>
+              </div>
+
+              <div>
                 <Label className="text-muted-foreground text-xs">代表メールアドレス</Label>
                 <p className="text-sm font-medium" data-testid="text-representative-email">
                   {team.representativeEmail || team.contactEmail || coachData?.email || "未設定"}
@@ -288,10 +345,10 @@ export default function TeamInfoPage() {
             <div>
               <CardTitle>料金設定</CardTitle>
               <CardDescription>
-                月謝や年会費の設定を行います
+                {isOwner ? "月謝や年会費の設定を行います" : "料金設定（閲覧のみ）"}
               </CardDescription>
             </div>
-            {!isEditingFees && (
+            {!isEditingFees && isOwner && (
               <Button
                 variant="outline"
                 size="sm"
@@ -345,6 +402,20 @@ export default function TeamInfoPage() {
                   />
                 </div>
                 <div>
+                  <Label htmlFor="entrance-fee">入会金（円）</Label>
+                  <Input
+                    id="entrance-fee"
+                    type="number"
+                    value={formData.entranceFee}
+                    onChange={(e) => setFormData({ ...formData, entranceFee: parseInt(e.target.value) || 0 })}
+                    placeholder="5000"
+                    data-testid="input-entrance-fee"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                   <Label htmlFor="annual-fee">年会費（円）</Label>
                   <Input
                     id="annual-fee"
@@ -354,6 +425,56 @@ export default function TeamInfoPage() {
                     placeholder="10000"
                     data-testid="input-annual-fee"
                   />
+                </div>
+                <div>
+                  <Label htmlFor="annual-fee-month">年会費課金月</Label>
+                  <Select
+                    value={formData.annualFeeMonth.toString()}
+                    onValueChange={(value) => setFormData({ ...formData, annualFeeMonth: parseInt(value) })}
+                  >
+                    <SelectTrigger id="annual-fee-month" data-testid="select-annual-fee-month">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                        <SelectItem key={month} value={month.toString()}>
+                          {month}月
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="insurance-fee">保険料（円）</Label>
+                  <Input
+                    id="insurance-fee"
+                    type="number"
+                    value={formData.insuranceFee}
+                    onChange={(e) => setFormData({ ...formData, insuranceFee: parseInt(e.target.value) || 0 })}
+                    placeholder="3000"
+                    data-testid="input-insurance-fee"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="insurance-fee-month">保険料課金月</Label>
+                  <Select
+                    value={formData.insuranceFeeMonth.toString()}
+                    onValueChange={(value) => setFormData({ ...formData, insuranceFeeMonth: parseInt(value) })}
+                  >
+                    <SelectTrigger id="insurance-fee-month" data-testid="select-insurance-fee-month">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                        <SelectItem key={month} value={month.toString()}>
+                          {month}月
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -402,9 +523,39 @@ export default function TeamInfoPage() {
                   </p>
                 </div>
                 <div>
+                  <Label className="text-muted-foreground text-xs">入会金</Label>
+                  <p className="text-sm font-medium" data-testid="text-entrance-fee">
+                    ¥{team.entranceFee?.toLocaleString() || "0"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                   <Label className="text-muted-foreground text-xs">年会費</Label>
                   <p className="text-sm font-medium" data-testid="text-annual-fee">
                     ¥{team.annualFee?.toLocaleString() || "0"}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">年会費課金月</Label>
+                  <p className="text-sm font-medium" data-testid="text-annual-fee-month">
+                    {team.annualFeeMonth || 4}月
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground text-xs">保険料</Label>
+                  <p className="text-sm font-medium" data-testid="text-insurance-fee">
+                    ¥{team.insuranceFee?.toLocaleString() || "0"}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">保険料課金月</Label>
+                  <p className="text-sm font-medium" data-testid="text-insurance-fee-month">
+                    {team.insuranceFeeMonth || 4}月
                   </p>
                 </div>
               </div>

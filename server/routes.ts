@@ -664,14 +664,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: "owner",
       }).returning();
 
+      // Update team with owner coach ID
+      await db.update(teams)
+        .set({ ownerCoachId: newCoach[0].id })
+        .where(eq(teams.id, newTeam[0].id));
+
       res.status(201).json({
-        team: newTeam[0],
+        team: { ...newTeam[0], ownerCoachId: newCoach[0].id },
         coach: {
           id: newCoach[0].id,
           lastName: newCoach[0].lastName,
           firstName: newCoach[0].firstName,
           email: newCoach[0].email,
           teamId: newCoach[0].teamId,
+          role: newCoach[0].role,
         },
       });
     } catch (error) {
@@ -1497,7 +1503,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/teams/:id", isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
-      const updateData = req.body;
+      const { coachId, ...updateData } = req.body;
+
+      // coachId is required for authorization
+      if (!coachId) {
+        return res.status(400).json({ error: "coachId is required" });
+      }
+
+      // Get the team to check ownership
+      const team = await db.select().from(teams).where(eq(teams.id, id)).limit(1);
+      if (team.length === 0) {
+        return res.status(404).json({ error: "Team not found" });
+      }
+
+      // Verify the coach exists
+      const coach = await db.select().from(coaches).where(eq(coaches.id, coachId)).limit(1);
+      if (coach.length === 0) {
+        return res.status(404).json({ error: "Coach not found" });
+      }
+
+      // Check if coach is the owner of this team
+      if (team[0].ownerCoachId !== coachId) {
+        return res.status(403).json({ error: "Only the team representative can edit team information" });
+      }
 
       await db.update(teams)
         .set(updateData)

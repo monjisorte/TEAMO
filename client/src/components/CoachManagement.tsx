@@ -36,6 +36,7 @@ interface Coach {
   firstName: string;
   email: string;
   role: string;
+  position?: string; // 役職名（代表、ヘッドコーチ、U-8担当など）
   createdAt: string;
   lastNameKana?: string;
   firstNameKana?: string;
@@ -294,7 +295,12 @@ export function CoachManagement() {
                       {coach.role === "owner" && (
                         <Badge variant="default" className="rounded-full" data-testid={`badge-owner-${coach.id}`}>
                           <Shield className="h-3 w-3 mr-1" />
-                          オーナー
+                          代表
+                        </Badge>
+                      )}
+                      {coach.position && (
+                        <Badge variant="secondary" className="rounded-full" data-testid={`badge-position-${coach.id}`}>
+                          {coach.position}
                         </Badge>
                       )}
                     </div>

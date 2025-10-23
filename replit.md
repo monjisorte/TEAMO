@@ -6,6 +6,19 @@ This application is a comprehensive sports team management platform designed for
 ## Recent Changes
 
 ### October 23, 2025
+*   **Team Representative Authorization System**:
+    *   Added `ownerCoachId` field to teams table to identify the team representative (代表)
+    *   Implemented server-side authorization check in `/api/teams/:id` PUT endpoint
+    *   Only the team representative (coach with role="owner") can edit team information
+    *   Team registration automatically sets the first coach as owner and assigns `ownerCoachId`
+    *   Added team name editing capability in TeamInfoPage for representatives
+    *   Added entrance fee, insurance fee, and billing month configuration fields
+    *   **Known Limitation**: Current implementation requires `coachId` in request body for authorization. Future improvement: implement session-based authentication to derive coach identity from server-side session instead of client-provided data.
+
+*   **Terminology Update**: Changed all "オーナー" (owner) references to "代表" (representative) throughout the application.
+
+*   **Coach Management Enhancement**: Added position/role display in coach list showing titles like "代表", "ヘッドコーチ", "U-8担当" etc.
+
 *   **Environment Separation Fixed:** Resolved critical issue where Preview environment was redirecting to production (teamo.cloud), causing development work to affect production database.
     *   Removed all hardcoded `teamo.cloud` domain references from codebase
     *   Disabled automatic domain redirect in `server/index.ts` for development environments
