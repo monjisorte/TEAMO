@@ -9,10 +9,10 @@ app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 // Redirect replit.app domain to custom domain (only in production)
 app.use((req, res, next) => {
   const host = req.get('host') || '';
-  const isDevelopment = process.env.NODE_ENV === 'development';
   
-  // Skip redirect in development environment
-  if (!isDevelopment && (host.includes('replit.app') || host.includes('replit.dev'))) {
+  // Only redirect replit.app to custom domain in production
+  // replit.dev domains are development environments and should not be redirected
+  if (host.includes('replit.app') && !host.includes('replit.dev')) {
     const protocol = req.protocol || 'https';
     const newUrl = `https://teamo.cloud${req.originalUrl}`;
     return res.redirect(301, newUrl);
