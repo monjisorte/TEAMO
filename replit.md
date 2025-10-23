@@ -6,6 +6,18 @@ This application is a comprehensive sports team management platform designed for
 ## Recent Changes
 
 ### October 23, 2025
+*   **Tuition Payment System Enhancement**:
+    *   Restructured tuition payment tracking from single `enrollmentOrAnnualFee` field to separate fields: `annualFee` (年会費), `entranceFee` (入会金), and `insuranceFee` (保険料)
+    *   Updated TuitionPage UI to display three separate input fields instead of single combined field
+    *   Modified auto-generation logic to apply annual fee and insurance fee based on configured billing months (`annualFeeMonth` and `insuranceFeeMonth`)
+    *   Updated backend API endpoints to support new fee structure while maintaining backward compatibility
+    *   Changed UI label from "入会/年会費" to "年会費" for clarity
+    *   Entrance fee is manually set per student (not auto-generated)
+
+*   **Player-Side UX Improvements**:
+    *   Fixed recurring category selection prompt: Modified PlayerAttendancePage to initialize state directly from localStorage, eliminating unnecessary category selection screen on every visit
+    *   Enhanced document preview: Updated PDF and text file iframes to use dynamic height (`calc(90vh - 200px)` with `min-height: 600px`), enabling full-page scrolling for multi-page documents
+
 *   **Team Representative Authorization System**:
     *   Added `ownerCoachId` field to teams table to identify the team representative (代表)
     *   Implemented server-side authorization check in `/api/teams/:id` PUT endpoint

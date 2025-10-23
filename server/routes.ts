@@ -1754,7 +1754,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/tuition-payments", isAuthenticated, async (req, res) => {
     try {
-      const { studentId, baseAmount, discount, enrollmentOrAnnualFee, spotFee, amount, isPaid, year, month, category } = req.body;
+      const { studentId, baseAmount, discount, annualFee, entranceFee, insuranceFee, spotFee, amount, isPaid, year, month, category } = req.body;
 
       if (!studentId || !year || !month) {
         return res.status(400).json({ error: "studentId, year, and month are required" });
@@ -1782,7 +1782,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .set({ 
             baseAmount: baseAmount ?? existing[0].baseAmount,
             discount: discount ?? existing[0].discount,
-            enrollmentOrAnnualFee: enrollmentOrAnnualFee ?? existing[0].enrollmentOrAnnualFee,
+            annualFee: annualFee ?? existing[0].annualFee,
+            entranceFee: entranceFee ?? existing[0].entranceFee,
+            insuranceFee: insuranceFee ?? existing[0].insuranceFee,
             spotFee: spotFee ?? existing[0].spotFee,
             amount: amount ?? existing[0].amount,
             isPaid, 
@@ -1806,7 +1808,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           month,
           baseAmount: baseAmount ?? 0,
           discount: discount ?? 0,
-          enrollmentOrAnnualFee: enrollmentOrAnnualFee ?? 0,
+          annualFee: annualFee ?? 0,
+          entranceFee: entranceFee ?? 0,
+          insuranceFee: insuranceFee ?? 0,
           spotFee: spotFee ?? 0,
           amount: amount ?? 0,
           isPaid,
@@ -1881,11 +1885,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
               baseAmount = team[0].monthlyFeeSchool || 0;
             }
 
-            // Set annual fee for April
-            let enrollmentOrAnnualFee = 0;
-            if (month === 4) {
-              enrollmentOrAnnualFee = team[0].annualFee || 0;
+            // Set annual fee for the configured month (default: April)
+            let annualFee = 0;
+            const annualFeeMonth = team[0].annualFeeMonth || 4;
+            if (month === annualFeeMonth) {
+              annualFee = team[0].annualFee || 0;
             }
+
+            // Set insurance fee for the configured month (default: April)
+            let insuranceFee = 0;
+            const insuranceFeeMonth = team[0].insuranceFeeMonth || 4;
+            if (month === insuranceFeeMonth) {
+              insuranceFee = team[0].insuranceFee || 0;
+            }
+
+            // Entrance fee is not auto-generated (set manually)
+            const entranceFee = 0;
 
             // Apply sibling discount if applicable
             let discount = 0;
@@ -1894,7 +1909,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
 
             const spotFee = 0;
-            const totalAmount = baseAmount - discount + enrollmentOrAnnualFee + spotFee;
+            const totalAmount = baseAmount - discount + annualFee + entranceFee + insuranceFee + spotFee;
 
             // Create payment record
             await db.insert(tuitionPayments).values({
@@ -1904,7 +1919,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               month,
               baseAmount,
               discount,
-              enrollmentOrAnnualFee,
+              annualFee,
+              entranceFee,
+              insuranceFee,
               spotFee,
               amount: totalAmount,
               isPaid: false,

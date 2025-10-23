@@ -239,7 +239,10 @@ export const tuitionPayments = pgTable("tuition_payments", {
   category: varchar("category"), // "team" | "school" | null (未選択)
   baseAmount: integer("base_amount").notNull().default(0), // 月謝（自動設定）
   discount: integer("discount").notNull().default(0), // 割引
-  enrollmentOrAnnualFee: integer("enrollment_or_annual_fee").notNull().default(0), // 入会/年会費
+  enrollmentOrAnnualFee: integer("enrollment_or_annual_fee").notNull().default(0), // 入会/年会費（旧フィールド・後方互換性のため残す）
+  annualFee: integer("annual_fee").notNull().default(0), // 年会費
+  entranceFee: integer("entrance_fee").notNull().default(0), // 入会金
+  insuranceFee: integer("insurance_fee").notNull().default(0), // 保険料
   spotFee: integer("spot_fee").notNull().default(0), // スポット
   amount: integer("amount").notNull(), // 合計金額（手動編集可能）
   isPaid: boolean("is_paid").notNull().default(false),

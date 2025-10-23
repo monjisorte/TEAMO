@@ -24,7 +24,9 @@ export default function TuitionPage() {
   const [editingValues, setEditingValues] = useState<Record<string, {
     baseAmount?: number;
     discount?: number;
-    enrollmentOrAnnualFee?: number;
+    annualFee?: number;
+    entranceFee?: number;
+    insuranceFee?: number;
     spotFee?: number;
     amount?: number;
   }>>({});
@@ -123,7 +125,9 @@ export default function TuitionPage() {
       studentId: string; 
       baseAmount?: number;
       discount?: number;
-      enrollmentOrAnnualFee?: number;
+      annualFee?: number;
+      entranceFee?: number;
+      insuranceFee?: number;
       spotFee?: number;
       amount?: number; 
       isPaid?: boolean; 
@@ -182,11 +186,25 @@ export default function TuitionPage() {
     return 0;
   };
 
-  const getDefaultEnrollmentOrAnnualFee = () => {
+  const getDefaultAnnualFee = () => {
     if (!team) return 0;
-    // 4月には年会費を自動設定
-    if (selectedMonth === 4) {
+    // 年会費課金月には年会費を自動設定
+    if (selectedMonth === (team.annualFeeMonth || 4)) {
       return team.annualFee || 0;
+    }
+    return 0;
+  };
+
+  const getDefaultEntranceFee = () => {
+    // 入会金は自動設定しない（手動で設定）
+    return 0;
+  };
+
+  const getDefaultInsuranceFee = () => {
+    if (!team) return 0;
+    // 保険料課金月には保険料を自動設定
+    if (selectedMonth === (team.insuranceFeeMonth || 4)) {
+      return team.insuranceFee || 0;
     }
     return 0;
   };
@@ -215,17 +233,27 @@ export default function TuitionPage() {
       payment?.baseAmount ?? getDefaultBaseAmount(student!)
     );
     const discount = getEditingValue(studentId, 'discount', payment?.discount ?? 0);
-    const enrollmentOrAnnualFee = getEditingValue(
+    const annualFee = getEditingValue(
       studentId, 
-      'enrollmentOrAnnualFee', 
-      payment?.enrollmentOrAnnualFee ?? getDefaultEnrollmentOrAnnualFee()
+      'annualFee', 
+      payment?.annualFee ?? getDefaultAnnualFee()
+    );
+    const entranceFee = getEditingValue(
+      studentId, 
+      'entranceFee', 
+      payment?.entranceFee ?? getDefaultEntranceFee()
+    );
+    const insuranceFee = getEditingValue(
+      studentId, 
+      'insuranceFee', 
+      payment?.insuranceFee ?? getDefaultInsuranceFee()
     );
     const spotFee = getEditingValue(studentId, 'spotFee', payment?.spotFee ?? 0);
     
-    return baseAmount - discount + enrollmentOrAnnualFee + spotFee;
+    return baseAmount - discount + annualFee + entranceFee + insuranceFee + spotFee;
   };
 
-  const handleFieldUpdate = (studentId: string, field: 'baseAmount' | 'discount' | 'enrollmentOrAnnualFee' | 'spotFee' | 'amount') => {
+  const handleFieldUpdate = (studentId: string, field: 'baseAmount' | 'discount' | 'annualFee' | 'entranceFee' | 'insuranceFee' | 'spotFee' | 'amount') => {
     const payment = getPaymentForStudent(studentId);
     const student = students.find(s => s.id === studentId);
     const value = editingValues[studentId]?.[field];
@@ -235,17 +263,21 @@ export default function TuitionPage() {
     // 他のフィールドの現在の値を取得
     const baseAmount = field === 'baseAmount' ? value : (payment?.baseAmount ?? getDefaultBaseAmount(student!));
     const discount = field === 'discount' ? value : (payment?.discount ?? 0);
-    const enrollmentOrAnnualFee = field === 'enrollmentOrAnnualFee' ? value : (payment?.enrollmentOrAnnualFee ?? getDefaultEnrollmentOrAnnualFee());
+    const annualFee = field === 'annualFee' ? value : (payment?.annualFee ?? getDefaultAnnualFee());
+    const entranceFee = field === 'entranceFee' ? value : (payment?.entranceFee ?? getDefaultEntranceFee());
+    const insuranceFee = field === 'insuranceFee' ? value : (payment?.insuranceFee ?? getDefaultInsuranceFee());
     const spotFee = field === 'spotFee' ? value : (payment?.spotFee ?? 0);
     
     // 合計金額を計算（手動編集の場合は編集値を使用）
-    const amount = field === 'amount' ? value : (baseAmount - discount + enrollmentOrAnnualFee + spotFee);
+    const amount = field === 'amount' ? value : (baseAmount - discount + annualFee + entranceFee + insuranceFee + spotFee);
 
     updatePaymentMutation.mutate({
       studentId,
       baseAmount,
       discount,
-      enrollmentOrAnnualFee,
+      annualFee,
+      entranceFee,
+      insuranceFee,
       spotFee,
       amount,
       isPaid: payment?.isPaid || false,
@@ -268,7 +300,9 @@ export default function TuitionPage() {
       studentId,
       baseAmount: payment?.baseAmount ?? getDefaultBaseAmount(student!),
       discount: payment?.discount ?? 0,
-      enrollmentOrAnnualFee: payment?.enrollmentOrAnnualFee ?? getDefaultEnrollmentOrAnnualFee(),
+      annualFee: payment?.annualFee ?? getDefaultAnnualFee(),
+      entranceFee: payment?.entranceFee ?? getDefaultEntranceFee(),
+      insuranceFee: payment?.insuranceFee ?? getDefaultInsuranceFee(),
       spotFee: payment?.spotFee ?? 0,
       amount: payment?.amount ?? calculateTotal(studentId),
       isPaid,
@@ -331,7 +365,9 @@ export default function TuitionPage() {
       studentId,
       baseAmount: payment?.baseAmount ?? getDefaultBaseAmount(student!),
       discount: payment?.discount ?? 0,
-      enrollmentOrAnnualFee: payment?.enrollmentOrAnnualFee ?? getDefaultEnrollmentOrAnnualFee(),
+      annualFee: payment?.annualFee ?? getDefaultAnnualFee(),
+      entranceFee: payment?.entranceFee ?? getDefaultEntranceFee(),
+      insuranceFee: payment?.insuranceFee ?? getDefaultInsuranceFee(),
       spotFee: payment?.spotFee ?? 0,
       amount: payment?.amount ?? calculateTotal(studentId),
       isPaid: payment?.isPaid || false,
@@ -620,7 +656,9 @@ export default function TuitionPage() {
                 const payment = getPaymentForStudent(student.id);
                 const baseAmount = payment?.baseAmount ?? getDefaultBaseAmount(student);
                 const discount = payment?.discount ?? 0;
-                const enrollmentOrAnnualFee = payment?.enrollmentOrAnnualFee ?? getDefaultEnrollmentOrAnnualFee();
+                const annualFee = payment?.annualFee ?? getDefaultAnnualFee();
+                const entranceFee = payment?.entranceFee ?? getDefaultEntranceFee();
+                const insuranceFee = payment?.insuranceFee ?? getDefaultInsuranceFee();
                 const spotFee = payment?.spotFee ?? 0;
                 const amount = payment?.amount ?? calculateTotal(student.id);
 
@@ -735,17 +773,47 @@ export default function TuitionPage() {
                             </div>
                           </div>
                           <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-muted-foreground">入会/年会費</label>
+                            <label className="text-xs font-medium text-muted-foreground">年会費</label>
                             <div className="relative">
                               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">¥</span>
                               <Input
                                 type="number"
-                                value={getEditingValue(student.id, 'enrollmentOrAnnualFee', enrollmentOrAnnualFee)}
-                                onChange={(e) => setEditingValue(student.id, 'enrollmentOrAnnualFee', parseInt(e.target.value) || 0)}
-                                onBlur={() => handleFieldUpdate(student.id, 'enrollmentOrAnnualFee')}
+                                value={getEditingValue(student.id, 'annualFee', annualFee)}
+                                onChange={(e) => setEditingValue(student.id, 'annualFee', parseInt(e.target.value) || 0)}
+                                onBlur={() => handleFieldUpdate(student.id, 'annualFee')}
                                 className="w-full text-right pl-8"
                                 disabled={payment?.isPaid || false}
-                                data-testid={`input-enrollment-fee-${student.id}`}
+                                data-testid={`input-annual-fee-${student.id}`}
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-muted-foreground">入会金</label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">¥</span>
+                              <Input
+                                type="number"
+                                value={getEditingValue(student.id, 'entranceFee', entranceFee)}
+                                onChange={(e) => setEditingValue(student.id, 'entranceFee', parseInt(e.target.value) || 0)}
+                                onBlur={() => handleFieldUpdate(student.id, 'entranceFee')}
+                                className="w-full text-right pl-8"
+                                disabled={payment?.isPaid || false}
+                                data-testid={`input-entrance-fee-${student.id}`}
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-muted-foreground">保険料</label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">¥</span>
+                              <Input
+                                type="number"
+                                value={getEditingValue(student.id, 'insuranceFee', insuranceFee)}
+                                onChange={(e) => setEditingValue(student.id, 'insuranceFee', parseInt(e.target.value) || 0)}
+                                onBlur={() => handleFieldUpdate(student.id, 'insuranceFee')}
+                                className="w-full text-right pl-8"
+                                disabled={payment?.isPaid || false}
+                                data-testid={`input-insurance-fee-${student.id}`}
                               />
                             </div>
                           </div>
