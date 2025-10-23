@@ -21,10 +21,10 @@ export default function InvitePage() {
 
   const handleCopyId = () => {
     if (team) {
-      navigator.clipboard.writeText(team.id);
+      navigator.clipboard.writeText(team.teamCode);
       toast({
         title: "コピーしました",
-        description: `チームID: ${team.id}`,
+        description: `チームID: ${team.teamCode}`,
       });
     }
   };
@@ -72,8 +72,8 @@ export default function InvitePage() {
         <CardContent className="space-y-4">
           <div className="flex items-center gap-2">
             <div className="flex-1 text-center">
-              <div className="text-2xl md:text-3xl font-mono font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent py-6 break-all">
-                {team.id}
+              <div className="text-4xl md:text-5xl font-mono font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent py-6">
+                {team.teamCode}
               </div>
             </div>
           </div>
@@ -124,7 +124,7 @@ export default function InvitePage() {
             </div>
             <div className="flex justify-between">
               <dt className="text-sm font-medium text-muted-foreground">チームID:</dt>
-              <dd className="text-sm font-mono" data-testid="text-team-id">{team.id}</dd>
+              <dd className="text-sm font-mono font-bold" data-testid="text-team-id">{team.teamCode}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-sm font-medium text-muted-foreground">連絡先:</dt>
