@@ -967,6 +967,149 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Coach Password Reset Request
+  app.post("/api/coach/request-password-reset", async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      // Check if coach exists
+      const coach = await db.select().from(coaches).where(eq(coaches.email, email)).limit(1);
+      if (coach.length === 0) {
+        // Return success even if email doesn't exist (security best practice)
+        return res.status(200).json({ message: "If the email exists, a password reset link has been sent" });
+      }
+
+      // Generate reset token
+      const resetToken = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+      // Save token to database
+      await db.insert(passwordResetTokens).values({
+        email,
+        token: resetToken,
+        expiresAt,
+      });
+
+      // Send email with Resend
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const host = req.get('host') || '';
+      const protocol = req.protocol || 'https';
+      const baseUrl = `${protocol}://${host}`;
+      const resetUrl = `${baseUrl}/coach/reset-password?token=${resetToken}`;
+
+      console.log("Sending coach password reset email to:", email);
+      console.log("Reset URL:", resetUrl);
+      
+      try {
+        const emailResult = await resend.emails.send({
+          from: "TEAMO <noreply@sorte.work>",
+          to: email,
+          subject: "パスワードリセットのご案内 - TEAMO（コーチ）",
+          html: `
+            <h2>パスワードリセット</h2>
+            <p>パスワードのリセットをリクエストいただきありがとうございます。</p>
+            <p>下記のリンクをクリックして、新しいパスワードを設定してください：</p>
+            <p><a href="${resetUrl}">${resetUrl}</a></p>
+            <p>このリンクは1時間有効です。</p>
+            <p>もしリクエストしていない場合は、このメールを無視してください。</p>
+          `,
+        });
+        
+        console.log("Email sent successfully:", emailResult);
+      } catch (emailError) {
+        console.error("Error sending email:", emailError);
+        // Still return success to not reveal if email exists
+      }
+
+      res.status(200).json({ message: "If the email exists, a password reset link has been sent" });
+    } catch (error) {
+      console.error("Error requesting coach password reset:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Coach Verify Reset Token
+  app.post("/api/coach/verify-reset-token", async (req, res) => {
+    try {
+      const { token } = req.body;
+
+      if (!token) {
+        return res.status(400).json({ error: "Token is required" });
+      }
+
+      // Find token in database
+      const resetToken = await db.select().from(passwordResetTokens)
+        .where(and(
+          eq(passwordResetTokens.token, token),
+          gt(passwordResetTokens.expiresAt, new Date())
+        ))
+        .limit(1);
+
+      if (resetToken.length === 0) {
+        return res.status(400).json({ error: "Invalid or expired token" });
+      }
+
+      // Verify it's a coach email
+      const coach = await db.select().from(coaches).where(eq(coaches.email, resetToken[0].email)).limit(1);
+      if (coach.length === 0) {
+        return res.status(400).json({ error: "Invalid token" });
+      }
+
+      res.status(200).json({ valid: true, email: resetToken[0].email });
+    } catch (error) {
+      console.error("Error verifying coach reset token:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Coach Reset Password
+  app.post("/api/coach/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        return res.status(400).json({ error: "Token and new password are required" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters" });
+      }
+
+      // Find token in database
+      const resetToken = await db.select().from(passwordResetTokens)
+        .where(and(
+          eq(passwordResetTokens.token, token),
+          gt(passwordResetTokens.expiresAt, new Date())
+        ))
+        .limit(1);
+
+      if (resetToken.length === 0) {
+        return res.status(400).json({ error: "Invalid or expired token" });
+      }
+
+      // Hash new password
+      const hashedPassword = await hashPassword(newPassword);
+
+      // Update coach password
+      await db.update(coaches)
+        .set({ password: hashedPassword })
+        .where(eq(coaches.email, resetToken[0].email));
+
+      // Delete used token
+      await db.delete(passwordResetTokens)
+        .where(eq(passwordResetTokens.token, token));
+
+      res.status(200).json({ message: "Password reset successful" });
+    } catch (error) {
+      console.error("Error resetting coach password:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   app.get("/api/coach/:coachId", isAuthenticated, async (req, res) => {
     try {
       const { coachId } = req.params;
@@ -2606,7 +2749,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const host = req.get('host') || '';
       const protocol = req.protocol || 'https';
       const baseUrl = `${protocol}://${host}`;
-      const profileUrl = `${baseUrl}/player/profile`;
+      const profileUrl = `${baseUrl}/player/profile?sibling_request=true`;
       
       const requesterName = `${requestingStudent[0].lastName} ${requestingStudent[0].firstName}`;
       const siblingName = `${sibling[0].lastName} ${sibling[0].firstName}`;

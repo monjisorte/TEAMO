@@ -409,7 +409,7 @@ export default function MembersPage({ teamId }: MembersPageProps) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>本当に退会しますか？</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
+            <div className="space-y-2 text-sm text-muted-foreground">
               <p className="font-semibold text-destructive">
                 退会は取り消せません。退会するとすべてのデータが削除されます。
               </p>
@@ -417,14 +417,14 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                 {selectedStudent && getFullName(selectedStudent.lastName, selectedStudent.firstName)}さんを退会させます。
                 以下のデータが完全に削除されます：
               </p>
-              <ul className="list-disc list-inside text-sm mb-4">
+              <ul className="list-disc list-inside mb-4">
                 <li>プロフィール情報</li>
                 <li>出席記録</li>
                 <li>月謝支払い履歴</li>
                 <li>兄弟アカウント連携</li>
               </ul>
               <p>実行するには、下の入力欄に <strong>delete</strong> と入力してください。</p>
-            </AlertDialogDescription>
+            </div>
           </AlertDialogHeader>
           <div className="py-4">
             <Label htmlFor="delete-confirm">確認入力</Label>

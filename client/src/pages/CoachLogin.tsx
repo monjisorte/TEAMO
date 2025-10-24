@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ClubRegistration } from "@/components/ClubRegistration";
@@ -17,7 +18,12 @@ const loginSchema = z.object({
   password: z.string().min(6, "パスワードは6文字以上である必要があります"),
 });
 
+const resetRequestSchema = z.object({
+  email: z.string().email("有効なメールアドレスを入力してください"),
+});
+
 type LoginFormValues = z.infer<typeof loginSchema>;
+type ResetRequestFormValues = z.infer<typeof resetRequestSchema>;
 
 interface CoachLoginProps {
   onLoginSuccess: (coach: { id: string; lastName: string; firstName: string; email: string; teamId: string; role?: string }) => void;
@@ -25,6 +31,7 @@ interface CoachLoginProps {
 
 export default function CoachLogin({ onLoginSuccess }: CoachLoginProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPasswordResetDialog, setShowPasswordResetDialog] = useState(false);
   const { toast } = useToast();
 
   const loginForm = useForm<LoginFormValues>({
@@ -32,6 +39,13 @@ export default function CoachLogin({ onLoginSuccess }: CoachLoginProps) {
     defaultValues: {
       email: "",
       password: "",
+    },
+  });
+
+  const resetRequestForm = useForm<ResetRequestFormValues>({
+    resolver: zodResolver(resetRequestSchema),
+    defaultValues: {
+      email: "",
     },
   });
 
@@ -59,6 +73,37 @@ export default function CoachLogin({ onLoginSuccess }: CoachLoginProps) {
       toast({
         title: "エラー",
         description: "ログイン中にエラーが発生しました",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onResetRequest = async (data: ResetRequestFormValues) => {
+    setIsLoading(true);
+    try {
+      const response = await apiRequest("POST", "/api/coach/request-password-reset", data);
+      const result = await response.json();
+      
+      if (response.ok) {
+        toast({
+          title: "メールを送信しました",
+          description: "パスワードリセット用のリンクをメールで送信しました。メールをご確認ください。",
+        });
+        resetRequestForm.reset();
+        setShowPasswordResetDialog(false);
+      } else {
+        toast({
+          title: "エラー",
+          description: result.error || "メール送信中にエラーが発生しました",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "エラー",
+        description: "メール送信中にエラーが発生しました",
         variant: "destructive",
       });
     } finally {
@@ -131,6 +176,16 @@ export default function CoachLogin({ onLoginSuccess }: CoachLoginProps) {
                   >
                     {isLoading ? "ログイン中..." : "ログイン"}
                   </Button>
+                  <div className="text-center mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswordResetDialog(true)}
+                      className="text-sm text-muted-foreground hover:text-primary underline"
+                      data-testid="link-coach-forgot-password"
+                    >
+                      パスワードを忘れた場合
+                    </button>
+                  </div>
                 </form>
               </Form>
             </TabsContent>
@@ -150,6 +205,58 @@ export default function CoachLogin({ onLoginSuccess }: CoachLoginProps) {
           </Tabs>
         </CardContent>
       </Card>
+
+      <Dialog open={showPasswordResetDialog} onOpenChange={setShowPasswordResetDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>パスワードをリセット</DialogTitle>
+            <DialogDescription>
+              登録されているメールアドレスを入力してください。パスワードリセット用のリンクをお送りします。
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...resetRequestForm}>
+            <form onSubmit={resetRequestForm.handleSubmit(onResetRequest)} className="space-y-4">
+              <FormField
+                control={resetRequestForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>メールアドレス</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="email" 
+                        placeholder="email@example.com" 
+                        data-testid="input-reset-email"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowPasswordResetDialog(false)}
+                  className="flex-1"
+                  data-testid="button-cancel-reset"
+                >
+                  キャンセル
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="flex-1"
+                  disabled={isLoading}
+                  data-testid="button-send-reset"
+                >
+                  {isLoading ? "送信中..." : "送信"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

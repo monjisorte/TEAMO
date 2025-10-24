@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import CategorySelection from "@/components/player/CategorySelection";
-import { Upload, User, Mail, Lock, Users, Check, X, Send, AlertTriangle } from "lucide-react";
+import { Upload, User, Mail, Lock, Users, Check, X, Send, AlertTriangle, ChevronDown, Settings } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +23,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface PlayerProfilePageProps {
   playerId: string;
@@ -100,6 +105,9 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isEmailChangeOpen, setIsEmailChangeOpen] = useState(false);
+  const [isPasswordChangeOpen, setIsPasswordChangeOpen] = useState(false);
+  const [isSiblingManagementOpen, setIsSiblingManagementOpen] = useState(false);
 
   // Fetch player profile
   const { data: player, isLoading } = useQuery<PlayerProfile>({
@@ -176,6 +184,20 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
       setSelectedCategories(JSON.parse(savedCategories));
     }
   }, [playerId]);
+
+  // Check for sibling request notification from email link
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('sibling_request') === 'true') {
+      toast({
+        title: "兄弟アカウント連携リクエスト",
+        description: "兄弟アカウント連携のリクエストが届いています。下の「兄弟アカウント管理」セクションで承認または拒否してください。",
+        duration: 8000,
+      });
+      // Clear the query parameter from URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [toast]);
 
   const handleCategoriesUpdated = (categoryIds: string[]) => {
     setSelectedCategories(categoryIds);
@@ -734,232 +756,289 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
         </CardContent>
       </Card>
 
-      {/* Email Change Card */}
+      {/* Account Settings Card */}
       <Card className="border-0 shadow-xl">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-xl font-bold">メールアドレス変更</CardTitle>
+            <Settings className="h-5 w-5 text-blue-600" />
+            <CardTitle className="text-xl font-bold">アカウント設定</CardTitle>
           </div>
         </CardHeader>
-        <CardContent className="p-3 pt-0">
-          <Form {...emailForm}>
-            <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-4">
-              <FormField
-                control={emailForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>新しいメールアドレス</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="email"
-                        placeholder="example@example.com" 
-                        data-testid="input-new-email"
-                        {...field} 
+        <CardContent className="p-3 pt-0 space-y-2">
+          {/* Email Change Collapsible */}
+          <Collapsible open={isEmailChangeOpen} onOpenChange={setIsEmailChangeOpen}>
+            <Card>
+              <CollapsibleTrigger className="w-full" data-testid="toggle-email-change">
+                <div className="flex items-center justify-between p-3 hover-elevate">
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-blue-600" />
+                    <span className="font-semibold text-sm">メールアドレス変更</span>
+                  </div>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${isEmailChangeOpen ? 'rotate-180' : ''}`} />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="px-3 pb-3 pt-1 border-t">
+                  <Form {...emailForm}>
+                    <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-4 mt-3">
+                      <FormField
+                        control={emailForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>新しいメールアドレス</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="email"
+                                placeholder="example@example.com" 
+                                data-testid="input-new-email"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
-              <FormField
-                control={emailForm.control}
-                name="currentPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>現在のパスワード</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="password"
-                        placeholder="現在のパスワードを入力" 
-                        data-testid="input-current-password-email"
-                        {...field} 
+                      <FormField
+                        control={emailForm.control}
+                        name="currentPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>現在のパスワード</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="password"
+                                placeholder="現在のパスワードを入力" 
+                                data-testid="input-current-password-email"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
-              <Button 
-                type="submit" 
-                disabled={changeEmailMutation.isPending}
-                data-testid="button-change-email"
-              >
-                {changeEmailMutation.isPending ? "変更中..." : "メールアドレスを変更"}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+                      <Button 
+                        type="submit" 
+                        disabled={changeEmailMutation.isPending}
+                        data-testid="button-change-email"
+                      >
+                        {changeEmailMutation.isPending ? "変更中..." : "メールアドレスを変更"}
+                      </Button>
+                    </form>
+                  </Form>
+                </div>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
 
-      {/* Password Change Card */}
-      <Card className="border-0 shadow-xl">
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <Lock className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-xl font-bold">パスワード変更</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="p-3 pt-0">
-          <Form {...passwordForm}>
-            <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
-              <FormField
-                control={passwordForm.control}
-                name="newPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>新しいパスワード</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="password"
-                        placeholder="新しいパスワード（6文字以上）" 
-                        data-testid="input-new-password"
-                        {...field} 
+          {/* Password Change Collapsible */}
+          <Collapsible open={isPasswordChangeOpen} onOpenChange={setIsPasswordChangeOpen}>
+            <Card>
+              <CollapsibleTrigger className="w-full" data-testid="toggle-password-change">
+                <div className="flex items-center justify-between p-3 hover-elevate">
+                  <div className="flex items-center gap-2">
+                    <Lock className="h-4 w-4 text-blue-600" />
+                    <span className="font-semibold text-sm">パスワード変更</span>
+                  </div>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${isPasswordChangeOpen ? 'rotate-180' : ''}`} />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="px-3 pb-3 pt-1 border-t">
+                  <Form {...passwordForm}>
+                    <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4 mt-3">
+                      <FormField
+                        control={passwordForm.control}
+                        name="newPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>新しいパスワード</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="password"
+                                placeholder="新しいパスワード（6文字以上）" 
+                                data-testid="input-new-password"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
-              <FormField
-                control={passwordForm.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>新しいパスワード（確認）</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="password"
-                        placeholder="新しいパスワードを再入力" 
-                        data-testid="input-confirm-password"
-                        {...field} 
+                      <FormField
+                        control={passwordForm.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>新しいパスワード（確認）</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="password"
+                                placeholder="新しいパスワードを再入力" 
+                                data-testid="input-confirm-password"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
-              <Button 
-                type="submit" 
-                disabled={changePasswordMutation.isPending}
-                data-testid="button-change-password"
-              >
-                {changePasswordMutation.isPending ? "変更中..." : "パスワードを変更"}
-              </Button>
-            </form>
-          </Form>
+                      <Button 
+                        type="submit" 
+                        disabled={changePasswordMutation.isPending}
+                        data-testid="button-change-password"
+                      >
+                        {changePasswordMutation.isPending ? "変更中..." : "パスワードを変更"}
+                      </Button>
+                    </form>
+                  </Form>
+                </div>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
         </CardContent>
       </Card>
 
       {/* Sibling Account Management Card */}
-      <Card className="border-0 shadow-xl">
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-xl font-bold">兄弟アカウント管理</CardTitle>
-          </div>
-          <CardDescription className="text-sm">
-            兄弟姉妹のアカウントを連携すると、ヘッダーメニューから簡単にアカウントを切り替えることができます
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-3 pt-0 space-y-4">
-          {/* Add Sibling Form */}
-          <div>
-            <h3 className="text-sm font-semibold mb-2">兄弟姉妹を追加</h3>
-            <Form {...siblingForm}>
-              <form onSubmit={siblingForm.handleSubmit(onSiblingSubmit)} className="flex gap-2">
-                <FormField
-                  control={siblingForm.control}
-                  name="siblingEmail"
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormControl>
-                        <Input 
-                          type="email"
-                          placeholder="兄弟姉妹のメールアドレス" 
-                          data-testid="input-sibling-email"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button 
-                  type="submit" 
-                  disabled={sendSiblingRequestMutation.isPending}
-                  data-testid="button-send-sibling-request"
-                  size="sm"
-                >
-                  <Send className="w-4 h-4 mr-1" />
-                  {sendSiblingRequestMutation.isPending ? "送信中..." : "送信"}
-                </Button>
-              </form>
-            </Form>
-          </div>
-
-          {/* Sibling Links List */}
-          <div className="space-y-2">
-            <h3 className="text-sm font-semibold">連携中の兄弟姉妹</h3>
-            {siblingLinks.length === 0 ? (
-              <p className="text-sm text-muted-foreground">まだ兄弟姉妹のアカウントが連携されていません</p>
-            ) : (
-              <div className="space-y-2">
-                {siblingLinks.map((link) => (
-                  <Card key={link.id} className="p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate" data-testid={`text-sibling-name-${link.id}`}>
-                          {link.otherStudent ? `${link.otherStudent.lastName} ${link.otherStudent.firstName}` : "不明"}
-                        </p>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {link.otherStudent?.email}
-                        </p>
-                        {link.isPendingApproval && (
-                          <p className="text-xs text-blue-600 font-medium mt-1">承認待ち</p>
-                        )}
-                        {link.isSentRequest && (
-                          <p className="text-xs text-muted-foreground mt-1">申請中</p>
-                        )}
-                        {link.status === "approved" && (
-                          <p className="text-xs text-green-600 font-medium mt-1">承認済み</p>
-                        )}
-                      </div>
-                      <div className="flex gap-1">
-                        {link.isPendingApproval && (
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={() => approveSiblingLinkMutation.mutate(link.id)}
-                            disabled={approveSiblingLinkMutation.isPending}
-                            data-testid={`button-approve-${link.id}`}
-                          >
-                            <Check className="w-3 h-3" />
-                          </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => deleteSiblingLinkMutation.mutate(link.id)}
-                          disabled={deleteSiblingLinkMutation.isPending}
-                          data-testid={`button-delete-${link.id}`}
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+      <Collapsible open={isSiblingManagementOpen} onOpenChange={setIsSiblingManagementOpen}>
+        <Card className="border-0 shadow-xl">
+          <CollapsibleTrigger className="w-full" data-testid="toggle-sibling-management">
+            <CardHeader className="pb-3 hover-elevate">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-blue-600" />
+                  <CardTitle className="text-xl font-bold">兄弟アカウント管理</CardTitle>
+                </div>
+                <ChevronDown className={`h-5 w-5 transition-transform ${isSiblingManagementOpen ? 'rotate-180' : ''}`} />
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              <CardDescription className="text-sm text-left">
+                兄弟姉妹のアカウントを連携すると、ヘッダーメニューから簡単にアカウントを切り替えることができます
+              </CardDescription>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="p-3 pt-0 space-y-4 border-t">
+              {/* Add Sibling Form */}
+              <div className="pt-3">
+                <h3 className="text-sm font-semibold mb-2">兄弟姉妹を追加</h3>
+                <Form {...siblingForm}>
+                  <form onSubmit={siblingForm.handleSubmit(onSiblingSubmit)} className="flex gap-2">
+                    <FormField
+                      control={siblingForm.control}
+                      name="siblingEmail"
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormControl>
+                            <Input 
+                              type="email"
+                              placeholder="兄弟姉妹のメールアドレス" 
+                              data-testid="input-sibling-email"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button 
+                      type="submit" 
+                      disabled={sendSiblingRequestMutation.isPending}
+                      data-testid="button-send-sibling-request"
+                      size="sm"
+                    >
+                      <Send className="w-4 h-4 mr-1" />
+                      {sendSiblingRequestMutation.isPending ? "送信中..." : "送信"}
+                    </Button>
+                  </form>
+                </Form>
+              </div>
+
+              {/* Sibling Links List */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold">連携中の兄弟姉妹</h3>
+                {siblingLinks.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">まだ兄弟姉妹のアカウントが連携されていません</p>
+                ) : (
+                  <div className="space-y-2">
+                    {siblingLinks.map((link) => (
+                      <Card key={link.id} className="p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate" data-testid={`text-sibling-name-${link.id}`}>
+                              {link.otherStudent ? `${link.otherStudent.lastName} ${link.otherStudent.firstName}` : "不明"}
+                            </p>
+                            <p className="text-sm text-muted-foreground truncate">
+                              {link.otherStudent?.email}
+                            </p>
+                            {link.isPendingApproval && (
+                              <p className="text-xs text-blue-600 font-medium mt-1">承認待ち</p>
+                            )}
+                            {link.isSentRequest && (
+                              <p className="text-xs text-muted-foreground mt-1">申請中</p>
+                            )}
+                            {link.status === "approved" && (
+                              <p className="text-xs text-green-600 font-medium mt-1">承認済み</p>
+                            )}
+                          </div>
+                          <div className="flex gap-1">
+                            {link.isPendingApproval && (
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => approveSiblingLinkMutation.mutate(link.id)}
+                                disabled={approveSiblingLinkMutation.isPending}
+                                data-testid={`button-approve-${link.id}`}
+                              >
+                                <Check className="w-3 h-3" />
+                              </Button>
+                            )}
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={deleteSiblingLinkMutation.isPending}
+                                  data-testid={`button-delete-${link.id}`}
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>兄弟アカウント連携を解除しますか？</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    {link.otherStudent ? `${link.otherStudent.lastName} ${link.otherStudent.firstName}` : "この"} との連携を解除します。この操作は取り消せません。
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel data-testid={`button-cancel-delete-${link.id}`}>
+                                    キャンセル
+                                  </AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteSiblingLinkMutation.mutate(link.id)}
+                                    className="bg-destructive hover:bg-destructive/90"
+                                    data-testid={`button-confirm-delete-${link.id}`}
+                                  >
+                                    解除する
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {/* 退会セクション */}
       <Card className="border-0 shadow-xl border-destructive/20">
@@ -973,60 +1052,49 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-              <p className="text-sm font-medium text-destructive mb-2">⚠️ 重要な注意事項</p>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• 退会すると、すべてのデータが削除されます</li>
-                <li>• 出席記録、月謝支払い履歴なども削除されます</li>
-                <li>• 兄弟アカウント連携も解除されます</li>
-                <li>• この操作は取り消すことができません</li>
-              </ul>
-            </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  variant="destructive" 
-                  className="w-full"
-                  data-testid="button-withdraw"
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="destructive" 
+                className="w-full"
+                data-testid="button-withdraw"
+              >
+                退会する
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>本当に退会しますか？</AlertDialogTitle>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p className="font-semibold text-destructive">
+                    退会は取り消せません。退会するとすべてのデータが削除されます。
+                  </p>
+                  <p>
+                    この操作を実行すると、以下のデータが完全に削除されます：
+                  </p>
+                  <ul className="list-disc list-inside">
+                    <li>プロフィール情報</li>
+                    <li>出席記録</li>
+                    <li>月謝支払い履歴</li>
+                    <li>兄弟アカウント連携</li>
+                  </ul>
+                </div>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel data-testid="button-cancel-withdraw">
+                  キャンセル
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => withdrawMutation.mutate()}
+                  disabled={withdrawMutation.isPending}
+                  className="bg-destructive hover:bg-destructive/90"
+                  data-testid="button-confirm-withdraw"
                 >
-                  退会する
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>本当に退会しますか？</AlertDialogTitle>
-                  <AlertDialogDescription className="space-y-2">
-                    <p className="font-semibold text-destructive">
-                      退会は取り消せません。退会するとすべてのデータが削除されます。
-                    </p>
-                    <p>
-                      この操作を実行すると、以下のデータが完全に削除されます：
-                    </p>
-                    <ul className="list-disc list-inside text-sm">
-                      <li>プロフィール情報</li>
-                      <li>出席記録</li>
-                      <li>月謝支払い履歴</li>
-                      <li>兄弟アカウント連携</li>
-                    </ul>
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel data-testid="button-cancel-withdraw">
-                    キャンセル
-                  </AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => withdrawMutation.mutate()}
-                    disabled={withdrawMutation.isPending}
-                    className="bg-destructive hover:bg-destructive/90"
-                    data-testid="button-confirm-withdraw"
-                  >
-                    {withdrawMutation.isPending ? "処理中..." : "退会する"}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+                  {withdrawMutation.isPending ? "処理中..." : "退会する"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
       </Card>
     </div>

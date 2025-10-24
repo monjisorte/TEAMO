@@ -41,6 +41,7 @@ interface PlayerLoginProps {
 export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showPasswordResetDialog, setShowPasswordResetDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState("login");
   const { toast } = useToast();
 
   const loginForm = useForm<LoginFormValues>({
@@ -112,6 +113,7 @@ export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
           description: "アカウントが作成されました。ログインしてください。",
         });
         registerForm.reset();
+        setActiveTab("login");
       } else {
         toast({
           title: "登録失敗",
@@ -173,7 +175,7 @@ export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="login">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login" data-testid="tab-login">ログイン</TabsTrigger>
               <TabsTrigger value="register" data-testid="tab-register">新規登録</TabsTrigger>
