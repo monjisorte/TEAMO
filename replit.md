@@ -9,9 +9,9 @@ This application is a comprehensive sports team management platform designed for
 *   **Sibling Account Linking System**:
     *   Added `siblingLinks` table to database schema for managing sibling relationships between students
     *   Implemented complete backend API for sibling management:
-        *   POST `/api/sibling-links` - Send sibling link requests via email address
+        *   POST `/api/sibling-links` - Send sibling link requests via email address (with email notification)
         *   GET `/api/sibling-links/:studentId` - Retrieve all sibling links (pending and approved)
-        *   PUT `/api/sibling-links/:linkId/approve` - Approve pending sibling requests
+        *   PUT `/api/sibling-links/:linkId/approve` - Approve pending sibling requests (with email notification)
         *   DELETE `/api/sibling-links/:linkId` - Remove or reject sibling links
         *   GET `/api/siblings/:studentId` - Get approved siblings for account switching
     *   Added "Sibling Account Management" section to player profile page:
@@ -27,6 +27,11 @@ This application is a comprehensive sports team management platform designed for
         *   Tuition payment reset endpoint now automatically detects approved sibling relationships
         *   Students with approved siblings automatically receive configured sibling discount
         *   No manual siblingDiscountStatus setting required
+    *   Email notifications using Resend:
+        *   Request notification: Sent to sibling when link request is created
+        *   Approval notification: Sent to requester when link is approved
+        *   Both notifications include direct links to profile settings
+        *   Error handling: Process continues even if email delivery fails
     *   **Design Notes**: Optional feature for families with multiple children; only affects users who set up sibling links. Requires same team membership for sibling linking. Link approval is bidirectional (both students must be involved in the relationship).
 
 *   **Tuition Payment System Enhancement**:
