@@ -2597,6 +2597,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         requestedBy: studentId,
       }).returning();
 
+      // Send email notification to the sibling
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const host = req.get('host') || '';
+      const protocol = req.protocol || 'https';
+      const baseUrl = `${protocol}://${host}`;
+      const profileUrl = `${baseUrl}/player/profile`;
+      
+      const requesterName = `${requestingStudent[0].lastName} ${requestingStudent[0].firstName}`;
+      const siblingName = `${sibling[0].lastName} ${sibling[0].firstName}`;
+
+      try {
+        await resend.emails.send({
+          from: "TEAMO <noreply@sorte.work>",
+          to: siblingEmail,
+          subject: "兄弟アカウント連携リクエスト - TEAMO",
+          html: `
+            <h2>兄弟アカウント連携リクエスト</h2>
+            <p>${siblingName} 様</p>
+            <p>${requesterName}さんから兄弟アカウント連携のリクエストが届いています。</p>
+            <p>プロフィール設定画面で承認または拒否することができます：</p>
+            <p><a href="${profileUrl}">${profileUrl}</a></p>
+            <p>兄弟アカウントを連携すると、ログインし直すことなく簡単にアカウントを切り替えることができます。</p>
+          `,
+        });
+        console.log("Sibling link request email sent to:", siblingEmail);
+      } catch (emailError) {
+        console.error("Error sending sibling link email:", emailError);
+        // Continue even if email fails
+      }
+
       res.json(newLink[0]);
     } catch (error) {
       console.error("Error creating sibling link:", error);
