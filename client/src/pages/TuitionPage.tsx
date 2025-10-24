@@ -68,6 +68,12 @@ export default function TuitionPage() {
     enabled: !!team?.id,
   });
 
+  // Fetch sibling status for all students in the team
+  const { data: siblingStatusMap = {} } = useQuery<Record<string, boolean>>({
+    queryKey: [`/api/sibling-links/team/${team?.id}/status`],
+    enabled: !!team?.id,
+  });
+
   const autoGenerateMutation = useMutation({
     mutationFn: async () => {
       if (!team) throw new Error("チームが見つかりません");
@@ -132,26 +138,10 @@ export default function TuitionPage() {
     },
   });
 
-  // 兄弟割引ステータス変更のmutation
-  const updateSiblingDiscountMutation = useMutation({
-    mutationFn: async ({ studentId, siblingDiscountStatus }: { studentId: string; siblingDiscountStatus: string | null }) => {
-      return await apiRequest("PATCH", `/api/student/${studentId}`, { siblingDiscountStatus });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["/api/students"] });
-      toast({
-        title: "更新完了",
-        description: "兄弟割引ステータスを更新しました",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "エラー",
-        description: "兄弟割引ステータスの更新に失敗しました",
-        variant: "destructive",
-      });
-    },
-  });
+  // Get sibling discount status based on actual sibling links
+  const getSiblingDiscountStatus = (studentId: string) => {
+    return siblingStatusMap[studentId] ? "あり" : " ";
+  };
 
   const getPaymentForStudent = (studentId: string) => {
     return payments.find((p) => p.studentId === studentId);
@@ -543,23 +533,9 @@ export default function TuitionPage() {
                         </div>
                         <div>
                           <div className="text-xs font-medium text-muted-foreground mb-1.5">兄弟割引</div>
-                          <Select
-                            value={student.siblingDiscountStatus || "none"}
-                            onValueChange={(value) => {
-                              const newValue = value === "none" ? null : value;
-                              updateSiblingDiscountMutation.mutate({ studentId: student.id, siblingDiscountStatus: newValue });
-                            }}
-                            disabled={payment?.isPaid || false}
-                            data-testid={`select-sibling-discount-${student.id}`}
-                          >
-                            <SelectTrigger className="w-[130px]">
-                              <SelectValue placeholder="" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none"> </SelectItem>
-                              <SelectItem value="あり">あり</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <div className="text-sm font-medium h-9 flex items-center" data-testid={`text-sibling-discount-${student.id}`}>
+                            {getSiblingDiscountStatus(student.id)}
+                          </div>
                         </div>
                       </div>
 
