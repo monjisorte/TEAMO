@@ -695,8 +695,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "All fields are required" });
       }
 
-      // Check if team code exists
-      const team = await db.select().from(teams).where(eq(teams.teamCode, teamCode)).limit(1);
+      // Validate team code length (8 or 9 characters)
+      if (teamCode.length < 8 || teamCode.length > 9) {
+        return res.status(400).json({ error: "Invalid team code format" });
+      }
+
+      // Extract the base team code (first 8 characters) for team lookup
+      const baseTeamCode = teamCode.substring(0, 8);
+      
+      // Determine player type based on team code length
+      // 8 digits = team member, 9 digits = school member
+      const playerType = teamCode.length === 9 ? "school" : "team";
+
+      // Check if team code exists (using first 8 characters)
+      const team = await db.select().from(teams).where(eq(teams.teamCode, baseTeamCode)).limit(1);
       if (team.length === 0) {
         return res.status(404).json({ error: "Invalid team code" });
       }
@@ -707,7 +719,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Email already registered" });
       }
 
-      // Hash password and create student
+      // Hash password and create student with auto-determined player type
       const hashedPassword = await hashPassword(password);
       const newStudent = await db.insert(students).values({
         lastName,
@@ -715,9 +727,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email,
         password: hashedPassword,
         teamId: team[0].id,
+        playerType,
       }).returning();
 
-      res.status(201).json({ student: { id: newStudent[0].id, lastName: newStudent[0].lastName, firstName: newStudent[0].firstName, email: newStudent[0].email, teamId: newStudent[0].teamId } });
+      res.status(201).json({ student: { id: newStudent[0].id, lastName: newStudent[0].lastName, firstName: newStudent[0].firstName, email: newStudent[0].email, teamId: newStudent[0].teamId, playerType: newStudent[0].playerType } });
     } catch (error) {
       console.error("Error registering student:", error);
       res.status(500).json({ error: "Internal server error" });

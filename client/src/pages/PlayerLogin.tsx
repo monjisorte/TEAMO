@@ -23,7 +23,7 @@ const registerSchema = z.object({
   firstName: z.string().min(1, "名前を入力してください"),
   email: z.string().email("有効なメールアドレスを入力してください"),
   password: z.string().min(6, "パスワードは6文字以上である必要があります"),
-  teamCode: z.string().length(8, "チームIDは8文字です"),
+  teamCode: z.string().min(8, "チームIDは8文字または9文字です").max(9, "チームIDは8文字または9文字です"),
 });
 
 const resetRequestSchema = z.object({
@@ -324,7 +324,7 @@ export default function PlayerLogin({ onLoginSuccess }: PlayerLoginProps) {
                         <FormControl>
                           <Input 
                             placeholder="チームから共有されたチームID" 
-                            maxLength={8}
+                            maxLength={9}
                             data-testid="input-register-teamcode"
                             {...field} 
                           />
