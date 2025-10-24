@@ -353,27 +353,46 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                             </PopoverTrigger>
                             <PopoverContent className="w-56 p-3" align="start">
                               <div className="space-y-2">
-                                {categories.map((category) => {
-                                  const isChecked = getStudentCategories(student.id).includes(category.id);
-                                  return (
-                                    <div key={category.id} className="flex items-center space-x-2">
-                                      <Checkbox
-                                        id={`category-${student.id}-${category.id}`}
-                                        checked={isChecked}
-                                        onCheckedChange={(checked) => {
-                                          handleCategoryToggle(student.id, category.id, checked as boolean);
-                                        }}
-                                        data-testid={`checkbox-category-${student.id}-${category.id}`}
-                                      />
-                                      <label
-                                        htmlFor={`category-${student.id}-${category.id}`}
-                                        className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                                      >
-                                        {category.name}
-                                      </label>
-                                    </div>
-                                  );
-                                })}
+                                {(() => {
+                                  // スクール生の場合、スクール専用カテゴリと既に割り当てられているカテゴリを表示
+                                  const availableCategories = student.playerType === "school" 
+                                    ? categories.filter(cat => {
+                                        const isSchoolCategory = cat.isSchoolOnly;
+                                        const isAlreadyAssigned = getStudentCategories(student.id).includes(cat.id);
+                                        return isSchoolCategory || isAlreadyAssigned;
+                                      })
+                                    : categories;
+                                  
+                                  if (availableCategories.length === 0 && student.playerType === "school") {
+                                    return (
+                                      <p className="text-sm text-muted-foreground text-center py-2">
+                                        スクール専用カテゴリーがありません
+                                      </p>
+                                    );
+                                  }
+                                  
+                                  return availableCategories.map((category) => {
+                                    const isChecked = getStudentCategories(student.id).includes(category.id);
+                                    return (
+                                      <div key={category.id} className="flex items-center space-x-2">
+                                        <Checkbox
+                                          id={`category-${student.id}-${category.id}`}
+                                          checked={isChecked}
+                                          onCheckedChange={(checked) => {
+                                            handleCategoryToggle(student.id, category.id, checked as boolean);
+                                          }}
+                                          data-testid={`checkbox-category-${student.id}-${category.id}`}
+                                        />
+                                        <label
+                                          htmlFor={`category-${student.id}-${category.id}`}
+                                          className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                        >
+                                          {category.name}
+                                        </label>
+                                      </div>
+                                    );
+                                  });
+                                })()}
                                 {categories.length === 0 && (
                                   <p className="text-sm text-muted-foreground text-center py-2">
                                     カテゴリーがありません
