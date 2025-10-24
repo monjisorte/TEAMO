@@ -599,6 +599,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/categories/reorder-batch", isAuthenticated, async (req, res) => {
+    try {
+      const { categoryIds, teamId } = req.body;
+
+      if (!categoryIds || !Array.isArray(categoryIds)) {
+        return res.status(400).json({ error: "categoryIds array is required" });
+      }
+
+      if (!teamId) {
+        return res.status(400).json({ error: "teamId is required" });
+      }
+
+      if (categoryIds.length === 0) {
+        return res.json({ success: true });
+      }
+
+      // Verify all categories belong to the specified team
+      for (const categoryId of categoryIds) {
+        const cat = await db.select()
+          .from(categories)
+          .where(eq(categories.id, categoryId));
+        
+        if (cat.length === 0) {
+          return res.status(404).json({ error: "Category not found" });
+        }
+        
+        if (cat[0].teamId !== teamId) {
+          return res.status(403).json({ error: "Unauthorized: Category does not belong to your team" });
+        }
+      }
+
+      // Update displayOrder for each category based on its position in the array
+      for (let i = 0; i < categoryIds.length; i++) {
+        await db.update(categories)
+          .set({ displayOrder: i })
+          .where(eq(categories.id, categoryIds[i]));
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error batch reordering categories:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   app.patch("/api/categories/:id/reorder", isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;

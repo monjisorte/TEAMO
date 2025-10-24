@@ -24,6 +24,21 @@ The system utilizes a component-based frontend architecture with reusable UI com
 
 **Team Code Registration System:** Students register using team codes (8 or 9 digits). The system automatically determines player type: 8-digit codes default to "team" (team members), while 9-digit codes (8-digit base + suffix character) default to "school" (school members). Team validation uses the first 8 characters, allowing multiple registration paths to the same team with different default member types.
 
+## Known Issues & Future Improvements
+
+### Authentication & Authorization
+**Current Issue**: The application's authentication system has architectural limitations. While users are authenticated through email/password login, the server-side authorization relies on client-provided IDs (teamId, studentId, coachId) rather than server-managed session data or JWT tokens. This creates a trust boundary issue where the server cannot independently verify which team/user a request originates from.
+
+**Impact**: Endpoints trust client-supplied identifiers (e.g., teamId in category management, studentId in attendance) without server-side validation that the authenticated user has permission to access those resources.
+
+**Recommended Solution**: Implement proper session management or JWT-based authentication where:
+1. Login endpoints issue secure, server-signed tokens containing user ID and team ID
+2. The `isAuthenticated` middleware validates tokens and populates `req.user` with verified user data
+3. All endpoints use `req.user.teamId` or `req.user.id` (server-derived) instead of client-provided values
+4. Add authorization middleware to verify team ownership before allowing resource mutations
+
+**Current Mitigation**: Client-side data storage in localStorage + server-side validation that resources belong to specified team (partial protection).
+
 ## External Dependencies
 *   **UI Components:** Radix UI, shadcn/ui.
 *   **Styling:** Tailwind CSS, class-variance-authority, clsx, tailwind-merge.
