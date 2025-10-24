@@ -189,9 +189,11 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('sibling_request') === 'true') {
+      // Open sibling management section automatically
+      setIsSiblingManagementOpen(true);
       toast({
         title: "兄弟アカウント連携リクエスト",
-        description: "兄弟アカウント連携のリクエストが届いています。下の「兄弟アカウント管理」セクションで承認または拒否してください。",
+        description: "兄弟アカウント連携のリクエストが届いています。承認または拒否してください。",
         duration: 8000,
       });
       // Clear the query parameter from URL
@@ -513,6 +515,9 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
     );
   }
 
+  // Filter pending approval requests
+  const pendingApprovalLinks = siblingLinks.filter(link => link.isPendingApproval);
+
   return (
     <div className="p-1 space-y-4">
       <div className="space-y-1">
@@ -520,6 +525,88 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
           プロフィール管理
         </h1>
       </div>
+
+      {/* Pending Sibling Approval Cards */}
+      {pendingApprovalLinks.length > 0 && (
+        <div className="space-y-3">
+          {pendingApprovalLinks.map((link) => (
+            <Card key={link.id} className="border-2 border-blue-500 dark:border-blue-400 shadow-xl bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-950/30 dark:to-purple-950/30">
+              <CardHeader className="pb-3">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                    <Users className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-lg font-bold">
+                      兄弟アカウント連携リクエスト
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                      {link.otherStudent ? (
+                        <span>
+                          <span className="font-semibold">{link.otherStudent.lastName} {link.otherStudent.firstName}</span>さんから兄弟アカウント連携のリクエストが届いています
+                        </span>
+                      ) : (
+                        "兄弟アカウント連携のリクエストが届いています"
+                      )}
+                    </CardDescription>
+                    {link.otherStudent?.email && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        メールアドレス: {link.otherStudent.email}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0 px-3 pb-3">
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    onClick={() => approveSiblingLinkMutation.mutate(link.id)}
+                    disabled={approveSiblingLinkMutation.isPending}
+                    data-testid={`button-approve-top-${link.id}`}
+                  >
+                    <Check className="w-4 h-4 mr-2" />
+                    {approveSiblingLinkMutation.isPending ? "承認中..." : "承認する"}
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="flex-1 border-destructive text-destructive hover:bg-destructive/10"
+                        disabled={deleteSiblingLinkMutation.isPending}
+                        data-testid={`button-reject-top-${link.id}`}
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        拒否する
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>兄弟アカウント連携を拒否しますか？</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {link.otherStudent ? `${link.otherStudent.lastName} ${link.otherStudent.firstName}` : "この"}さんからのリクエストを拒否します。
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel data-testid={`button-cancel-reject-${link.id}`}>
+                          キャンセル
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => deleteSiblingLinkMutation.mutate(link.id)}
+                          className="bg-destructive hover:bg-destructive/90"
+                          data-testid={`button-confirm-reject-${link.id}`}
+                        >
+                          拒否する
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <Card className="border-0 shadow-xl">
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
