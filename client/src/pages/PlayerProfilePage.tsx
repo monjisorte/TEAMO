@@ -11,7 +11,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import CategorySelection from "@/components/player/CategorySelection";
-import { Upload, User, Mail, Lock, Users, Check, X, Send } from "lucide-react";
+import { Upload, User, Mail, Lock, Users, Check, X, Send, AlertTriangle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface PlayerProfilePageProps {
   playerId: string;
@@ -439,6 +450,30 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
       toast({
         title: "エラー",
         description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Withdraw (delete account)
+  const withdrawMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("DELETE", `/api/students/${playerId}`, {});
+    },
+    onSuccess: () => {
+      toast({
+        title: "退会完了",
+        description: "退会処理が完了しました",
+      });
+      // Clear localStorage and redirect to login
+      localStorage.removeItem("playerData");
+      localStorage.removeItem("selectedCategoryIds");
+      window.location.href = "/player/login";
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "退会処理に失敗しました",
         variant: "destructive",
       });
     },
@@ -922,6 +957,75 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
                 ))}
               </div>
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 退会セクション */}
+      <Card className="border-0 shadow-xl border-destructive/20">
+        <CardHeader>
+          <CardTitle className="text-xl font-bold flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-destructive" />
+            退会
+          </CardTitle>
+          <CardDescription>
+            アカウントを削除します。この操作は取り消せません。
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <p className="text-sm font-medium text-destructive mb-2">⚠️ 重要な注意事項</p>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• 退会すると、すべてのデータが削除されます</li>
+                <li>• 出席記録、月謝支払い履歴なども削除されます</li>
+                <li>• 兄弟アカウント連携も解除されます</li>
+                <li>• この操作は取り消すことができません</li>
+              </ul>
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="destructive" 
+                  className="w-full"
+                  data-testid="button-withdraw"
+                >
+                  退会する
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>本当に退会しますか？</AlertDialogTitle>
+                  <AlertDialogDescription className="space-y-2">
+                    <p className="font-semibold text-destructive">
+                      退会は取り消せません。退会するとすべてのデータが削除されます。
+                    </p>
+                    <p>
+                      この操作を実行すると、以下のデータが完全に削除されます：
+                    </p>
+                    <ul className="list-disc list-inside text-sm">
+                      <li>プロフィール情報</li>
+                      <li>出席記録</li>
+                      <li>月謝支払い履歴</li>
+                      <li>兄弟アカウント連携</li>
+                    </ul>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel data-testid="button-cancel-withdraw">
+                    キャンセル
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => withdrawMutation.mutate()}
+                    disabled={withdrawMutation.isPending}
+                    className="bg-destructive hover:bg-destructive/90"
+                    data-testid="button-confirm-withdraw"
+                  >
+                    {withdrawMutation.isPending ? "処理中..." : "退会する"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </CardContent>
       </Card>
