@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -277,11 +277,11 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                     </Avatar>
                     <div className="flex-1 min-w-0 space-y-3">
                       <div>
-                        <h3 className="text-xl font-semibold" data-testid={`text-member-name-${student.id}`}>
+                        <CardTitle className="text-xl" data-testid={`text-member-name-${student.id}`}>
                           {fullName}
-                        </h3>
+                        </CardTitle>
                         {fullNameKana && (
-                          <p className="text-sm text-muted-foreground mt-1">{fullNameKana}</p>
+                          <CardDescription className="mt-1">{fullNameKana}</CardDescription>
                         )}
                       </div>
                       
