@@ -277,7 +277,7 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                     </Avatar>
                     <div className="flex-1 min-w-0 space-y-3">
                       <div>
-                        <CardTitle data-testid={`text-member-name-${student.id}`}>
+                        <CardTitle className="text-xl" data-testid={`text-member-name-${student.id}`}>
                           {fullName}
                         </CardTitle>
                         {fullNameKana && (
