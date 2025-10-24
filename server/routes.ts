@@ -1487,13 +1487,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (name !== undefined) updateData.name = name;
       if (lastName !== undefined) updateData.lastName = lastName;
       if (firstName !== undefined) updateData.firstName = firstName;
-      if (lastNameKana !== undefined) updateData.lastNameKana = lastNameKana;
-      if (firstNameKana !== undefined) updateData.firstNameKana = firstNameKana;
-      if (schoolName !== undefined) updateData.schoolName = schoolName;
-      if (birthDate !== undefined) updateData.birthDate = birthDate;
+      if (lastNameKana !== undefined) updateData.lastNameKana = lastNameKana === "" ? null : lastNameKana;
+      if (firstNameKana !== undefined) updateData.firstNameKana = firstNameKana === "" ? null : firstNameKana;
+      if (schoolName !== undefined) updateData.schoolName = schoolName === "" ? null : schoolName;
+      if (birthDate !== undefined) updateData.birthDate = birthDate === "" ? null : birthDate;
       if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
       if (playerType !== undefined) updateData.playerType = playerType;
-      if (jerseyNumber !== undefined) updateData.jerseyNumber = jerseyNumber;
+      if (jerseyNumber !== undefined) updateData.jerseyNumber = jerseyNumber === "" ? null : jerseyNumber;
 
       if (Object.keys(updateData).length === 0) {
         return res.status(400).json({ error: "No fields to update" });
