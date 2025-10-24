@@ -518,10 +518,6 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
   // Filter pending approval requests
   const pendingApprovalLinks = siblingLinks.filter(link => link.isPendingApproval);
 
-  // Debug logging
-  console.log("[PlayerProfilePage] siblingLinks:", siblingLinks);
-  console.log("[PlayerProfilePage] pendingApprovalLinks:", pendingApprovalLinks);
-
   return (
     <div className="p-1 space-y-4">
       <div className="space-y-1">
