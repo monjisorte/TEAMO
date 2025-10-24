@@ -1474,6 +1474,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { studentId } = req.params;
       const { name, lastName, firstName, lastNameKana, firstNameKana, schoolName, birthDate, photoUrl, playerType, jerseyNumber } = req.body;
 
+      // playerTypeが変更される場合、現在の値を取得
+      let shouldClearCategories = false;
+      if (playerType !== undefined) {
+        const currentStudent = await db.select().from(students).where(eq(students.id, studentId)).limit(1);
+        if (currentStudent.length > 0 && currentStudent[0].playerType !== playerType) {
+          shouldClearCategories = true;
+        }
+      }
+
       const updateData: any = {};
       if (name !== undefined) updateData.name = name;
       if (lastName !== undefined) updateData.lastName = lastName;
@@ -1490,7 +1499,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No fields to update" });
       }
 
-      await db.update(students).set(updateData).where(eq(students.id, studentId));
+      // トランザクションを使用してアトミック性を保証
+      await db.transaction(async (tx) => {
+        // 学生情報を更新
+        await tx.update(students).set(updateData).where(eq(students.id, studentId));
+
+        // playerTypeが変更された場合、カテゴリ登録を全てクリア
+        if (shouldClearCategories) {
+          await tx.delete(studentCategories).where(eq(studentCategories.studentId, studentId));
+        }
+      });
 
       const updatedStudent = await db.select().from(students).where(eq(students.id, studentId)).limit(1);
       const { password, ...studentData } = updatedStudent[0];
