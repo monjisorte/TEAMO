@@ -155,18 +155,18 @@ export default function PlayerMembersPage({ teamId }: PlayerMembersPageProps) {
                         学校名　<span className="text-xs md:text-sm">{student.schoolName || '未設定'}</span>
                       </p>
                     </div>
-                    <div>
-                      <p className="text-xs md:text-sm font-medium" data-testid={`text-sibling-${student.id}`}>
-                        兄弟　<span className="text-xs md:text-sm">
-                          {siblingInfoMap[student.id]?.hasSibling && siblingInfoMap[student.id].siblings.length > 0
-                            ? getFullName(
-                                siblingInfoMap[student.id].siblings[0].lastName,
-                                siblingInfoMap[student.id].siblings[0].firstName
-                              )
-                            : ''}
-                        </span>
-                      </p>
-                    </div>
+                    {siblingInfoMap[student.id]?.hasSibling && siblingInfoMap[student.id].siblings.length > 0 && (
+                      <div>
+                        <p className="text-xs md:text-sm font-medium" data-testid={`text-sibling-${student.id}`}>
+                          兄弟　<span className="text-xs md:text-sm">
+                            {getFullName(
+                              siblingInfoMap[student.id].siblings[0].lastName,
+                              siblingInfoMap[student.id].siblings[0].firstName
+                            )}
+                          </span>
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
