@@ -8,11 +8,13 @@ This application is a comprehensive sports team management platform designed for
 ### October 24, 2025
 *   **Sibling Discount Status Management Cleanup**:
     *   Removed deprecated `siblingDiscountStatus` field from students table schema
-    *   MembersPage and TuitionPage now automatically display sibling discount status based on approved sibling links (read-only, no manual editing)
+    *   MembersPage (coach), TuitionPage (coach), and PlayerMembersPage (player) now automatically display sibling discount status based on approved sibling links (read-only, no manual editing)
     *   Backend API endpoint `/api/student/:studentId` no longer accepts `siblingDiscountStatus` field
     *   Sibling discount status is now entirely determined by the `siblingLinks` table (status="approved")
-    *   Added bulk sibling status checking API endpoint: GET `/api/sibling-links/team/:teamId/status` for efficient status retrieval
-    *   **Rationale**: Eliminates data inconsistency by using single source of truth (siblingLinks table) instead of maintaining redundant field
+    *   Enhanced GET `/api/sibling-links/team/:teamId/status` endpoint to return sibling details (id, lastName, firstName) instead of just boolean status
+    *   All three pages display sibling information in format "兄弟 [姓名]" when siblings exist (e.g., "兄弟 文字麟太郎")
+    *   When multiple siblings exist, only the first sibling's name is displayed
+    *   **Rationale**: Eliminates data inconsistency by using single source of truth (siblingLinks table) instead of maintaining redundant field, while providing clear visibility of sibling relationships
 
 ### October 23, 2025
 *   **Sibling Account Linking System**:

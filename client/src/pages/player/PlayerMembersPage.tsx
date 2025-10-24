@@ -36,6 +36,12 @@ export default function PlayerMembersPage({ teamId }: PlayerMembersPageProps) {
     queryKey: ["/api/student-categories"],
   });
 
+  // 兄弟情報を取得
+  const { data: siblingInfoMap = {} } = useQuery<Record<string, { hasSibling: boolean; siblings: Array<{ id: string; lastName: string; firstName: string }> }>>({
+    queryKey: teamId ? [`/api/sibling-links/team/${teamId}/status`] : [],
+    enabled: !!teamId,
+  });
+
   const filteredStudents = useMemo(() => {
     let filtered: Student[];
     
@@ -147,6 +153,18 @@ export default function PlayerMembersPage({ teamId }: PlayerMembersPageProps) {
                     <div>
                       <p className="text-xs md:text-sm font-medium" data-testid={`text-school-${student.id}`}>
                         学校名　<span className="text-xs md:text-sm">{student.schoolName || '未設定'}</span>
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs md:text-sm font-medium" data-testid={`text-sibling-${student.id}`}>
+                        兄弟割引　<span className="text-xs md:text-sm">
+                          {siblingInfoMap[student.id]?.hasSibling && siblingInfoMap[student.id].siblings.length > 0
+                            ? `兄弟 ${getFullName(
+                                siblingInfoMap[student.id].siblings[0].lastName,
+                                siblingInfoMap[student.id].siblings[0].firstName
+                              )}`
+                            : ''}
+                        </span>
                       </p>
                     </div>
                   </div>
