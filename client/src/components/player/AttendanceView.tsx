@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Schedule, Attendance, Student, Category } from "@shared/schema";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
-import { Calendar, MapPin, Clock } from "lucide-react";
+import { Calendar, MapPin, Clock, Check, AlertCircle, X as XIcon } from "lucide-react";
 
 interface AttendanceViewProps {
   studentId: string;
@@ -195,91 +195,130 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
 
         return (
           <Card key={schedule.id} data-testid={`card-schedule-${schedule.id}`} className="border-0 shadow-xl overflow-hidden">
-            <div className="bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 p-2 text-foreground">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <CardTitle className="text-lg font-bold">{schedule.title}</CardTitle>
-                    <div className="text-xs font-semibold shrink-0 text-muted-foreground">
-                      ○{attendanceCounts.confirmed} △{attendanceCounts.maybe} ×{attendanceCounts.absent}
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 p-4 text-foreground">
+              <div className="space-y-3">
+                {/* タイトルと参加人数 */}
+                <div className="flex items-start justify-between gap-3">
+                  <CardTitle className="text-xl font-bold flex-1">{schedule.title}</CardTitle>
+                  <div className="flex items-center gap-2 shrink-0 bg-white/80 dark:bg-slate-900/80 rounded-full px-3 py-1">
+                    <div className="flex items-center gap-1">
+                      <Check className="w-3 h-3 text-green-600 dark:text-green-400" />
+                      <span className="text-sm font-semibold">{attendanceCounts.confirmed}</span>
                     </div>
+                    <div className="flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 text-yellow-600 dark:text-yellow-400" />
+                      <span className="text-sm font-semibold">{attendanceCounts.maybe}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <XIcon className="w-3 h-3 text-red-600 dark:text-red-400" />
+                      <span className="text-sm font-semibold">{attendanceCounts.absent}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* カテゴリーバッジ */}
+                {categoryNames.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {categoryNames.map((name, index) => (
+                      <Badge 
+                        key={index} 
+                        variant="secondary"
+                        className="text-xs font-medium"
+                        data-testid={`badge-category-${index}`}
+                      >
+                        {name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                {/* 日付・時間・場所情報 */}
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <span className="font-semibold" data-testid={`text-schedule-date-${schedule.id}`}>
+                      {format(new Date(schedule.date), "M月d日(E)", { locale: ja })}
+                    </span>
                   </div>
                   
-                  {/* カテゴリーバッジ */}
-                  {categoryNames.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-1">
-                      {categoryNames.map((name, index) => (
-                        <Badge 
-                          key={index} 
-                          variant="secondary"
-                          className="text-xs"
-                          data-testid={`badge-category-${index}`}
-                        >
-                          {name}
-                        </Badge>
-                      ))}
+                  {schedule.startHour !== null && schedule.startMinute !== null && schedule.endHour !== null && schedule.endMinute !== null && (
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      <span className="font-medium">
+                        {String(schedule.startHour).padStart(2, '0')}:{String(schedule.startMinute).padStart(2, '0')} - {String(schedule.endHour).padStart(2, '0')}:{String(schedule.endMinute).padStart(2, '0')}
+                      </span>
+                      {schedule.gatherHour !== null && schedule.gatherMinute !== null && (
+                        <span className="text-xs text-muted-foreground">
+                          (集合 {String(schedule.gatherHour).padStart(2, '0')}:{String(schedule.gatherMinute).padStart(2, '0')})
+                        </span>
+                      )}
                     </div>
                   )}
-
-                  {/* 日付・時間情報 - 1行表示 */}
-                  <div className="flex items-center gap-2 flex-wrap text-xs">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      <span className="font-medium" data-testid={`text-schedule-date-${schedule.id}`}>
-                        {format(new Date(schedule.date), "M/d(E)", { locale: ja })}
-                      </span>
+                  
+                  {schedule.venue ? (
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(schedule.venue)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 hover-elevate rounded px-2 py-1 transition-all w-fit"
+                      data-testid={`link-venue-${schedule.id}`}
+                    >
+                      <MapPin className="w-4 h-4 text-red-600 dark:text-red-400" />
+                      <span className="font-medium underline decoration-dotted underline-offset-2">{schedule.venue}</span>
+                    </a>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-red-600 dark:text-red-400" />
+                      <span className="font-medium text-muted-foreground">未定</span>
                     </div>
-                    
-                    {schedule.startHour !== null && schedule.startMinute !== null && schedule.endHour !== null && schedule.endMinute !== null && (
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        <span>
-                          {String(schedule.startHour).padStart(2, '0')}:{String(schedule.startMinute).padStart(2, '0')}-{String(schedule.endHour).padStart(2, '0')}:{String(schedule.endMinute).padStart(2, '0')}
-                        </span>
-                        {schedule.gatherHour !== null && schedule.gatherMinute !== null && (
-                          <span className="text-xs opacity-80">
-                            (集合 {String(schedule.gatherHour).padStart(2, '0')}:{String(schedule.gatherMinute).padStart(2, '0')})
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    
-                    {schedule.venue ? (
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(schedule.venue)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 hover-elevate rounded px-1.5 py-0.5 transition-all"
-                        data-testid={`link-venue-${schedule.id}`}
-                      >
-                        <MapPin className="w-3 h-3" />
-                        <span className="underline decoration-dotted underline-offset-2">{schedule.venue}</span>
-                      </a>
-                    ) : (
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        <span>未定</span>
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            <CardContent className="p-2 space-y-2">
+            <CardContent className="p-4 space-y-4">
               {/* 出欠状況 */}
               <div>
-                <label className="text-xs font-semibold mb-1 block text-foreground">出欠状況を選択</label>
-                <div className="grid grid-cols-3 gap-1.5">
+                <label className="text-sm font-semibold mb-2 block text-foreground">出欠状況を選択</label>
+                <div className="grid grid-cols-3 gap-3">
                   {(["○", "△", "×"] as AttendanceStatus[]).map((status) => {
                     const isSelected = currentStatus === status;
-                    const buttonClass = isSelected 
-                      ? status === "○" 
-                        ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 shadow-lg scale-105" 
-                        : status === "△"
-                        ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0 shadow-lg scale-105"
-                        : "bg-gradient-to-r from-red-500 to-rose-600 text-white border-0 shadow-lg scale-105"
-                      : "bg-card hover-elevate active-elevate-2";
+                    
+                    const getStatusConfig = () => {
+                      switch(status) {
+                        case "○":
+                          return {
+                            icon: Check,
+                            label: "参加",
+                            selectedClass: "bg-gradient-to-br from-green-500 to-emerald-600 text-white border-green-600 shadow-lg",
+                            defaultClass: "border-green-200 dark:border-green-800"
+                          };
+                        case "△":
+                          return {
+                            icon: AlertCircle,
+                            label: "未定",
+                            selectedClass: "bg-gradient-to-br from-yellow-500 to-orange-500 text-white border-yellow-600 shadow-lg",
+                            defaultClass: "border-yellow-200 dark:border-yellow-800"
+                          };
+                        case "×":
+                          return {
+                            icon: XIcon,
+                            label: "欠席",
+                            selectedClass: "bg-gradient-to-br from-red-500 to-rose-600 text-white border-red-600 shadow-lg",
+                            defaultClass: "border-red-200 dark:border-red-800"
+                          };
+                        default:
+                          return {
+                            icon: Check,
+                            label: "参加",
+                            selectedClass: "bg-gradient-to-br from-green-500 to-emerald-600 text-white border-green-600 shadow-lg",
+                            defaultClass: "border-green-200 dark:border-green-800"
+                          };
+                      }
+                    };
+                    
+                    const config = getStatusConfig();
+                    const Icon = config.icon;
                     
                     return (
                       <Button
@@ -287,9 +326,14 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
                         variant="outline"
                         onClick={() => handleStatusChange(schedule.id, status)}
                         data-testid={`button-status-${status}-${schedule.id}`}
-                        className={`text-lg font-bold h-10 transition-all ${buttonClass}`}
+                        className={`flex flex-col items-center justify-center h-20 gap-1 transition-all ${
+                          isSelected 
+                            ? config.selectedClass 
+                            : `bg-card hover-elevate active-elevate-2 ${config.defaultClass}`
+                        }`}
                       >
-                        {status}
+                        <Icon className={`w-6 h-6 ${isSelected ? '' : 'opacity-60'}`} />
+                        <span className="text-xs font-semibold">{config.label}</span>
                       </Button>
                     );
                   })}
@@ -298,14 +342,14 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
 
               {/* コメント */}
               <div>
-                <label className="text-xs font-semibold mb-1 block text-foreground">コメント（任意）</label>
+                <label className="text-sm font-semibold mb-2 block text-foreground">コメント（任意）</label>
                 <Textarea
                   placeholder="遅刻・早退の理由などがあれば入力してください..."
                   value={currentComment}
                   onChange={(e) => handleCommentChange(schedule.id, e.target.value)}
                   data-testid={`textarea-comment-${schedule.id}`}
-                  rows={2}
-                  className="resize-none text-xs"
+                  rows={3}
+                  className="resize-none text-sm"
                 />
               </div>
 
@@ -314,7 +358,8 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
                 onClick={() => handleSave(schedule.id)}
                 disabled={savingScheduleId === schedule.id}
                 data-testid={`button-save-${schedule.id}`}
-                className="w-full text-sm font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
+                size="lg"
+                className="w-full font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
               >
                 {savingScheduleId === schedule.id ? "保存中..." : "保存する"}
               </Button>
