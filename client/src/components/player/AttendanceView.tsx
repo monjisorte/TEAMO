@@ -202,7 +202,7 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
                   <CardTitle className="text-xl font-bold flex-1">{schedule.title}</CardTitle>
                   <div className="flex items-center gap-2 shrink-0 bg-white/80 dark:bg-slate-900/80 rounded-full px-3 py-1">
                     <div className="flex items-center gap-1">
-                      <Check className="w-3 h-3 text-green-600 dark:text-green-400" />
+                      <Check className="w-3 h-3 text-blue-600 dark:text-blue-400" />
                       <span className="text-sm font-semibold">{attendanceCounts.confirmed}</span>
                     </div>
                     <div className="flex items-center gap-1">
@@ -290,8 +290,8 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
                           return {
                             icon: Check,
                             label: "参加",
-                            selectedClass: "bg-gradient-to-br from-green-500 to-emerald-600 text-white border-green-600 shadow-lg",
-                            defaultClass: "border-green-200 dark:border-green-800"
+                            selectedClass: "bg-gradient-to-br from-blue-500 to-purple-600 text-white border-blue-600 shadow-lg",
+                            defaultClass: "border-blue-200 dark:border-blue-800"
                           };
                         case "△":
                           return {
@@ -311,8 +311,8 @@ export default function AttendanceView({ studentId, selectedCategories }: Attend
                           return {
                             icon: Check,
                             label: "参加",
-                            selectedClass: "bg-gradient-to-br from-green-500 to-emerald-600 text-white border-green-600 shadow-lg",
-                            defaultClass: "border-green-200 dark:border-green-800"
+                            selectedClass: "bg-gradient-to-br from-blue-500 to-purple-600 text-white border-blue-600 shadow-lg",
+                            defaultClass: "border-blue-200 dark:border-blue-800"
                           };
                       }
                     };
