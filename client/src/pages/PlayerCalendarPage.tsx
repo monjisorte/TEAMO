@@ -9,10 +9,35 @@ interface PlayerCalendarPageProps {
 }
 
 export default function PlayerCalendarPage({ playerId, teamId }: PlayerCalendarPageProps) {
+  // Get player type from localStorage
+  const [playerType, setPlayerType] = useState<string | undefined>(() => {
+    const playerData = localStorage.getItem("playerData");
+    if (playerData) {
+      try {
+        const data = JSON.parse(playerData);
+        return data.playerType;
+      } catch {
+        return undefined;
+      }
+    }
+    return undefined;
+  });
+
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [hasCategoriesSelected, setHasCategoriesSelected] = useState(false);
 
   useEffect(() => {
+    // Update player type when playerId or playerData changes
+    const playerData = localStorage.getItem("playerData");
+    if (playerData) {
+      try {
+        const data = JSON.parse(playerData);
+        setPlayerType(data.playerType);
+      } catch {
+        setPlayerType(undefined);
+      }
+    }
+
     const savedCategories = localStorage.getItem(`player_${playerId}_categories`);
     if (savedCategories) {
       const categories = JSON.parse(savedCategories);
@@ -43,6 +68,7 @@ export default function PlayerCalendarPage({ playerId, teamId }: PlayerCalendarP
             <CategorySelection
               studentId={playerId}
               teamId={teamId}
+              playerType={playerType}
               onCategoriesUpdated={handleCategoriesUpdated}
             />
           </CardContent>

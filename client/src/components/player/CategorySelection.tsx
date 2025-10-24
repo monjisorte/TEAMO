@@ -10,20 +10,59 @@ import type { Category } from "@shared/schema";
 interface CategorySelectionProps {
   studentId: string;
   teamId: string;
+  playerType?: string;
   onCategoriesUpdated?: (categoryIds: string[]) => void;
 }
 
-export default function CategorySelection({ studentId, teamId, onCategoriesUpdated }: CategorySelectionProps) {
+export default function CategorySelection({ studentId, teamId, playerType: playerTypeProp, onCategoriesUpdated }: CategorySelectionProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [originalCategories, setOriginalCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const { toast} = useToast();
 
+  // Get player type from localStorage if prop is not provided
+  const [playerType, setPlayerType] = useState<string | undefined>(() => {
+    // Try to get playerType immediately on mount
+    if (playerTypeProp) return playerTypeProp;
+    
+    const playerData = localStorage.getItem("playerData");
+    if (playerData) {
+      try {
+        const data = JSON.parse(playerData);
+        return data.playerType;
+      } catch {
+        return undefined;
+      }
+    }
+    return undefined;
+  });
+
+  useEffect(() => {
+    if (!playerTypeProp) {
+      const playerData = localStorage.getItem("playerData");
+      if (playerData) {
+        try {
+          const data = JSON.parse(playerData);
+          setPlayerType(data.playerType);
+        } catch {
+          setPlayerType(undefined);
+        }
+      }
+    } else {
+      setPlayerType(playerTypeProp);
+    }
+  }, [playerTypeProp]);
+
   const { data: allCategories = [] } = useQuery<Category[]>({
     queryKey: teamId ? [`/api/categories/${teamId}`] : [],
     enabled: !!teamId,
   });
+
+  // スクール生の場合、スクール生用カテゴリのみをフィルタリング
+  const availableCategories = playerType === "school" 
+    ? allCategories.filter(cat => cat.isSchoolOnly) 
+    : allCategories;
 
   const { data: studentCategories = [] } = useQuery<Category[]>({
     queryKey: [`/api/student/${studentId}/categories`],
@@ -105,7 +144,7 @@ export default function CategorySelection({ studentId, teamId, onCategoriesUpdat
       )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {allCategories.map((category) => (
+        {availableCategories.map((category) => (
           <Card 
             key={category.id} 
             className={`

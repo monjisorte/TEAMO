@@ -921,7 +921,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lastName: student[0].lastName,
           firstName: student[0].firstName,
           email: student[0].email,
-          teamId: student[0].teamId 
+          teamId: student[0].teamId,
+          playerType: student[0].playerType
         } 
       });
     } catch (error) {

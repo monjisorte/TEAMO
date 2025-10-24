@@ -9,6 +9,20 @@ interface PlayerAttendancePageProps {
 }
 
 export default function PlayerAttendancePage({ playerId, teamId }: PlayerAttendancePageProps) {
+  // Get player type from localStorage
+  const [playerType, setPlayerType] = useState<string | undefined>(() => {
+    const playerData = localStorage.getItem("playerData");
+    if (playerData) {
+      try {
+        const data = JSON.parse(playerData);
+        return data.playerType;
+      } catch {
+        return undefined;
+      }
+    }
+    return undefined;
+  });
+
   // Initialize from localStorage immediately to avoid flickering
   const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
     const savedCategories = localStorage.getItem(`player_${playerId}_categories`);
@@ -36,6 +50,17 @@ export default function PlayerAttendancePage({ playerId, teamId }: PlayerAttenda
   });
 
   useEffect(() => {
+    // Update player type when playerId or playerData changes
+    const playerData = localStorage.getItem("playerData");
+    if (playerData) {
+      try {
+        const data = JSON.parse(playerData);
+        setPlayerType(data.playerType);
+      } catch {
+        setPlayerType(undefined);
+      }
+    }
+
     // Update state when playerId changes
     const savedCategories = localStorage.getItem(`player_${playerId}_categories`);
     if (savedCategories) {
@@ -75,6 +100,7 @@ export default function PlayerAttendancePage({ playerId, teamId }: PlayerAttenda
             <CategorySelection
               studentId={playerId}
               teamId={teamId}
+              playerType={playerType}
               onCategoriesUpdated={handleCategoriesUpdated}
             />
           </CardContent>
