@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -129,13 +129,13 @@ export default function PlayerMembersPage({ teamId }: PlayerMembersPageProps) {
                   </Avatar>
                   <div className="space-y-1.5 flex-1">
                     <div>
-                      <p className="text-xs md:text-sm font-medium" data-testid={`text-member-name-${student.id}`}>
-                        名前　<span className="font-bold text-base md:text-lg">{getFullName(student.lastName, student.firstName)}</span>
-                      </p>
+                      <CardTitle className="text-xl" data-testid={`text-member-name-${student.id}`}>
+                        {getFullName(student.lastName, student.firstName)}
+                      </CardTitle>
                       {(student.lastNameKana || student.firstNameKana) && (
-                        <p className="text-xs text-muted-foreground ml-8" data-testid={`text-member-kana-${student.id}`}>
+                        <CardDescription className="mt-1" data-testid={`text-member-kana-${student.id}`}>
                           {getFullName(student.lastNameKana || "", student.firstNameKana || "")}
-                        </p>
+                        </CardDescription>
                       )}
                     </div>
                     <div>

@@ -291,7 +291,7 @@ export function CoachManagement() {
                   </Avatar>
                   <div className="flex-1 min-w-0 space-y-2">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <CardTitle className="text-2xl">{fullName}</CardTitle>
+                      <CardTitle className="text-xl">{fullName}</CardTitle>
                       {coach.role === "owner" && (
                         <Badge variant="default" className="rounded-full" data-testid={`badge-owner-${coach.id}`}>
                           <Shield className="h-3 w-3 mr-1" />
