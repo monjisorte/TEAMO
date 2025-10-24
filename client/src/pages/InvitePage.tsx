@@ -33,13 +33,25 @@ export default function InvitePage() {
     window.open("https://teamo.cloud/", "_blank");
   };
 
-  const handleCopyMessage = () => {
+  const handleCopyTeamMessage = () => {
     if (team) {
       const message = `https://teamo.cloud/ から登録をお願いします。チームIDは ${team.teamCode} です。\nログイン後、プロフィールやカテゴリを登録してください。出欠も記入をお願いします。`;
       navigator.clipboard.writeText(message);
       toast({
         title: "コピーしました",
-        description: "登録手順の文面をクリップボードにコピーしました",
+        description: "チーム生用の登録手順をコピーしました",
+      });
+    }
+  };
+
+  const handleCopySchoolMessage = () => {
+    if (team) {
+      const schoolCode = `${team.teamCode}X`;
+      const message = `https://teamo.cloud/ から登録をお願いします。チームIDは ${schoolCode} です。\nログイン後、プロフィールやカテゴリを登録してください。出欠も記入をお願いします。`;
+      navigator.clipboard.writeText(message);
+      toast({
+        title: "コピーしました",
+        description: "スクール生用の登録手順をコピーしました",
       });
     }
   };
@@ -112,7 +124,10 @@ export default function InvitePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>登録手順</CardTitle>
+          <CardTitle>チーム生用 登録手順</CardTitle>
+          <CardDescription>
+            チームに所属する選手用の登録手順です
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-muted p-4 rounded-lg">
@@ -122,9 +137,34 @@ export default function InvitePage() {
             </p>
           </div>
           <Button
-            onClick={handleCopyMessage}
+            onClick={handleCopyTeamMessage}
             className="w-full"
-            data-testid="button-copy-message"
+            data-testid="button-copy-team-message"
+          >
+            <Copy className="w-4 h-4 mr-2" />
+            文面をコピー
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>スクール生用 登録手順</CardTitle>
+          <CardDescription>
+            スクールに通う生徒用の登録手順です
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-muted p-4 rounded-lg">
+            <p className="text-sm whitespace-pre-line">
+              https://teamo.cloud/ から登録をお願いします。チームIDは <span className="font-bold text-primary">{team.teamCode}X</span> です。{'\n'}
+              ログイン後、プロフィールやカテゴリを登録してください。出欠も記入をお願いします。
+            </p>
+          </div>
+          <Button
+            onClick={handleCopySchoolMessage}
+            className="w-full"
+            data-testid="button-copy-school-message"
           >
             <Copy className="w-4 h-4 mr-2" />
             文面をコピー
