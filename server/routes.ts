@@ -2710,6 +2710,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(siblingLinks.id, linkId))
         .returning();
 
+      // Send email notification to the requester
+      const requesterId = link[0].requestedBy;
+      const approverId = studentId;
+      
+      const requester = await db.select()
+        .from(students)
+        .where(eq(students.id, requesterId))
+        .limit(1);
+      
+      const approver = await db.select()
+        .from(students)
+        .where(eq(students.id, approverId))
+        .limit(1);
+
+      if (requester.length > 0 && approver.length > 0) {
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const requesterName = `${requester[0].lastName} ${requester[0].firstName}`;
+        const approverName = `${approver[0].lastName} ${approver[0].firstName}`;
+
+        try {
+          await resend.emails.send({
+            from: "TEAMO <noreply@sorte.work>",
+            to: requester[0].email,
+            subject: "兄弟アカウント連携が承認されました - TEAMO",
+            html: `
+              <h2>兄弟アカウント連携が承認されました</h2>
+              <p>${requesterName} 様</p>
+              <p>${approverName}さんが兄弟アカウント連携を承認しました。</p>
+              <p>これで、ログインし直すことなく簡単にアカウントを切り替えることができます。</p>
+              <p>アカウント切り替えは、画面右上のアカウントメニューから行えます。</p>
+            `,
+          });
+          console.log("Sibling link approval email sent to:", requester[0].email);
+        } catch (emailError) {
+          console.error("Error sending approval email:", emailError);
+          // Continue even if email fails
+        }
+      }
+
       res.json(updated[0]);
     } catch (error) {
       console.error("Error approving sibling link:", error);
