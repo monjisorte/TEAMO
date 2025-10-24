@@ -25,8 +25,14 @@ export default function PasswordReset() {
   const [isVerifying, setIsVerifying] = useState(true);
   const [tokenValid, setTokenValid] = useState(false);
   const [email, setEmail] = useState("");
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const { toast } = useToast();
+
+  // Determine if this is for coach or student based on URL path
+  const isCoach = location.includes("/coach/");
+  const apiPrefix = isCoach ? "/api/coach" : "/api/student";
+  const returnPath = isCoach ? "/team" : "/";
+  const userType = isCoach ? "コーチ" : "生徒";
 
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
@@ -52,7 +58,7 @@ export default function PasswordReset() {
       }
 
       try {
-        const response = await apiRequest("POST", "/api/student/verify-reset-token", { token });
+        const response = await apiRequest("POST", `${apiPrefix}/verify-reset-token`, { token });
         const result = await response.json();
 
         if (response.ok && result.valid) {
@@ -77,7 +83,7 @@ export default function PasswordReset() {
     };
 
     verifyToken();
-  }, [toast]);
+  }, [toast, apiPrefix]);
 
   const onSubmit = async (data: ResetPasswordFormValues) => {
     const params = new URLSearchParams(window.location.search);
@@ -94,7 +100,7 @@ export default function PasswordReset() {
 
     setIsLoading(true);
     try {
-      const response = await apiRequest("POST", "/api/student/reset-password", {
+      const response = await apiRequest("POST", `${apiPrefix}/reset-password`, {
         token,
         newPassword: data.newPassword,
       });
@@ -106,7 +112,7 @@ export default function PasswordReset() {
           description: "パスワードがリセットされました。ログイン画面に移動します。",
         });
         setTimeout(() => {
-          setLocation("/");
+          setLocation(returnPath);
         }, 2000);
       } else {
         toast({
@@ -128,7 +134,7 @@ export default function PasswordReset() {
 
   if (isVerifying) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <p className="text-center text-muted-foreground">検証中...</p>
@@ -140,7 +146,7 @@ export default function PasswordReset() {
 
   if (!tokenValid) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl text-center">エラー</CardTitle>
@@ -150,7 +156,7 @@ export default function PasswordReset() {
           </CardHeader>
           <CardContent>
             <Button 
-              onClick={() => setLocation("/")} 
+              onClick={() => setLocation(returnPath)} 
               className="w-full"
               data-testid="button-back-to-login"
             >
@@ -163,10 +169,16 @@ export default function PasswordReset() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">新しいパスワードを設定</CardTitle>
+          <CardTitle className="text-2xl text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            TEAMO
+          </CardTitle>
+          <CardDescription className="text-center">
+            {isCoach ? "コーチポータル" : "プレイヤーポータル"}
+          </CardDescription>
+          <CardTitle className="text-xl text-center pt-4">新しいパスワードを設定</CardTitle>
           <CardDescription className="text-center">
             {email} のパスワードを変更します
           </CardDescription>

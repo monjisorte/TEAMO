@@ -1071,6 +1071,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { token, newPassword } = req.body;
 
+      console.log("Coach password reset request:", { tokenLength: token?.length, passwordLength: newPassword?.length });
+
       if (!token || !newPassword) {
         return res.status(400).json({ error: "Token and new password are required" });
       }
@@ -1087,21 +1089,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ))
         .limit(1);
 
+      console.log("Reset token found:", resetToken.length > 0 ? { email: resetToken[0].email } : "Not found");
+
       if (resetToken.length === 0) {
         return res.status(400).json({ error: "Invalid or expired token" });
       }
 
+      const email = resetToken[0].email;
+      console.log("Resetting password for coach:", email);
+
       // Hash new password
       const hashedPassword = await hashPassword(newPassword);
+      console.log("Hashed password generated");
 
       // Update coach password
-      await db.update(coaches)
+      const updateResult = await db.update(coaches)
         .set({ password: hashedPassword })
-        .where(eq(coaches.email, resetToken[0].email));
+        .where(eq(coaches.email, email))
+        .returning();
+
+      console.log("Coach password update result:", updateResult.length > 0 ? "Success" : "No rows updated");
 
       // Delete used token
       await db.delete(passwordResetTokens)
         .where(eq(passwordResetTokens.token, token));
+
+      console.log("Token deleted");
 
       res.status(200).json({ message: "Password reset successful" });
     } catch (error) {

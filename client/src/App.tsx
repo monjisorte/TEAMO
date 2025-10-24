@@ -488,6 +488,9 @@ function App() {
           <Route path="/reset-password">
             {() => <PasswordReset />}
           </Route>
+          <Route path="/coach/reset-password">
+            {() => <PasswordReset />}
+          </Route>
           <Route path="/login">
             {() => {
               // Redirect /login to /team
