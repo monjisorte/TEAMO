@@ -528,7 +528,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const teamCategories = await db.select()
         .from(categories)
-        .where(eq(categories.teamId, teamId));
+        .where(eq(categories.teamId, teamId))
+        .orderBy(categories.displayOrder);
       
       res.json(teamCategories);
     } catch (error) {
@@ -539,21 +540,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/categories", isAuthenticated, async (req, res) => {
     try {
-      const { teamId, name, description } = req.body;
+      const { teamId, name, description, isSchoolOnly } = req.body;
 
       if (!teamId || !name) {
         return res.status(400).json({ error: "teamId and name are required" });
       }
 
+      // Get max displayOrder for this team
+      const existingCategories = await db.select()
+        .from(categories)
+        .where(eq(categories.teamId, teamId));
+      
+      const maxOrder = existingCategories.length > 0 
+        ? Math.max(...existingCategories.map(c => c.displayOrder || 0))
+        : -1;
+
       const newCategory = await db.insert(categories).values({
         teamId,
         name,
         description,
+        isSchoolOnly: isSchoolOnly || false,
+        displayOrder: maxOrder + 1,
       }).returning();
 
       res.status(201).json(newCategory[0]);
     } catch (error) {
       console.error("Error creating category:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/categories/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, description, isSchoolOnly } = req.body;
+
+      if (!name) {
+        return res.status(400).json({ error: "name is required" });
+      }
+
+      const updatedCategory = await db.update(categories)
+        .set({
+          name,
+          description,
+          isSchoolOnly: isSchoolOnly || false,
+        })
+        .where(eq(categories.id, id))
+        .returning();
+
+      if (updatedCategory.length === 0) {
+        return res.status(404).json({ error: "Category not found" });
+      }
+
+      res.json(updatedCategory[0]);
+    } catch (error) {
+      console.error("Error updating category:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/categories/:id/reorder", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { direction } = req.body; // 'up' or 'down'
+
+      // Get current category
+      const currentCategory = await db.select()
+        .from(categories)
+        .where(eq(categories.id, id))
+        .limit(1);
+
+      if (currentCategory.length === 0) {
+        return res.status(404).json({ error: "Category not found" });
+      }
+
+      const current = currentCategory[0];
+
+      // Get all categories for this team
+      const allCategories = await db.select()
+        .from(categories)
+        .where(eq(categories.teamId, current.teamId))
+        .orderBy(categories.displayOrder);
+
+      // Normalize displayOrder if all are 0 or have duplicates
+      const needsNormalization = allCategories.every(c => c.displayOrder === 0) || 
+        new Set(allCategories.map(c => c.displayOrder)).size !== allCategories.length;
+      
+      if (needsNormalization) {
+        // Assign sequential displayOrder values
+        for (let i = 0; i < allCategories.length; i++) {
+          await db.update(categories)
+            .set({ displayOrder: i })
+            .where(eq(categories.id, allCategories[i].id));
+          allCategories[i].displayOrder = i;
+        }
+      }
+
+      const currentIndex = allCategories.findIndex(c => c.id === id);
+
+      if (currentIndex === -1) {
+        return res.status(404).json({ error: "Category not found in list" });
+      }
+
+      // Determine swap target
+      let swapIndex = -1;
+      if (direction === 'up' && currentIndex > 0) {
+        swapIndex = currentIndex - 1;
+      } else if (direction === 'down' && currentIndex < allCategories.length - 1) {
+        swapIndex = currentIndex + 1;
+      }
+
+      if (swapIndex === -1) {
+        return res.status(400).json({ error: "Cannot move in that direction" });
+      }
+
+      // Swap displayOrder values
+      const temp = allCategories[currentIndex].displayOrder;
+      await db.update(categories)
+        .set({ displayOrder: allCategories[swapIndex].displayOrder })
+        .where(eq(categories.id, allCategories[currentIndex].id));
+
+      await db.update(categories)
+        .set({ displayOrder: temp })
+        .where(eq(categories.id, allCategories[swapIndex].id));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error reordering category:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });

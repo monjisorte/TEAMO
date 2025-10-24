@@ -33,6 +33,8 @@ export const categories = pgTable("categories", {
   teamId: varchar("team_id").notNull(),
   name: text("name").notNull(),
   description: text("description"),
+  isSchoolOnly: boolean("is_school_only").default(false),
+  displayOrder: integer("display_order").notNull().default(0),
 });
 
 export const insertCategorySchema = createInsertSchema(categories).omit({ id: true });
