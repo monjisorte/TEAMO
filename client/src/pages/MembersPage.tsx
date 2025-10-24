@@ -321,7 +321,7 @@ export default function MembersPage({ teamId }: MembersPageProps) {
                         </Select>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground mb-0.5">兄弟割引</p>
+                        <p className="text-xs text-muted-foreground mb-0.5">兄弟</p>
                         <p className="text-sm md:text-base font-medium h-8 md:h-9 flex items-center" data-testid={`text-sibling-discount-${student.id}`}>
                           {getSiblingDiscountStatus(student.id)}
                         </p>

@@ -157,12 +157,12 @@ export default function PlayerMembersPage({ teamId }: PlayerMembersPageProps) {
                     </div>
                     <div>
                       <p className="text-xs md:text-sm font-medium" data-testid={`text-sibling-${student.id}`}>
-                        兄弟割引　<span className="text-xs md:text-sm">
+                        兄弟　<span className="text-xs md:text-sm">
                           {siblingInfoMap[student.id]?.hasSibling && siblingInfoMap[student.id].siblings.length > 0
-                            ? `兄弟 ${getFullName(
+                            ? getFullName(
                                 siblingInfoMap[student.id].siblings[0].lastName,
                                 siblingInfoMap[student.id].siblings[0].firstName
-                              )}`
+                              )
                             : ''}
                         </span>
                       </p>

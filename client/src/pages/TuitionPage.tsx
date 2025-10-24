@@ -538,7 +538,7 @@ export default function TuitionPage() {
                           </Select>
                         </div>
                         <div>
-                          <div className="text-xs font-medium text-muted-foreground mb-1.5">兄弟割引</div>
+                          <div className="text-xs font-medium text-muted-foreground mb-1.5">兄弟</div>
                           <div className="text-sm font-medium h-9 flex items-center" data-testid={`text-sibling-discount-${student.id}`}>
                             {getSiblingDiscountStatus(student.id)}
                           </div>
