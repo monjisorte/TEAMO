@@ -511,22 +511,19 @@ export default function TuitionPage() {
                 const amount = payment?.amount ?? calculateTotal(student.id);
 
                 return (
-                  <div key={student.id} className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-card to-card/50 p-5 shadow-sm hover-elevate transition-all">
-                    <div className="flex items-start justify-between gap-4 mb-4">
-                      {/* Left: Name and Category */}
-                      <div className="flex-1 space-y-3">
-                        <div>
-                          <div className="text-xs font-medium text-muted-foreground mb-1.5">名前</div>
+                  <div key={student.id} className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-card to-card/50 p-4 shadow-sm hover-elevate transition-all">
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      {/* Left: Name, Category, and Sibling (horizontal layout) */}
+                      <div className="flex-1">
+                        <div className="text-xs font-medium text-muted-foreground mb-1.5">名前</div>
+                        <div className="flex flex-wrap items-center gap-2">
                           <div className="text-lg font-semibold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">{getFullName(student.lastName, student.firstName)}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs font-medium text-muted-foreground mb-1.5">区分</div>
                           <Select
                             value={student.playerType || "unset"}
                             onValueChange={(value) => handleCategoryChange(student.id, value === "unset" ? null : value)}
                             data-testid={`select-category-${student.id}`}
                           >
-                            <SelectTrigger className="w-[130px]">
+                            <SelectTrigger className="w-[115px] h-8">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -536,35 +533,30 @@ export default function TuitionPage() {
                               <SelectItem value="inactive">休部</SelectItem>
                             </SelectContent>
                           </Select>
-                        </div>
-                        <div>
-                          <div className="text-xs font-medium text-muted-foreground mb-1.5">兄弟</div>
-                          <div className="text-sm font-medium h-9 flex items-center" data-testid={`text-sibling-discount-${student.id}`}>
+                          <div className="text-sm text-muted-foreground" data-testid={`text-sibling-discount-${student.id}`}>
                             {getSiblingDiscountStatus(student.id)}
                           </div>
                         </div>
                       </div>
 
                       {/* Right: Total and Status */}
-                      <div className="text-right space-y-3">
-                        <div className="bg-primary/5 rounded-lg p-3 border border-primary/10">
-                          <div className="text-xs font-medium text-muted-foreground mb-1">合計金額</div>
+                      <div className="text-right flex items-start gap-3">
+                        <div className="bg-primary/5 rounded-lg px-4 py-2 border border-primary/10">
+                          <div className="text-xs font-medium text-muted-foreground mb-0.5">合計金額</div>
                           <div className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent" data-testid={`text-total-amount-${student.id}`}>
                             ¥{amount.toLocaleString()}
                           </div>
                         </div>
-                        <div>
-                          <label className="flex items-center justify-end gap-2 cursor-pointer group">
-                            <Checkbox
-                              checked={payment?.isPaid || false}
-                              onCheckedChange={(checked) => handlePaidToggle(student.id, checked as boolean)}
-                              data-testid={`checkbox-paid-${student.id}`}
-                            />
-                            <span className={`text-sm font-medium transition-colors ${payment?.isPaid ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
-                              {payment?.isPaid ? "✓ 入金済み" : "未入金"}
-                            </span>
-                          </label>
-                        </div>
+                        <label className="flex items-center gap-2 cursor-pointer group pt-2">
+                          <Checkbox
+                            checked={payment?.isPaid || false}
+                            onCheckedChange={(checked) => handlePaidToggle(student.id, checked as boolean)}
+                            data-testid={`checkbox-paid-${student.id}`}
+                          />
+                          <span className={`text-sm font-medium transition-colors ${payment?.isPaid ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                            {payment?.isPaid ? "入金済" : "未入金"}
+                          </span>
+                        </label>
                       </div>
                     </div>
 
