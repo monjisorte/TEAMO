@@ -1708,6 +1708,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Delete related data first
       await db.delete(attendances).where(eq(attendances.studentId, id));
       await db.delete(studentCategories).where(eq(studentCategories.studentId, id));
+      await db.delete(tuitionPayments).where(eq(tuitionPayments.studentId, id));
+      
+      // Delete sibling links where this student is either requester or sibling
+      await db.delete(siblingLinks).where(eq(siblingLinks.requesterId, id));
+      await db.delete(siblingLinks).where(eq(siblingLinks.siblingId, id));
 
       // Delete the student
       await db.delete(students).where(eq(students.id, id));
