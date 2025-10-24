@@ -2825,6 +2825,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get sibling status for all students in a team (for display purposes)
+  app.get("/api/sibling-links/team/:teamId/status", isAuthenticated, async (req, res) => {
+    try {
+      const { teamId } = req.params;
+
+      // Get all students in the team
+      const teamStudents = await db.select().from(students).where(eq(students.teamId, teamId));
+      const studentIds = teamStudents.map(s => s.id);
+      
+      // Get all approved links (no filtering by student ID in query)
+      const allApprovedLinks = await db.select()
+        .from(siblingLinks)
+        .where(eq(siblingLinks.status, "approved"));
+
+      // Filter links that involve students from this team
+      const relevantLinks = allApprovedLinks.filter(link =>
+        studentIds.includes(link.studentId1) || studentIds.includes(link.studentId2)
+      );
+
+      // Create a map of student ID to sibling status
+      const siblingStatusMap: Record<string, boolean> = {};
+      teamStudents.forEach(student => {
+        const hasSiblings = relevantLinks.some(link => 
+          link.studentId1 === student.id || link.studentId2 === student.id
+        );
+        siblingStatusMap[student.id] = hasSiblings;
+      });
+
+      res.json(siblingStatusMap);
+    } catch (error) {
+      console.error("Error fetching team sibling status:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
