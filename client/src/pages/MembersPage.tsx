@@ -66,7 +66,7 @@ export default function MembersPage({ teamId }: MembersPageProps) {
   });
 
   // Fetch sibling status for all students in the team
-  const { data: siblingStatusMap = {} } = useQuery<Record<string, boolean>>({
+  const { data: siblingInfoMap = {} } = useQuery<Record<string, { hasSibling: boolean, siblings: Array<{ id: string, lastName: string, firstName: string }> }>>({
     queryKey: [`/api/sibling-links/team/${teamId}/status`],
     enabled: !!teamId,
   });
@@ -167,7 +167,13 @@ export default function MembersPage({ teamId }: MembersPageProps) {
 
   // Get sibling discount status based on actual sibling links
   const getSiblingDiscountStatus = (studentId: string) => {
-    return siblingStatusMap[studentId] ? "あり" : " ";
+    const siblingInfo = siblingInfoMap[studentId];
+    if (siblingInfo && siblingInfo.hasSibling && siblingInfo.siblings.length > 0) {
+      // Display first sibling name (if there are multiple siblings, show the first one)
+      const sibling = siblingInfo.siblings[0];
+      return `兄弟 ${getFullName(sibling.lastName, sibling.firstName)}`;
+    }
+    return " ";
   };
 
   const deleteMutation = useMutation({
