@@ -2843,16 +2843,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         studentIds.includes(link.studentId1) || studentIds.includes(link.studentId2)
       );
 
-      // Create a map of student ID to sibling status
-      const siblingStatusMap: Record<string, boolean> = {};
-      teamStudents.forEach(student => {
-        const hasSiblings = relevantLinks.some(link => 
+      // Create a map of student ID to sibling information
+      const siblingInfoMap: Record<string, { hasSibling: boolean, siblings: Array<{ id: string, lastName: string, firstName: string }> }> = {};
+      
+      for (const student of teamStudents) {
+        // Find all sibling links for this student
+        const studentLinks = relevantLinks.filter(link => 
           link.studentId1 === student.id || link.studentId2 === student.id
         );
-        siblingStatusMap[student.id] = hasSiblings;
-      });
 
-      res.json(siblingStatusMap);
+        if (studentLinks.length === 0) {
+          siblingInfoMap[student.id] = { hasSibling: false, siblings: [] };
+        } else {
+          // Get sibling details
+          const siblings = await Promise.all(studentLinks.map(async (link) => {
+            const siblingId = link.studentId1 === student.id ? link.studentId2 : link.studentId1;
+            const sibling = await db.select()
+              .from(students)
+              .where(eq(students.id, siblingId))
+              .limit(1);
+
+            if (sibling.length > 0) {
+              return {
+                id: sibling[0].id,
+                lastName: sibling[0].lastName,
+                firstName: sibling[0].firstName
+              };
+            }
+            return null;
+          }));
+
+          siblingInfoMap[student.id] = {
+            hasSibling: true,
+            siblings: siblings.filter(s => s !== null) as Array<{ id: string, lastName: string, firstName: string }>
+          };
+        }
+      }
+
+      res.json(siblingInfoMap);
     } catch (error) {
       console.error("Error fetching team sibling status:", error);
       res.status(500).json({ error: "Internal server error" });
