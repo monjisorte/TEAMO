@@ -37,7 +37,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CalendarView } from "@/components/CalendarView";
-import type { Schedule, Category, Student, Attendance, CoachCategory, Venue } from "@shared/schema";
+import type { Schedule, Category, Student, Attendance, CoachCategory, Venue, Team } from "@shared/schema";
 import { getFullName } from "@/lib/nameUtils";
 
 // 時間（0-23）のオプションを生成
@@ -150,6 +150,11 @@ export function ScheduleList() {
 
   const { data: venues = [] } = useQuery<Venue[]>({
     queryKey: [`/api/venues/${teamId}`],
+    enabled: !!teamId,
+  });
+
+  const { data: team } = useQuery<Team>({
+    queryKey: [`/api/teams/${teamId}`],
     enabled: !!teamId,
   });
 
