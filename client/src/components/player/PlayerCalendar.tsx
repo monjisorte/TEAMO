@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, Check, Paperclip, FileText } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Paperclip, FileText, Calendar, Clock, MapPin, AlertCircle, X as XIcon } from "lucide-react";
 import type { Schedule, Attendance, Student, Category } from "@shared/schema";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { getFullName } from "@/lib/nameUtils";
+import { format } from "date-fns";
+import { ja } from "date-fns/locale";
 
 interface StudentCalendarProps {
   studentId: string;
@@ -410,7 +412,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
 
     if (!nextSchedule) {
       return (
-        <Card>
+        <Card className="border-0 shadow-xl">
           <CardContent className="p-12 text-center">
             <p className="text-muted-foreground text-lg">次回の予定はありません</p>
           </CardContent>
@@ -423,274 +425,324 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
     const confirmedAttendances = scheduleAttendances.filter(a => a.status === "○");
     const maybeAttendances = scheduleAttendances.filter(a => a.status === "△");
     const absentAttendances = scheduleAttendances.filter(a => a.status === "×");
+    const scheduleCategoryIds = getScheduleCategoryIds(nextSchedule);
+    const categoryNames = scheduleCategoryIds
+      .map(id => categories.find(cat => cat.id === id)?.name)
+      .filter((name): name is string => !!name);
+    const attendanceCounts = {
+      confirmed: confirmedAttendances.length,
+      maybe: maybeAttendances.length,
+      absent: absentAttendances.length,
+    };
 
     return (
-      <Card>
-        <CardContent className="p-4">
+      <Card className="border-0 shadow-xl overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 p-4 text-foreground">
           <div className="space-y-3">
-            {/* Schedule Title */}
-            <div>
-              <h3 className="text-lg font-bold mb-1">{nextSchedule.title}</h3>
-              <Badge variant="outline" className="text-xs">次回の予定</Badge>
+            {/* タイトルと参加人数 */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1">
+                <h3 className="text-xl font-bold mb-1">{nextSchedule.title}</h3>
+                <Badge variant="secondary" className="text-xs font-medium">次回の予定</Badge>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 bg-white/80 dark:bg-slate-900/80 rounded-full px-3 py-1">
+                <div className="flex items-center gap-1">
+                  <Check className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                  <span className="text-sm font-semibold">{attendanceCounts.confirmed}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 text-yellow-600 dark:text-yellow-400" />
+                  <span className="text-sm font-semibold">{attendanceCounts.maybe}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <XIcon className="w-3 h-3 text-red-600 dark:text-red-400" />
+                  <span className="text-sm font-semibold">{attendanceCounts.absent}</span>
+                </div>
+              </div>
             </div>
 
-            <Separator />
+            {/* カテゴリーバッジ */}
+            {categoryNames.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {categoryNames.map((name, index) => (
+                  <Badge 
+                    key={index} 
+                    variant="secondary"
+                    className="text-xs font-medium"
+                  >
+                    {name}
+                  </Badge>
+                ))}
+              </div>
+            )}
 
-            {/* Schedule Details - 1列表示 */}
-            <div className="space-y-2">
-              <div className="text-sm flex items-center gap-2 flex-wrap">
+            {/* 日付・時間・場所情報 */}
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <span className="font-semibold">
-                  {nextSchedule.date.substring(0, 4)}/{nextSchedule.date.substring(5, 7)}/{nextSchedule.date.substring(8, 10)}
+                  {format(new Date(nextSchedule.date), "M月d日(E)", { locale: ja })}
                 </span>
-                
-                {(nextSchedule.startHour !== null && nextSchedule.startMinute !== null) && (
-                  <span>
+              </div>
+              
+              {(nextSchedule.startHour !== null && nextSchedule.startMinute !== null) && (
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                  <span className="font-medium">
                     {String(nextSchedule.startHour).padStart(2, '0')}:{String(nextSchedule.startMinute).padStart(2, '0')}
                     {nextSchedule.endHour !== null && nextSchedule.endMinute !== null && 
-                      `-${String(nextSchedule.endHour).padStart(2, '0')}:${String(nextSchedule.endMinute).padStart(2, '0')}`}
+                      ` - ${String(nextSchedule.endHour).padStart(2, '0')}:${String(nextSchedule.endMinute).padStart(2, '0')}`}
                   </span>
-                )}
-
-                {(nextSchedule.gatherHour !== null && nextSchedule.gatherMinute !== null) && (
-                  <span className="text-muted-foreground">
-                    集合:{String(nextSchedule.gatherHour).padStart(2, '0')}:{String(nextSchedule.gatherMinute).padStart(2, '0')}
-                  </span>
-                )}
-
-                {nextSchedule.venue && nextSchedule.venue !== "未定" ? (
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nextSchedule.venue)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary underline"
-                    data-testid="link-next-schedule-venue"
-                  >
-                    {nextSchedule.venue}
-                  </a>
-                ) : (
-                  <span>{nextSchedule.venue || "未定"}</span>
-                )}
-              </div>
-
-              {nextSchedule.notes && (
-                <div className="text-sm whitespace-pre-wrap text-muted-foreground">{nextSchedule.notes}</div>
+                  {(nextSchedule.gatherHour !== null && nextSchedule.gatherMinute !== null) && (
+                    <span className="text-xs text-muted-foreground">
+                      (集合 {String(nextSchedule.gatherHour).padStart(2, '0')}:{String(nextSchedule.gatherMinute).padStart(2, '0')})
+                    </span>
+                  )}
+                </div>
               )}
-
-              {/* Attachments */}
-              {nextSchedule.attachments && (() => {
-                try {
-                  const files = JSON.parse(nextSchedule.attachments);
-                  if (files.length > 0) {
-                    const handleFileDownload = async (fileUrl: string, fileName: string) => {
-                      try {
-                        const response = await fetch('/api/objects/download-url', {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json',
-                          },
-                          body: JSON.stringify({ url: fileUrl }),
-                        });
-
-                        if (!response.ok) {
-                          throw new Error('Failed to generate download URL');
-                        }
-
-                        const { downloadURL } = await response.json();
-                        window.open(downloadURL, '_blank');
-                      } catch (error) {
-                        console.error('Error downloading file:', error);
-                        toast({
-                          title: "エラー",
-                          description: "ファイルのダウンロードに失敗しました",
-                          variant: "destructive",
-                        });
-                      }
-                    };
-
-                    return (
-                      <div className="space-y-2 pt-2">
-                        <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                          <Paperclip className="h-4 w-4" />
-                          <span>添付ファイル ({files.length})</span>
-                        </div>
-                        <div className="space-y-2">
-                          {files.map((file: { name: string; url: string; size: number }, index: number) => (
-                            <button
-                              key={index}
-                              onClick={() => handleFileDownload(file.url, file.name)}
-                              className="flex items-center gap-2 p-2 rounded-lg border bg-card hover-elevate text-sm w-full text-left"
-                              data-testid={`attachment-link-${index}`}
-                            >
-                              <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                              <span className="truncate flex-1">{file.name}</span>
-                              <span className="text-xs text-muted-foreground flex-shrink-0">
-                                ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  }
-                } catch (error) {
-                  console.error("Failed to parse attachments:", error);
-                }
-                return null;
-              })()}
-            </div>
-
-            <Separator />
-
-            {/* Your Attendance */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold">あなたの出欠: </span>
-                <Badge 
-                  variant={
-                    attendance?.status === "○" ? "default" :
-                    attendance?.status === "△" ? "secondary" :
-                    "outline"
-                  }
-                  className="text-sm px-2 py-0 h-5"
+              
+              {nextSchedule.venue ? (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nextSchedule.venue)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 hover-elevate rounded px-2 py-1 transition-all w-fit"
+                  data-testid="link-next-schedule-venue"
                 >
-                  {attendance?.status || "未回答"}
-                </Badge>
-                {nextSchedule.studentCanRegister === false && (
-                  <Badge variant="secondary" className="text-xs">
-                    コーチ指定
-                  </Badge>
-                )}
-              </div>
-              
-              {/* Attendance Buttons */}
-              {nextSchedule.studentCanRegister !== false ? (
-                <>
-                  <div className="flex gap-1.5">
-                    <Button
-                      variant={attendance?.status === "○" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleAttendanceChange(nextSchedule.id, "○", editingComment)}
-                      disabled={saveAttendanceMutation.isPending}
-                      data-testid="button-next-attendance-yes"
-                    >
-                      ○ 参加
-                    </Button>
-                    <Button
-                      variant={attendance?.status === "△" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleAttendanceChange(nextSchedule.id, "△", editingComment)}
-                      disabled={saveAttendanceMutation.isPending}
-                      data-testid="button-next-attendance-maybe"
-                    >
-                      △ 未定
-                    </Button>
-                    <Button
-                      variant={attendance?.status === "×" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleAttendanceChange(nextSchedule.id, "×", editingComment)}
-                      disabled={saveAttendanceMutation.isPending}
-                      data-testid="button-next-attendance-no"
-                    >
-                      × 欠席
-                    </Button>
-                  </div>
-                  
-                  {/* Comment Field */}
-                  <div>
-                    <label className="text-xs font-semibold mb-1 block">コメント（任意）</label>
-                    <Textarea
-                      placeholder="遅刻・早退の理由などがあれば入力してください..."
-                      value={editingComment}
-                      onChange={(e) => setEditingComment(e.target.value)}
-                      data-testid="textarea-next-comment"
-                      rows={2}
-                      className="resize-none text-sm"
-                    />
-                  </div>
-                </>
+                  <MapPin className="w-4 h-4 text-red-600 dark:text-red-400" />
+                  <span className="font-medium underline decoration-dotted underline-offset-2">{nextSchedule.venue}</span>
+                </a>
               ) : (
-                <p className="text-xs text-muted-foreground">
-                  このイベントはコーチ指定のため、出欠の変更はできません
-                </p>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-red-600 dark:text-red-400" />
+                  <span className="font-medium text-muted-foreground">未定</span>
+                </div>
               )}
             </div>
+          </div>
+        </div>
 
-            <Separator />
+        <CardContent className="p-4 space-y-4">
+          {/* 備考 */}
+          {nextSchedule.notes && (
+            <div className="bg-muted/30 p-3 rounded-lg">
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{nextSchedule.notes}</p>
+            </div>
+          )}
 
-            {/* Participants */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-base">参加者情報</h4>
-              
-              <div className="grid gap-3">
-                {/* Confirmed */}
-                {confirmedAttendances.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="default" className="bg-green-500">
-                        ○ 参加 ({confirmedAttendances.length}名)
-                      </Badge>
+          {/* Attachments */}
+          {nextSchedule.attachments && (() => {
+            try {
+              const files = JSON.parse(nextSchedule.attachments);
+              if (files.length > 0) {
+                const handleFileDownload = async (fileUrl: string, fileName: string) => {
+                  try {
+                    const response = await fetch('/api/objects/download-url', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({ url: fileUrl }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error('Failed to generate download URL');
+                    }
+
+                    const { downloadURL } = await response.json();
+                    window.open(downloadURL, '_blank');
+                  } catch (error) {
+                    console.error('Error downloading file:', error);
+                    toast({
+                      title: "エラー",
+                      description: "ファイルのダウンロードに失敗しました",
+                      variant: "destructive",
+                    });
+                  }
+                };
+
+                return (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                      <Paperclip className="h-4 w-4" />
+                      <span>添付ファイル ({files.length})</span>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {confirmedAttendances.map(att => (
-                        <Badge key={att.id} variant="outline" className="flex items-center gap-1">
-                          <span>{getStudentName(att.studentId)}</span>
-                          {att.comment && (
-                            <span className="text-xs text-muted-foreground">({att.comment})</span>
-                          )}
-                        </Badge>
+                    <div className="space-y-2">
+                      {files.map((file: { name: string; url: string; size: number }, index: number) => (
+                        <button
+                          key={index}
+                          onClick={() => handleFileDownload(file.url, file.name)}
+                          className="flex items-center gap-2 p-2 rounded-lg border bg-card hover-elevate text-sm w-full text-left"
+                          data-testid={`attachment-link-${index}`}
+                        >
+                          <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <span className="truncate flex-1">{file.name}</span>
+                          <span className="text-xs text-muted-foreground flex-shrink-0">
+                            ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                          </span>
+                        </button>
                       ))}
                     </div>
                   </div>
-                )}
+                );
+              }
+            } catch (error) {
+              console.error("Failed to parse attachments:", error);
+            }
+            return null;
+          })()}
 
-                {/* Maybe */}
-                {maybeAttendances.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="default" className="bg-yellow-500">
-                        △ 未定 ({maybeAttendances.length}名)
+          <Separator />
+
+          {/* Your Attendance */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold">あなたの出欠: </span>
+              <Badge 
+                variant={
+                  attendance?.status === "○" ? "default" :
+                  attendance?.status === "△" ? "secondary" :
+                  "outline"
+                }
+                className="text-sm px-2 py-0 h-5"
+              >
+                {attendance?.status || "未回答"}
+              </Badge>
+              {nextSchedule.studentCanRegister === false && (
+                <Badge variant="secondary" className="text-xs">
+                  コーチ指定
+                </Badge>
+              )}
+            </div>
+            
+            {/* Attendance Buttons */}
+            {nextSchedule.studentCanRegister !== false ? (
+              <>
+                <div className="flex gap-1.5">
+                  <Button
+                    variant={attendance?.status === "○" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleAttendanceChange(nextSchedule.id, "○", editingComment)}
+                    disabled={saveAttendanceMutation.isPending}
+                    data-testid="button-next-attendance-yes"
+                  >
+                    ○ 参加
+                  </Button>
+                  <Button
+                    variant={attendance?.status === "△" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleAttendanceChange(nextSchedule.id, "△", editingComment)}
+                    disabled={saveAttendanceMutation.isPending}
+                    data-testid="button-next-attendance-maybe"
+                  >
+                    △ 未定
+                  </Button>
+                  <Button
+                    variant={attendance?.status === "×" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleAttendanceChange(nextSchedule.id, "×", editingComment)}
+                    disabled={saveAttendanceMutation.isPending}
+                    data-testid="button-next-attendance-no"
+                  >
+                    × 欠席
+                  </Button>
+                </div>
+                
+                {/* Comment Field */}
+                <div>
+                  <label className="text-xs font-semibold mb-1 block">コメント（任意）</label>
+                  <Textarea
+                    placeholder="遅刻・早退の理由などがあれば入力してください..."
+                    value={editingComment}
+                    onChange={(e) => setEditingComment(e.target.value)}
+                    data-testid="textarea-next-comment"
+                    rows={2}
+                    className="resize-none text-sm"
+                  />
+                </div>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                このイベントはコーチ指定のため、出欠の変更はできません
+              </p>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Participants */}
+          <div className="space-y-3">
+            <h4 className="font-semibold text-base">参加者情報</h4>
+            
+            <div className="grid gap-3">
+              {/* Confirmed */}
+              {confirmedAttendances.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="default" className="bg-green-500">
+                      ○ 参加 ({confirmedAttendances.length}名)
+                    </Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {confirmedAttendances.map(att => (
+                      <Badge key={att.id} variant="outline" className="flex items-center gap-1">
+                        <span>{getStudentName(att.studentId)}</span>
+                        {att.comment && (
+                          <span className="text-xs text-muted-foreground">({att.comment})</span>
+                        )}
                       </Badge>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {maybeAttendances.map(att => (
-                        <Badge key={att.id} variant="outline" className="flex items-center gap-1">
-                          <span>{getStudentName(att.studentId)}</span>
-                          {att.comment && (
-                            <span className="text-xs text-muted-foreground">({att.comment})</span>
-                          )}
-                        </Badge>
-                      ))}
-                    </div>
+                    ))}
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Absent */}
-                {absentAttendances.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="default" className="bg-red-500">
-                        × 欠席 ({absentAttendances.length}名)
+              {/* Maybe */}
+              {maybeAttendances.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="default" className="bg-yellow-500">
+                      △ 未定 ({maybeAttendances.length}名)
+                    </Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {maybeAttendances.map(att => (
+                      <Badge key={att.id} variant="outline" className="flex items-center gap-1">
+                        <span>{getStudentName(att.studentId)}</span>
+                        {att.comment && (
+                          <span className="text-xs text-muted-foreground">({att.comment})</span>
+                        )}
                       </Badge>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {absentAttendances.map(att => (
-                        <Badge key={att.id} variant="outline" className="flex items-center gap-1">
-                          <span>{getStudentName(att.studentId)}</span>
-                          {att.comment && (
-                            <span className="text-xs text-muted-foreground">({att.comment})</span>
-                          )}
-                        </Badge>
-                      ))}
-                    </div>
+                    ))}
                   </div>
-                )}
+                </div>
+              )}
 
-                {scheduleAttendances.length === 0 && (
-                  <div className="text-sm text-muted-foreground text-center py-4">
-                    まだ出欠登録がありません
+              {/* Absent */}
+              {absentAttendances.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="default" className="bg-red-500">
+                      × 欠席 ({absentAttendances.length}名)
+                    </Badge>
                   </div>
-                )}
-              </div>
+                  <div className="flex flex-wrap gap-2">
+                    {absentAttendances.map(att => (
+                      <Badge key={att.id} variant="outline" className="flex items-center gap-1">
+                        <span>{getStudentName(att.studentId)}</span>
+                        {att.comment && (
+                          <span className="text-xs text-muted-foreground">({att.comment})</span>
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {scheduleAttendances.length === 0 && (
+                <div className="text-sm text-muted-foreground text-center py-4">
+                  まだ出欠登録がありません
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
