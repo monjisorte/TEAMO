@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Plus, Clock, Edit, Trash2, CalendarDays, List, Users, Paperclip, FileText, X as XIcon, Repeat } from "lucide-react";
+import { Calendar, MapPin, Plus, Clock, Edit, Trash2, CalendarDays, List, Users, Paperclip, FileText, X as XIcon, Repeat, Share2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import type { UploadResult } from "@uppy/core";
@@ -336,6 +336,62 @@ export function ScheduleList() {
     
     setShowRecurringEditDialog(false);
     setPendingScheduleData(null);
+  };
+
+  const handleShareScheduleInfo = () => {
+    if (!formData.title || !formData.date) {
+      toast({ 
+        title: "情報が不足しています", 
+        description: "タイトルと日付を入力してください",
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    // Format date
+    const dateObj = new Date(formData.date);
+    const formattedDate = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
+
+    // Format times
+    const startTime = formatTime(parseInt(formData.startHour), parseInt(formData.startMinute));
+    const endTime = formatTime(parseInt(formData.endHour), parseInt(formData.endMinute));
+    const gatherTime = formatTime(parseInt(formData.gatherHour), parseInt(formData.gatherMinute));
+
+    // Get venue address if venue is selected
+    const selectedVenue = venues.find(v => v.name === formData.venue);
+    const venueAddress = selectedVenue?.address || "";
+
+    // Build share text
+    let shareText = `【練習試合情報】\n`;
+    shareText += `対戦相手: ${formData.title}\n\n`;
+    shareText += `日時: ${formattedDate} ${startTime}～${endTime}\n`;
+    shareText += `集合時間: ${gatherTime}\n`;
+    shareText += `※集合時間は目安です。余裕を持ってお集まりください。\n\n`;
+    
+    if (formData.venue && formData.venue !== "未定") {
+      shareText += `会場: ${formData.venue}\n`;
+      if (venueAddress) {
+        shareText += `住所: ${venueAddress}\n`;
+      }
+      shareText += `\n`;
+    }
+    
+    if (formData.notes) {
+      shareText += `備考:\n${formData.notes}\n`;
+    }
+
+    // Copy to clipboard
+    navigator.clipboard.writeText(shareText).then(() => {
+      toast({ 
+        title: "情報をコピーしました", 
+        description: "LINEなどで共有できます" 
+      });
+    }).catch(() => {
+      toast({ 
+        title: "コピーに失敗しました", 
+        variant: "destructive" 
+      });
+    });
   };
 
   const handleEditSchedule = (schedule: Schedule) => {
@@ -1302,6 +1358,22 @@ export function ScheduleList() {
                 >
                   生徒側から参加登録を不可能にする
                 </Label>
+              </div>
+
+              <div className="col-span-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleShareScheduleInfo}
+                  data-testid="button-share-schedule-info"
+                >
+                  <Share2 className="w-4 h-4 mr-2" />
+                  情報を共有
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  練習試合の情報をクリップボードにコピーして、LINEなどで共有できます
+                </p>
               </div>
             </div>
           </div>
