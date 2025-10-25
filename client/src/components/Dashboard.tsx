@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Schedule, Student, Category, Attendance, ScheduleFile, ActivityLog } from "@shared/schema";
+import type { Schedule, Student, Category, Attendance, ActivityLog } from "@shared/schema";
 import { getFullName } from "@/lib/nameUtils";
 
 interface DashboardStats {
@@ -77,12 +77,6 @@ export function Dashboard() {
   const { data: attendances = [] } = useQuery<Attendance[]>({
     queryKey: ["/api/attendances"],
     enabled: !!teamId,
-  });
-
-  // Fetch schedule files for schedule dialog
-  const { data: scheduleFiles = [] } = useQuery<ScheduleFile[]>({
-    queryKey: ["/api/schedule-files"],
-    enabled: showScheduleDialog && !!teamId,
   });
 
   // Fetch activity logs
@@ -584,69 +578,40 @@ export function Dashboard() {
               </div>
 
               {/* 添付ファイル */}
-              {scheduleFiles.filter(f => f.scheduleId === selectedSchedule.id).length > 0 && (
-                <div className="space-y-2 pt-4 border-t">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-primary" />
-                    <h4 className="font-semibold">添付ファイル</h4>
-                  </div>
-                  <div className="space-y-1 max-h-48 overflow-y-auto">
-                    {scheduleFiles
-                      .filter(f => f.scheduleId === selectedSchedule.id)
-                      .map(file => {
-                        const isImage = file.fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-                        const isPDF = file.fileName.match(/\.pdf$/i);
-                        
-                        return (
-                          <div 
-                            key={file.id}
-                            className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 hover-elevate"
-                          >
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm truncate">{file.fileName}</p>
-                              {file.fileSize && (
-                                <p className="text-xs text-muted-foreground">
-                                  {(parseInt(file.fileSize) / 1024 / 1024).toFixed(2)} MB
-                                </p>
-                              )}
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleFileDownload(file.fileUrl, file.fileName)}
-                              data-testid={`download-file-${file.id}`}
-                              className="flex-shrink-0"
+              {selectedSchedule.attachments && (() => {
+                try {
+                  const files = JSON.parse(selectedSchedule.attachments);
+                  if (files.length > 0) {
+                    return (
+                      <div className="space-y-2 pt-4 border-t">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-5 w-5 text-primary" />
+                          <h4 className="font-semibold">添付ファイル ({files.length})</h4>
+                        </div>
+                        <div className="space-y-2">
+                          {files.map((file: { name: string; url: string; size: number }, index: number) => (
+                            <button
+                              key={index}
+                              onClick={() => handleFileDownload(file.url, file.name)}
+                              className="flex items-center gap-2 p-2 rounded-lg border bg-card hover-elevate text-sm w-full text-left"
+                              data-testid={`attachment-link-${index}`}
                             >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        );
-                      })}
-                  </div>
-                  
-                  {/* 画像プレビュー */}
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {scheduleFiles
-                      .filter(f => f.scheduleId === selectedSchedule.id && f.fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i))
-                      .slice(0, 4)
-                      .map(file => (
-                        <button
-                          key={file.id}
-                          onClick={() => handleFileDownload(file.fileUrl, file.fileName)}
-                          className="relative aspect-video rounded-lg overflow-hidden bg-muted hover-elevate"
-                          data-testid={`preview-${file.id}`}
-                        >
-                          <img
-                            src={file.fileUrl}
-                            alt={file.fileName}
-                            className="w-full h-full object-cover"
-                          />
-                        </button>
-                      ))}
-                  </div>
-                </div>
-              )}
+                              <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              <span className="truncate flex-1">{file.name}</span>
+                              <span className="text-xs text-muted-foreground flex-shrink-0">
+                                ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                } catch (error) {
+                  console.error("Failed to parse attachments:", error);
+                }
+                return null;
+              })()}
 
               {/* 参加者リスト */}
               <div className="space-y-2 pt-4 border-t">
