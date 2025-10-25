@@ -317,6 +317,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 ...updateDataWithoutDate,
                 date: adjustedDate
               }).where(eq(schedules.id, instance.id));
+
+              // Reset attendance records since the date has changed
+              await db.delete(attendances).where(eq(attendances.scheduleId, instance.id));
             }
           }
         } else {
@@ -340,6 +343,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // Update only this schedule
         await db.update(schedules).set(updateData).where(eq(schedules.id, id));
+
+        // Check if date has changed for single event update
+        const newDate = updateData.date;
+        if (newDate && newDate !== originalSchedule[0].date) {
+          // Date has changed - reset attendance records
+          await db.delete(attendances).where(eq(attendances.scheduleId, id));
+        }
       }
 
       const updated = await db.select().from(schedules).where(eq(schedules.id, id)).limit(1);
