@@ -1701,7 +1701,7 @@ export function ScheduleList() {
               onClick={() => handleUpdateRecurringSchedule(true)}
               data-testid="button-update-all"
             >
-              すべての繰り返しイベントを更新
+              以降の繰り返しイベントを更新
             </Button>
           </div>
           <DialogFooter>
