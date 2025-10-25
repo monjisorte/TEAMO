@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Plus, Clock, Edit, Trash2, CalendarDays, List, Users, Paperclip, FileText, X as XIcon, Repeat, Share2 } from "lucide-react";
+import { Calendar, MapPin, Plus, Clock, Edit, Trash2, CalendarDays, List, Users, Paperclip, FileText, X as XIcon, Repeat, Share2, Download } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import type { UploadResult } from "@uppy/core";
@@ -105,6 +105,33 @@ export function ScheduleList() {
   const [scheduleToDelete, setScheduleToDelete] = useState<Schedule | null>(null);
   const [showRecurringEditDialog, setShowRecurringEditDialog] = useState(false);
   const [pendingScheduleData, setPendingScheduleData] = useState<Partial<Schedule> | null>(null);
+
+  // ファイルダウンロードハンドラー
+  const handleFileDownload = async (fileUrl: string, fileName: string) => {
+    try {
+      const response = await fetch('/api/objects/download-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: fileUrl }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate download URL');
+      }
+
+      const { downloadURL } = await response.json();
+      window.open(downloadURL, '_blank');
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast({
+        title: "エラー",
+        description: "ファイルのダウンロードに失敗しました",
+        variant: "destructive",
+      });
+    }
+  };
 
   const [formData, setFormData] = useState<ScheduleFormData>({
     title: "",
@@ -807,32 +834,6 @@ export function ScheduleList() {
                             try {
                               const files = JSON.parse(schedule.attachments);
                               if (files.length > 0) {
-                                const handleFileDownload = async (fileUrl: string, fileName: string) => {
-                                  try {
-                                    const response = await fetch('/api/objects/download-url', {
-                                      method: 'POST',
-                                      headers: {
-                                        'Content-Type': 'application/json',
-                                      },
-                                      body: JSON.stringify({ url: fileUrl }),
-                                    });
-
-                                    if (!response.ok) {
-                                      throw new Error('Failed to generate download URL');
-                                    }
-
-                                    const { downloadURL } = await response.json();
-                                    window.open(downloadURL, '_blank');
-                                  } catch (error) {
-                                    console.error('Error downloading file:', error);
-                                    toast({
-                                      title: "エラー",
-                                      description: "ファイルのダウンロードに失敗しました",
-                                      variant: "destructive",
-                                    });
-                                  }
-                                };
-
                                 return (
                                   <div className="space-y-2">
                                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -1043,6 +1044,27 @@ export function ScheduleList() {
                                           );
                                         })()}
                                       </div>
+                                      
+                                      {schedule.attachments && JSON.parse(schedule.attachments).length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t">
+                                          {JSON.parse(schedule.attachments).map((file: { name: string; url: string; size: number }, fileIndex: number) => (
+                                            <Button
+                                              key={fileIndex}
+                                              variant="outline"
+                                              size="sm"
+                                              className="text-xs"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleFileDownload(file.url, file.name);
+                                              }}
+                                              data-testid={`button-download-file-${schedule.id}-${fileIndex}`}
+                                            >
+                                              <Download className="h-3 w-3 mr-1" />
+                                              {file.name}
+                                            </Button>
+                                          ))}
+                                        </div>
+                                      )}
                                     </div>
                                     <div className="flex gap-2">
                                       <Button
