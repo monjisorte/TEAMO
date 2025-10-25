@@ -802,6 +802,43 @@ export function ScheduleList() {
                           {schedule.notes && (
                             <p className="text-sm text-muted-foreground p-3 rounded-xl bg-muted/30">{schedule.notes}</p>
                           )}
+
+                          {schedule.attachments && (() => {
+                            try {
+                              const files = JSON.parse(schedule.attachments);
+                              if (files.length > 0) {
+                                return (
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                                      <Paperclip className="h-4 w-4" />
+                                      <span>添付ファイル ({files.length})</span>
+                                    </div>
+                                    <div className="space-y-2">
+                                      {files.map((file: { name: string; url: string; size: number }, index: number) => (
+                                        <a
+                                          key={index}
+                                          href={file.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="flex items-center gap-2 p-2 rounded-lg border bg-card hover-elevate text-sm"
+                                          data-testid={`attachment-link-${index}`}
+                                        >
+                                          <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                          <span className="truncate flex-1">{file.name}</span>
+                                          <span className="text-xs text-muted-foreground flex-shrink-0">
+                                            ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                                          </span>
+                                        </a>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              }
+                            } catch (error) {
+                              console.error("Failed to parse attachments:", error);
+                            }
+                            return null;
+                          })()}
                           
                           {/* 出席人数と編集ボタンを横並び */}
                           <div className="flex items-center gap-3">
