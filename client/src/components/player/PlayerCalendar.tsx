@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Paperclip, FileText } from "lucide-react";
 import type { Schedule, Attendance, Student, Category } from "@shared/schema";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
@@ -970,6 +970,67 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                         <span className="flex-1 whitespace-pre-wrap">{selectedSchedule.notes}</span>
                       </div>
                     )}
+
+                    {selectedSchedule.attachments && (() => {
+                      try {
+                        const files = JSON.parse(selectedSchedule.attachments);
+                        if (files.length > 0) {
+                          const handleFileDownload = async (fileUrl: string, fileName: string) => {
+                            try {
+                              const response = await fetch('/api/objects/download-url', {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ url: fileUrl }),
+                              });
+
+                              if (!response.ok) {
+                                throw new Error('Failed to generate download URL');
+                              }
+
+                              const { downloadURL } = await response.json();
+                              window.open(downloadURL, '_blank');
+                            } catch (error) {
+                              console.error('Error downloading file:', error);
+                              toast({
+                                title: "エラー",
+                                description: "ファイルのダウンロードに失敗しました",
+                                variant: "destructive",
+                              });
+                            }
+                          };
+
+                          return (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                                <Paperclip className="h-4 w-4" />
+                                <span>添付ファイル ({files.length})</span>
+                              </div>
+                              <div className="space-y-2">
+                                {files.map((file: { name: string; url: string; size: number }, index: number) => (
+                                  <button
+                                    key={index}
+                                    onClick={() => handleFileDownload(file.url, file.name)}
+                                    className="flex items-center gap-2 p-2 rounded-lg border bg-card hover-elevate text-sm w-full text-left"
+                                    data-testid={`attachment-link-${index}`}
+                                  >
+                                    <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                    <span className="truncate flex-1">{file.name}</span>
+                                    <span className="text-xs text-muted-foreground flex-shrink-0">
+                                      ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        }
+                      } catch (error) {
+                        console.error("Failed to parse attachments:", error);
+                      }
+                      return null;
+                    })()}
                   </div>
 
                   <Separator />

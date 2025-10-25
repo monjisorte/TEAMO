@@ -807,6 +807,32 @@ export function ScheduleList() {
                             try {
                               const files = JSON.parse(schedule.attachments);
                               if (files.length > 0) {
+                                const handleFileDownload = async (fileUrl: string, fileName: string) => {
+                                  try {
+                                    const response = await fetch('/api/objects/download-url', {
+                                      method: 'POST',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                      },
+                                      body: JSON.stringify({ url: fileUrl }),
+                                    });
+
+                                    if (!response.ok) {
+                                      throw new Error('Failed to generate download URL');
+                                    }
+
+                                    const { downloadURL } = await response.json();
+                                    window.open(downloadURL, '_blank');
+                                  } catch (error) {
+                                    console.error('Error downloading file:', error);
+                                    toast({
+                                      title: "エラー",
+                                      description: "ファイルのダウンロードに失敗しました",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                };
+
                                 return (
                                   <div className="space-y-2">
                                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -815,12 +841,10 @@ export function ScheduleList() {
                                     </div>
                                     <div className="space-y-2">
                                       {files.map((file: { name: string; url: string; size: number }, index: number) => (
-                                        <a
+                                        <button
                                           key={index}
-                                          href={file.url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="flex items-center gap-2 p-2 rounded-lg border bg-card hover-elevate text-sm"
+                                          onClick={() => handleFileDownload(file.url, file.name)}
+                                          className="flex items-center gap-2 p-2 rounded-lg border bg-card hover-elevate text-sm w-full text-left"
                                           data-testid={`attachment-link-${index}`}
                                         >
                                           <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -828,7 +852,7 @@ export function ScheduleList() {
                                           <span className="text-xs text-muted-foreground flex-shrink-0">
                                             ({(file.size / 1024 / 1024).toFixed(2)} MB)
                                           </span>
-                                        </a>
+                                        </button>
                                       ))}
                                     </div>
                                   </div>
