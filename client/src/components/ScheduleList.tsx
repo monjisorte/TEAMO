@@ -371,7 +371,7 @@ export function ScheduleList() {
     if (formData.venue && formData.venue !== "未定") {
       shareText += `会場: ${formData.venue}\n`;
       if (venueAddress) {
-        shareText += `住所: ${venueAddress}\n`;
+        shareText += `住所: ${venueAddress}（会場が登録されている場合のみ）\n`;
       }
       shareText += `\n`;
     }
