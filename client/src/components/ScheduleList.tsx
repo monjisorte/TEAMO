@@ -343,16 +343,7 @@ export function ScheduleList() {
     setPendingScheduleData(null);
   };
 
-  const handleShareToOtherTeam = () => {
-    if (!formData.date) {
-      toast({ 
-        title: "情報が不足しています", 
-        description: "日付を入力してください",
-        variant: "destructive" 
-      });
-      return;
-    }
-
+  const handleShareToOtherTeam = (schedule: Schedule) => {
     if (!team?.name) {
       toast({ 
         title: "チーム情報が読み込まれていません", 
@@ -363,20 +354,21 @@ export function ScheduleList() {
     }
 
     // Format date
-    const dateObj = new Date(formData.date);
+    const dateObj = new Date(schedule.date);
     const formattedDate = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
 
     // Format times
-    const startTime = formatTime(parseInt(formData.startHour), parseInt(formData.startMinute));
-    const endTime = formatTime(parseInt(formData.endHour), parseInt(formData.endMinute));
-    const gatherTime = formatTime(parseInt(formData.gatherHour), parseInt(formData.gatherMinute));
+    const startTime = formatTime(schedule.startHour, schedule.startMinute);
+    const endTime = formatTime(schedule.endHour, schedule.endMinute);
+    const gatherTime = formatTime(schedule.gatherHour, schedule.gatherMinute);
 
     // Get venue address if venue is selected
-    const selectedVenue = venues.find(v => v.name === formData.venue);
+    const selectedVenue = venues.find(v => v.name === schedule.venue);
     const venueAddress = selectedVenue?.address || "";
 
     // Get category names
-    const categoryNames = formData.categoryIds
+    const scheduleCategoryIds = schedule.categoryIds || (schedule.categoryId ? [schedule.categoryId] : []);
+    const categoryNames = scheduleCategoryIds
       .map(id => categories.find(c => c.id === id)?.name)
       .filter(Boolean)
       .join(" ");
@@ -391,21 +383,21 @@ export function ScheduleList() {
     shareText += `集合時間: ${gatherTime}\n`;
     shareText += `※集合時間は目安です。余裕を持ってお集まりください。\n`;
     
-    if (formData.venue && formData.venue !== "未定") {
-      shareText += `会場: ${formData.venue}\n`;
+    if (schedule.venue && schedule.venue !== "未定") {
+      shareText += `会場: ${schedule.venue}\n`;
       if (venueAddress) {
         shareText += `住所：${venueAddress}\n`;
       }
     }
     
-    if (formData.notes) {
-      shareText += `備考:\n${formData.notes}`;
+    if (schedule.notes) {
+      shareText += `備考:\n${schedule.notes}`;
     }
 
     // Copy to clipboard
     navigator.clipboard.writeText(shareText).then(() => {
       toast({ 
-        title: "情報をコピーしました", 
+        title: "相手チーム用：情報をコピーしました", 
         description: "LINEなどで共有できます" 
       });
     }).catch(() => {
@@ -416,58 +408,50 @@ export function ScheduleList() {
     });
   };
 
-  const handleShareToOwnTeam = () => {
-    if (!formData.date || !formData.title) {
-      toast({ 
-        title: "情報が不足しています", 
-        description: "日付とイベント名を入力してください",
-        variant: "destructive" 
-      });
-      return;
-    }
-
+  const handleShareToOwnTeam = (schedule: Schedule) => {
     // Format date
-    const dateObj = new Date(formData.date);
+    const dateObj = new Date(schedule.date);
     const formattedDate = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
 
     // Format times
-    const startTime = formatTime(parseInt(formData.startHour), parseInt(formData.startMinute));
-    const endTime = formatTime(parseInt(formData.endHour), parseInt(formData.endMinute));
-    const gatherTime = formatTime(parseInt(formData.gatherHour), parseInt(formData.gatherMinute));
+    const startTime = formatTime(schedule.startHour, schedule.startMinute);
+    const endTime = formatTime(schedule.endHour, schedule.endMinute);
+    const gatherTime = formatTime(schedule.gatherHour, schedule.gatherMinute);
 
     // Get venue address if venue is selected
-    const selectedVenue = venues.find(v => v.name === formData.venue);
+    const selectedVenue = venues.find(v => v.name === schedule.venue);
     const venueAddress = selectedVenue?.address || "";
 
     // Get category names
-    const categoryNames = formData.categoryIds
+    const scheduleCategoryIds = schedule.categoryIds || (schedule.categoryId ? [schedule.categoryId] : []);
+    const categoryNames = scheduleCategoryIds
       .map(id => categories.find(c => c.id === id)?.name)
       .filter(Boolean)
       .join(" ");
 
     // Build share text
-    let shareText = `${formData.title}\n`;
+    let shareText = `${schedule.title}\n`;
     if (categoryNames) {
       shareText += `カテゴリ：${categoryNames}\n`;
     }
     shareText += `日時: ${formattedDate} ${startTime}～${endTime}\n`;
     shareText += `集合時間: ${gatherTime}\n`;
     
-    if (formData.venue && formData.venue !== "未定") {
-      shareText += `会場: ${formData.venue}\n`;
+    if (schedule.venue && schedule.venue !== "未定") {
+      shareText += `会場: ${schedule.venue}\n`;
       if (venueAddress) {
         shareText += `住所：${venueAddress}\n`;
       }
     }
     
-    if (formData.notes) {
-      shareText += `備考:\n${formData.notes}`;
+    if (schedule.notes) {
+      shareText += `備考:\n${schedule.notes}`;
     }
 
     // Copy to clipboard
     navigator.clipboard.writeText(shareText).then(() => {
       toast({ 
-        title: "情報をコピーしました", 
+        title: "自分チーム用：情報をコピーしました", 
         description: "LINEなどで共有できます" 
       });
     }).catch(() => {
@@ -716,6 +700,26 @@ export function ScheduleList() {
                                   </Badge>
                                 )}
                               </div>
+                            </div>
+                            <div className="flex gap-2 shrink-0">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleShareToOwnTeam(schedule)}
+                                data-testid={`button-share-own-${schedule.id}`}
+                              >
+                                <Share2 className="h-4 w-4 mr-1" />
+                                自分のチーム
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleShareToOtherTeam(schedule)}
+                                data-testid={`button-share-other-${schedule.id}`}
+                              >
+                                <Share2 className="h-4 w-4 mr-1" />
+                                相手のチーム
+                              </Button>
                             </div>
                           </div>
 
@@ -1442,39 +1446,6 @@ export function ScheduleList() {
                 >
                   生徒側から参加登録を不可能にする
                 </Label>
-              </div>
-
-              <div className="col-span-2 space-y-3">
-                <div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleShareToOwnTeam}
-                    data-testid="button-share-to-own-team"
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    自分のチームに情報を共有
-                  </Button>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    イベント情報をクリップボードにコピーして、チームメンバーとLINEなどで共有できます
-                  </p>
-                </div>
-                <div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleShareToOtherTeam}
-                    data-testid="button-share-to-other-team"
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    別チームに情報を共有
-                  </Button>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    練習試合の情報をクリップボードにコピーして、対戦相手とLINEなどで共有できます
-                  </p>
-                </div>
               </div>
             </div>
           </div>
