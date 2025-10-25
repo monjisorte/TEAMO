@@ -149,6 +149,7 @@ export const schedules = pgTable("schedules", {
   recurrenceDays: text("recurrence_days"), // 週の曜日 (JSON array: [0,1,2,3,4,5,6])
   recurrenceEndDate: date("recurrence_end_date"), // 繰り返し終了日
   parentScheduleId: varchar("parent_schedule_id"), // 繰り返しの親スケジュールID
+  attachments: text("attachments"), // JSON array of file metadata: [{name, url, size, type}]
 });
 
 export const insertScheduleSchema = createInsertSchema(schedules).omit({ id: true });
