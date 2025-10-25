@@ -1507,7 +1507,7 @@ export function ScheduleList() {
                     />
                   </div>
 
-                  {formData.recurrenceRule === "weekly" && (
+                  {formData.recurrenceRule === "weekly" && !formData.date && (
                     <div className="space-y-2 col-span-2">
                       <Label>曜日を選択</Label>
                       <div className="flex gap-2 flex-wrap">
