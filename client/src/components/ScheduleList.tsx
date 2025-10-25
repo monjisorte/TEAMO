@@ -149,7 +149,7 @@ export function ScheduleList() {
   });
 
   const { data: venues = [] } = useQuery<Venue[]>({
-    queryKey: [`/api/venues/${teamId}`],
+    queryKey: [`/api/teams/${teamId}/venues`],
     enabled: !!teamId,
   });
 
@@ -374,14 +374,6 @@ export function ScheduleList() {
     // Get venue address if venue is selected
     const selectedVenue = venues.find(v => v.name === formData.venue);
     const venueAddress = selectedVenue?.address || "";
-
-    // Debug logging
-    console.log("Share info debug:", {
-      venuesCount: venues.length,
-      formVenue: formData.venue,
-      selectedVenue: selectedVenue,
-      venueAddress: venueAddress,
-    });
 
     // Build share text
     let shareText = `【練習試合情報】\n`;
