@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Users, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users, ArrowRight, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,7 @@ interface CalendarViewProps {
 }
 
 export function CalendarView({ schedules, categories, attendances, students, onScheduleClick, onParticipantMove, onDeleteSchedule }: CalendarViewProps) {
+  const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedDaySchedules, setSelectedDaySchedules] = useState<Schedule[]>([]);
@@ -42,6 +44,28 @@ export function CalendarView({ schedules, categories, attendances, students, onS
     studentName: string;
   } | null>(null);
   const [targetScheduleId, setTargetScheduleId] = useState("");
+
+  const handleFileDownload = async (fileUrl: string, fileName: string) => {
+    try {
+      const response = await fetch('/api/objects/download-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileUrl })
+      });
+
+      if (!response.ok) throw new Error('Failed to get download URL');
+
+      const { downloadURL } = await response.json();
+      window.open(downloadURL, '_blank');
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        title: "ダウンロードエラー",
+        description: "ファイルのダウンロードに失敗しました",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(c => c.id === categoryId);
@@ -487,6 +511,42 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                           )}
                         </div>
                       </div>
+
+                      {/* Attachments */}
+                      {schedule.attachments && (() => {
+                        try {
+                          const files = JSON.parse(schedule.attachments);
+                          if (files.length > 0) {
+                            return (
+                              <div className="space-y-3 pt-4 border-t">
+                                <div className="flex items-center gap-2">
+                                  <FileText className="h-4 w-4 text-primary" />
+                                  <h4 className="font-semibold">添付ファイル ({files.length})</h4>
+                                </div>
+                                <div className="space-y-2">
+                                  {files.map((file: { name: string; url: string; size: number }, index: number) => (
+                                    <button
+                                      key={index}
+                                      onClick={() => handleFileDownload(file.url, file.name)}
+                                      className="flex items-center gap-2 p-2 rounded-lg border bg-card hover-elevate text-sm w-full text-left"
+                                      data-testid={`attachment-link-${index}`}
+                                    >
+                                      <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                      <span className="truncate flex-1">{file.name}</span>
+                                      <span className="text-xs text-muted-foreground flex-shrink-0">
+                                        ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          }
+                        } catch (error) {
+                          console.error("Failed to parse attachments:", error);
+                        }
+                        return null;
+                      })()}
 
                       {/* Attendance Info */}
                       <div className="space-y-3">
