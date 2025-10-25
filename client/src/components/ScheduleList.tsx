@@ -701,24 +701,28 @@ export function ScheduleList() {
                                 )}
                               </div>
                             </div>
-                            <div className="flex gap-2 shrink-0">
+                            <div className="flex flex-col sm:flex-row gap-2 shrink-0">
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleShareToOwnTeam(schedule)}
                                 data-testid={`button-share-own-${schedule.id}`}
+                                className="whitespace-nowrap"
                               >
                                 <Share2 className="h-4 w-4 mr-1" />
-                                自分のチーム
+                                <span className="hidden sm:inline">自分のチーム</span>
+                                <span className="sm:hidden">自分</span>
                               </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleShareToOtherTeam(schedule)}
                                 data-testid={`button-share-other-${schedule.id}`}
+                                className="whitespace-nowrap"
                               >
                                 <Share2 className="h-4 w-4 mr-1" />
-                                相手のチーム
+                                <span className="hidden sm:inline">相手のチーム</span>
+                                <span className="sm:hidden">相手</span>
                               </Button>
                             </div>
                           </div>
