@@ -154,6 +154,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all schedule files
+  app.get("/api/schedule-files", isAuthenticated, async (req, res) => {
+    try {
+      const allFiles = await db.select().from(scheduleFiles);
+      res.json(allFiles);
+    } catch (error) {
+      console.error("Error fetching schedule files:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   app.post("/api/schedules", isAuthenticated, async (req, res) => {
     try {
       const { recurrenceRule, recurrenceInterval, recurrenceDays, recurrenceEndDate, ...scheduleData } = req.body;
