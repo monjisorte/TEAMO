@@ -344,10 +344,19 @@ export function ScheduleList() {
   };
 
   const handleShareScheduleInfo = () => {
-    if (!formData.title || !formData.date) {
+    if (!formData.date) {
       toast({ 
         title: "情報が不足しています", 
-        description: "タイトルと日付を入力してください",
+        description: "日付を入力してください",
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    if (!team?.name) {
+      toast({ 
+        title: "チーム情報が読み込まれていません", 
+        description: "しばらく待ってから再度お試しください",
         variant: "destructive" 
       });
       return;
@@ -368,7 +377,7 @@ export function ScheduleList() {
 
     // Build share text
     let shareText = `【練習試合情報】\n`;
-    shareText += `対戦相手: ${formData.title}\n\n`;
+    shareText += `対戦相手: ${team.name}\n\n`;
     shareText += `日時: ${formattedDate} ${startTime}～${endTime}\n`;
     shareText += `集合時間: ${gatherTime}\n`;
     shareText += `※集合時間は目安です。余裕を持ってお集まりください。\n\n`;
