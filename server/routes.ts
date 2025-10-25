@@ -738,6 +738,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/teams/:teamId", isAuthenticated, async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      const team = await db.select().from(teams).where(eq(teams.id, teamId)).limit(1);
+      
+      if (team.length === 0) {
+        return res.status(404).json({ error: "Team not found" });
+      }
+      
+      res.json(team[0]);
+    } catch (error) {
+      console.error("Error fetching team:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   app.post("/api/teams", isAuthenticated, async (req, res) => {
     try {
       const { name, contactEmail } = req.body;
