@@ -112,6 +112,32 @@ export function Dashboard() {
     return category?.name || "";
   };
 
+  // ファイルダウンロードハンドラー
+  const handleFileDownload = async (fileUrl: string, fileName: string) => {
+    try {
+      const response = await fetch('/api/objects/download-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: fileUrl }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate download URL');
+      }
+
+      const { downloadURL } = await response.json();
+      window.open(downloadURL, '_blank');
+    } catch (error) {
+      console.error('Failed to download file:', error);
+      toast({
+        title: "ファイルのダウンロードに失敗しました",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getTimeAgo = (date: Date) => {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
