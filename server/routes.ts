@@ -2939,7 +2939,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const host = req.get('host') || '';
       const protocol = req.protocol || 'https';
       const baseUrl = `${protocol}://${host}`;
-      const profileUrl = `${baseUrl}/player/profile?sibling_request=true`;
+      const profileUrl = `${baseUrl}/player/profile`;
       
       const requesterName = `${requestingStudent[0].lastName} ${requestingStudent[0].firstName}`;
       const siblingName = `${sibling[0].lastName} ${sibling[0].firstName}`;
