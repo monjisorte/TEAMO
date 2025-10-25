@@ -62,11 +62,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "URL is required" });
       }
 
+      const userId = req.user?.claims?.sub;
       const objectStorageService = new ObjectStorageService();
+      
+      // Normalize the URL to object entity path format
+      const normalizedPath = objectStorageService.normalizeObjectEntityPath(url);
+      
+      // Get the file object and check access permissions
+      const objectFile = await objectStorageService.getObjectEntityFile(normalizedPath);
+      const canAccess = await objectStorageService.canAccessObjectEntity({
+        objectFile,
+        userId: userId,
+        requestedPermission: ObjectPermission.READ,
+      });
+
+      if (!canAccess) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      // Generate presigned URL for download
       const downloadURL = await objectStorageService.getDownloadURL(url);
       res.json({ downloadURL });
     } catch (error) {
       console.error("Error generating download URL:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.status(404).json({ error: "File not found" });
+      }
       res.status(500).json({ error: "Failed to generate download URL" });
     }
   });
