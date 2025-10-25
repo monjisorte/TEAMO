@@ -738,11 +738,9 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                           >
                             <div className="flex items-center justify-between gap-1">
                               <div className="truncate flex-1">{schedule.title}</div>
-                              {attendanceCounts.confirmed > 0 && (
-                                <span className="hidden md:inline-block text-[10px] font-semibold shrink-0">
-                                  {attendanceCounts.confirmed}名
-                                </span>
-                              )}
+                              <span className="hidden md:inline-block text-[10px] font-semibold shrink-0">
+                                {attendance?.status || "-"}
+                              </span>
                             </div>
                           </div>
                         );
