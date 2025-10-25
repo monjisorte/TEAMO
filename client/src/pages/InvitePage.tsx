@@ -35,7 +35,7 @@ export default function InvitePage() {
 
   const handleCopyTeamMessage = () => {
     if (team) {
-      const message = `https://teamo.cloud/ から登録をお願いします。チームIDは ${team.teamCode} です。\nログイン後、プロフィールやカテゴリを登録してください。出欠も記入をお願いします。`;
+      const message = `https://teamo.cloud/ から登録をお願いします。チームIDは ${team.teamCode} です。\nログイン後、プロフィールやカテゴリを登録してください。出欠も記入をお願いします。\n兄弟がいる場合は、別のメールアドレスで登録し、プロフィール設定「兄弟アカウント管理」より、連携をお願いします。再ログインなく、アカウントの切り替えができるようになります。`;
       navigator.clipboard.writeText(message);
       toast({
         title: "コピーしました",
@@ -47,7 +47,7 @@ export default function InvitePage() {
   const handleCopySchoolMessage = () => {
     if (team) {
       const schoolCode = `${team.teamCode}X`;
-      const message = `https://teamo.cloud/ から登録をお願いします。チームIDは ${schoolCode} です。\nログイン後、プロフィールやカテゴリを登録してください。出欠も記入をお願いします。`;
+      const message = `https://teamo.cloud/ から登録をお願いします。チームIDは ${schoolCode} です。\nログイン後、プロフィールやカテゴリを登録してください。出欠も記入をお願いします。\n兄弟がいる場合は、別のメールアドレスで登録し、プロフィール設定「兄弟アカウント管理」より、連携をお願いします。再ログインなく、アカウントの切り替えができるようになります。`;
       navigator.clipboard.writeText(message);
       toast({
         title: "コピーしました",
@@ -133,7 +133,8 @@ export default function InvitePage() {
           <div className="bg-muted p-4 rounded-lg">
             <p className="text-sm whitespace-pre-line">
               https://teamo.cloud/ から登録をお願いします。チームIDは <span className="font-bold text-primary">{team.teamCode}</span> です。{'\n'}
-              ログイン後、プロフィールやカテゴリを登録してください。出欠も記入をお願いします。
+              ログイン後、プロフィールやカテゴリを登録してください。出欠も記入をお願いします。{'\n'}
+              兄弟がいる場合は、別のメールアドレスで登録し、プロフィール設定「兄弟アカウント管理」より、連携をお願いします。再ログインなく、アカウントの切り替えができるようになります。
             </p>
           </div>
           <Button
@@ -158,7 +159,8 @@ export default function InvitePage() {
           <div className="bg-muted p-4 rounded-lg">
             <p className="text-sm whitespace-pre-line">
               https://teamo.cloud/ から登録をお願いします。チームIDは <span className="font-bold text-primary">{team.teamCode}X</span> です。{'\n'}
-              ログイン後、プロフィールやカテゴリを登録してください。出欠も記入をお願いします。
+              ログイン後、プロフィールやカテゴリを登録してください。出欠も記入をお願いします。{'\n'}
+              兄弟がいる場合は、別のメールアドレスで登録し、プロフィール設定「兄弟アカウント管理」より、連携をお願いします。再ログインなく、アカウントの切り替えができるようになります。
             </p>
           </div>
           <Button
