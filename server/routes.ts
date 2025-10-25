@@ -70,6 +70,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get the file object and check access permissions
       const objectFile = await objectStorageService.getObjectEntityFile(normalizedPath);
+      
+      // If the file doesn't have an ACL policy, set it to public
+      // This handles files that were uploaded before ACL implementation
+      const { getObjectAclPolicy, setObjectAclPolicy } = await import("./objectAcl");
+      const aclPolicy = await getObjectAclPolicy(objectFile);
+      if (!aclPolicy) {
+        await setObjectAclPolicy(objectFile, {
+          owner: userId || "system",
+          visibility: "public",
+        });
+      }
+      
       const canAccess = await objectStorageService.canAccessObjectEntity({
         objectFile,
         userId: userId,
