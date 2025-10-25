@@ -375,9 +375,18 @@ export function ScheduleList() {
     const selectedVenue = venues.find(v => v.name === formData.venue);
     const venueAddress = selectedVenue?.address || "";
 
+    // Get category names
+    const categoryNames = formData.categoryIds
+      .map(id => categories.find(c => c.id === id)?.name)
+      .filter(Boolean)
+      .join(" ");
+
     // Build share text
     let shareText = `【練習試合情報】\n`;
     shareText += `対戦相手: ${team.name}\n`;
+    if (categoryNames) {
+      shareText += `カテゴリ：${categoryNames}\n`;
+    }
     shareText += `日時: ${formattedDate} ${startTime}～${endTime}\n`;
     shareText += `集合時間: ${gatherTime}\n`;
     shareText += `※集合時間は目安です。余裕を持ってお集まりください。\n`;
@@ -437,8 +446,7 @@ export function ScheduleList() {
       .join(" ");
 
     // Build share text
-    let shareText = `【練習試合情報】\n`;
-    shareText += `${formData.title}\n`;
+    let shareText = `${formData.title}\n`;
     if (categoryNames) {
       shareText += `カテゴリ：${categoryNames}\n`;
     }
