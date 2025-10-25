@@ -39,7 +39,8 @@ import AdminAccounts from "@/pages/admin/AdminAccounts";
 import { PlayerSidebar } from "@/components/PlayerSidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { Button } from "@/components/ui/button";
-import { LogOut, ChevronDown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { LogOut, ChevronDown, Users } from "lucide-react";
 import { getFullName } from "@/lib/nameUtils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 
@@ -146,19 +147,33 @@ function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogou
               {siblings.length > 0 ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 hover-elevate active-elevate-2 rounded-md px-3 py-2 text-left" data-testid="button-sibling-switcher">
-                      <div>
-                        <h1 className="text-lg font-semibold" data-testid="text-player-name">
-                          {getFullName(player.lastName, player.firstName)}さん
-                        </h1>
-                        <p className="text-xs text-muted-foreground">{player.email}</p>
+                    <button className="flex items-center gap-3 hover-elevate active-elevate-2 rounded-lg px-4 py-2.5 text-left border-2 border-primary/20 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-950/30 dark:to-purple-950/30" data-testid="button-sibling-switcher">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                        <Users className="w-5 h-5 text-white" />
                       </div>
-                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h1 className="text-lg font-semibold" data-testid="text-player-name">
+                            {getFullName(player.lastName, player.firstName)}さん
+                          </h1>
+                          <Badge variant="secondary" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                            {siblings.length}人
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">{player.email}</p>
+                      </div>
+                      <ChevronDown className="w-5 h-5 text-primary flex-shrink-0" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-64">
-                    <div className="px-2 py-1.5">
-                      <p className="text-xs text-muted-foreground font-medium">アカウントを切り替え</p>
+                  <DropdownMenuContent align="start" className="w-80">
+                    <div className="px-3 py-2">
+                      <p className="text-sm font-semibold flex items-center gap-2">
+                        <Users className="w-4 h-4 text-primary" />
+                        アカウントを切り替え
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        兄弟アカウントに切り替えられます
+                      </p>
                     </div>
                     <DropdownMenuSeparator />
                     {siblings.map((sibling) => (
@@ -166,10 +181,16 @@ function PlayerPortalContent({ playerId, onLogout }: { playerId: string; onLogou
                         key={sibling.id} 
                         onClick={() => handleSwitchToSibling(sibling)}
                         data-testid={`menu-item-sibling-${sibling.id}`}
+                        className="px-3 py-3 cursor-pointer"
                       >
-                        <div>
-                          <p className="font-medium">{getFullName(sibling.lastName, sibling.firstName)}さん</p>
-                          <p className="text-xs text-muted-foreground">{sibling.email}</p>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                            <Users className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium">{getFullName(sibling.lastName, sibling.firstName)}さん</p>
+                            <p className="text-xs text-muted-foreground truncate">{sibling.email}</p>
+                          </div>
                         </div>
                       </DropdownMenuItem>
                     ))}
