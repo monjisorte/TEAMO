@@ -244,14 +244,14 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
 
   const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
 
-  // 週表示を縦型で生成
+  // 週表示を縦型で生成（今日から7日間）
   const renderWeekView = () => {
-    const weekStart = new Date(currentDate);
-    weekStart.setDate(currentDate.getDate() - currentDate.getDay()); // 週の始まり（日曜日）
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // 時刻をリセット
     
     const weekDaysData = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date(weekStart);
-      date.setDate(weekStart.getDate() + i);
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
       return date;
     });
 

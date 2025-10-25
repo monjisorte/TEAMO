@@ -89,10 +89,8 @@ export function ScheduleList() {
   const [view, setView] = useState<"list" | "calendar" | "week">("list");
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     const today = new Date();
-    const dayOfWeek = today.getDay();
-    const weekStart = new Date(today);
-    weekStart.setDate(today.getDate() - dayOfWeek);
-    return weekStart;
+    today.setHours(0, 0, 0, 0); // 時刻をリセット
+    return today; // 今日から開始
   });
   const [selectedSchedule, setSelectedSchedule] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
