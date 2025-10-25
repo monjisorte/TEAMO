@@ -290,14 +290,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (updateType === "all") {
         const parentId = originalSchedule[0].parentScheduleId || originalSchedule[0].id;
+        const originalDate = originalSchedule[0].date;
 
         // Check if date has changed
-        const originalDate = originalSchedule[0].date;
         const newDate = updateData.date;
         const dateDiff = newDate ? (new Date(newDate).getTime() - new Date(originalDate).getTime()) / (1000 * 60 * 60 * 24) : 0;
         
         if (newDate && dateDiff !== 0) {
-          // Date has changed - update all recurring instances with adjusted dates
+          // Date has changed - update current and future recurring instances with adjusted dates
           const allInstances = await db.select().from(schedules).where(
             or(
               eq(schedules.id, parentId),
@@ -305,29 +305,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
             )
           );
 
-          // Update each instance with adjusted date
+          // Update only instances with dates >= original date (current and future)
           for (const instance of allInstances) {
-            const instanceDate = new Date(instance.date);
-            instanceDate.setDate(instanceDate.getDate() + dateDiff);
-            const adjustedDate = instanceDate.toISOString().split('T')[0];
+            if (instance.date >= originalDate) {
+              const instanceDate = new Date(instance.date);
+              instanceDate.setDate(instanceDate.getDate() + dateDiff);
+              const adjustedDate = instanceDate.toISOString().split('T')[0];
 
-            const { date: _, ...updateDataWithoutDate } = updateData;
-            await db.update(schedules).set({
-              ...updateDataWithoutDate,
-              date: adjustedDate
-            }).where(eq(schedules.id, instance.id));
+              const { date: _, ...updateDataWithoutDate } = updateData;
+              await db.update(schedules).set({
+                ...updateDataWithoutDate,
+                date: adjustedDate
+              }).where(eq(schedules.id, instance.id));
+            }
           }
         } else {
-          // No date change - update without modifying dates
+          // No date change - update current and future instances without modifying dates
           const { date: _, ...updateDataWithoutDate } = updateData;
           
-          // Update all schedules in the series (including parent)
-          await db.update(schedules).set(updateDataWithoutDate).where(
+          // Update schedules in the series with dates >= original date
+          const allInstances = await db.select().from(schedules).where(
             or(
               eq(schedules.id, parentId),
               eq(schedules.parentScheduleId, parentId)
             )
           );
+
+          for (const instance of allInstances) {
+            if (instance.date >= originalDate) {
+              await db.update(schedules).set(updateDataWithoutDate).where(eq(schedules.id, instance.id));
+            }
+          }
         }
       } else {
         // Update only this schedule
