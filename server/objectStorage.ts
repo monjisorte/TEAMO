@@ -236,6 +236,26 @@ export class ObjectStorageService {
       requestedPermission: requestedPermission ?? ObjectPermission.READ,
     });
   }
+
+  async getDownloadURL(objectUrl: string): Promise<string> {
+    // Parse the GCS URL to extract bucket and object path
+    const url = new URL(objectUrl);
+    const pathParts = url.pathname.split('/').filter(p => p);
+    
+    if (pathParts.length < 2) {
+      throw new Error('Invalid object URL');
+    }
+
+    const bucketName = pathParts[0];
+    const objectName = pathParts.slice(1).join('/');
+
+    return signObjectURL({
+      bucketName,
+      objectName,
+      method: "GET",
+      ttlSec: 3600, // 1 hour
+    });
+  }
 }
 
 function parseObjectPath(path: string): {

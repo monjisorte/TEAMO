@@ -55,6 +55,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ uploadURL });
   });
 
+  app.post("/api/objects/download-url", isAuthenticated, async (req, res) => {
+    try {
+      const { url } = req.body;
+      if (!url) {
+        return res.status(400).json({ error: "URL is required" });
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      const downloadURL = await objectStorageService.getDownloadURL(url);
+      res.json({ downloadURL });
+    } catch (error) {
+      console.error("Error generating download URL:", error);
+      res.status(500).json({ error: "Failed to generate download URL" });
+    }
+  });
+
   app.put("/api/schedule-files", isAuthenticated, async (req, res) => {
     if (!req.body.scheduleId || !req.body.files) {
       return res.status(400).json({ error: "scheduleId and files are required" });
