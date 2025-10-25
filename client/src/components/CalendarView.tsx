@@ -50,7 +50,7 @@ export function CalendarView({ schedules, categories, attendances, students, onS
       const response = await fetch('/api/objects/download-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileUrl })
+        body: JSON.stringify({ url: fileUrl })
       });
 
       if (!response.ok) throw new Error('Failed to get download URL');
