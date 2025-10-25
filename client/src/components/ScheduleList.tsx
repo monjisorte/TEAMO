@@ -375,23 +375,30 @@ export function ScheduleList() {
     const selectedVenue = venues.find(v => v.name === formData.venue);
     const venueAddress = selectedVenue?.address || "";
 
+    // Debug logging
+    console.log("Share info debug:", {
+      venuesCount: venues.length,
+      formVenue: formData.venue,
+      selectedVenue: selectedVenue,
+      venueAddress: venueAddress,
+    });
+
     // Build share text
     let shareText = `【練習試合情報】\n`;
-    shareText += `対戦相手: ${team.name}\n\n`;
+    shareText += `対戦相手: ${team.name}\n`;
     shareText += `日時: ${formattedDate} ${startTime}～${endTime}\n`;
     shareText += `集合時間: ${gatherTime}\n`;
-    shareText += `※集合時間は目安です。余裕を持ってお集まりください。\n\n`;
+    shareText += `※集合時間は目安です。余裕を持ってお集まりください。\n`;
     
     if (formData.venue && formData.venue !== "未定") {
       shareText += `会場: ${formData.venue}\n`;
       if (venueAddress) {
-        shareText += `住所: ${venueAddress}（会場が登録されている場合のみ）\n`;
+        shareText += `住所：${venueAddress}\n`;
       }
-      shareText += `\n`;
     }
     
     if (formData.notes) {
-      shareText += `備考:\n${formData.notes}\n`;
+      shareText += `備考:\n${formData.notes}`;
     }
 
     // Copy to clipboard
