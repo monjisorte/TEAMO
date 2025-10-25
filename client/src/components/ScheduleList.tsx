@@ -306,6 +306,7 @@ export function ScheduleList() {
       recurrenceEndDate: formData.recurrenceRule !== "none" && formData.recurrenceEndDate 
         ? formData.recurrenceEndDate 
         : null,
+      attachments: uploadedFiles.length > 0 ? JSON.stringify(uploadedFiles) : null,
       teamId: teamId, // Add teamId to schedule data
     };
 
@@ -483,6 +484,20 @@ export function ScheduleList() {
       recurrenceDays: schedule.recurrenceDays ? JSON.parse(schedule.recurrenceDays) : [],
       recurrenceEndDate: schedule.recurrenceEndDate || "",
     });
+    
+    // Load existing attachments
+    if (schedule.attachments) {
+      try {
+        const files = JSON.parse(schedule.attachments);
+        setUploadedFiles(files);
+      } catch (error) {
+        console.error("Failed to parse attachments:", error);
+        setUploadedFiles([]);
+      }
+    } else {
+      setUploadedFiles([]);
+    }
+    
     setShowEditDialog(true);
   };
 
@@ -1456,6 +1471,50 @@ export function ScheduleList() {
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   data-testid="input-schedule-notes"
                 />
+              </div>
+
+              <div className="space-y-3 col-span-2">
+                <Label>添付ファイル</Label>
+                <div className="space-y-3">
+                  <ObjectUploader
+                    maxNumberOfFiles={10}
+                    maxFileSize={20971520}
+                    onGetUploadParameters={handleGetUploadParameters}
+                    onComplete={handleUploadComplete}
+                    buttonClassName="w-full"
+                  >
+                    <Paperclip className="h-4 w-4 mr-2" />
+                    ファイルを追加
+                  </ObjectUploader>
+                  
+                  {uploadedFiles.length > 0 && (
+                    <div className="space-y-2">
+                      {uploadedFiles.map((file, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 rounded-lg border bg-card"
+                          data-testid={`uploaded-file-${index}`}
+                        >
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <span className="text-sm truncate">{file.name}</span>
+                            <span className="text-xs text-muted-foreground flex-shrink-0">
+                              ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                            </span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeFile(index)}
+                            data-testid={`button-remove-file-${index}`}
+                          >
+                            <XIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center space-x-3 col-span-2 p-4 rounded-xl bg-muted/50">
