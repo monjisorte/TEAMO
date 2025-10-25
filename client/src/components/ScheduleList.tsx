@@ -576,7 +576,6 @@ export function ScheduleList() {
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">スケジュール管理</h1>
-          <p className="text-muted-foreground mt-2 text-lg">日々の活動を登録・管理</p>
         </div>
         <Button 
           className="h-12 px-6 rounded-xl text-base" 
