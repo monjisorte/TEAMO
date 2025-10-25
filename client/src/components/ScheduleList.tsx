@@ -676,7 +676,7 @@ export function ScheduleList() {
 
                         {/* 右側: 詳細情報 */}
                         <div className="flex-1 space-y-3 min-w-0">
-                          <div className="flex items-start justify-between gap-3">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                             <div className="flex-1">
                               <h3 className="text-2xl font-bold mb-2">{schedule.title}</h3>
                               <div className="flex gap-2 flex-wrap">
@@ -700,7 +700,7 @@ export function ScheduleList() {
                                 )}
                               </div>
                             </div>
-                            <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                            <div className="hidden sm:flex sm:flex-row gap-2 shrink-0">
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -709,8 +709,7 @@ export function ScheduleList() {
                                 className="whitespace-nowrap"
                               >
                                 <Share2 className="h-4 w-4 mr-1" />
-                                <span className="hidden sm:inline">自分のチーム</span>
-                                <span className="sm:hidden">自分</span>
+                                自分のチーム
                               </Button>
                               <Button
                                 variant="outline"
@@ -720,10 +719,33 @@ export function ScheduleList() {
                                 className="whitespace-nowrap"
                               >
                                 <Share2 className="h-4 w-4 mr-1" />
-                                <span className="hidden sm:inline">相手のチーム</span>
-                                <span className="sm:hidden">相手</span>
+                                相手のチーム
                               </Button>
                             </div>
+                          </div>
+                          
+                          {/* スマホ専用：共有ボタン */}
+                          <div className="flex sm:hidden gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleShareToOwnTeam(schedule)}
+                              data-testid={`button-share-own-mobile-${schedule.id}`}
+                              className="flex-1"
+                            >
+                              <Share2 className="h-4 w-4 mr-1" />
+                              自分
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleShareToOtherTeam(schedule)}
+                              data-testid={`button-share-other-mobile-${schedule.id}`}
+                              className="flex-1"
+                            >
+                              <Share2 className="h-4 w-4 mr-1" />
+                              相手
+                            </Button>
                           </div>
 
                           <div className="grid grid-cols-2 gap-3 text-sm">
