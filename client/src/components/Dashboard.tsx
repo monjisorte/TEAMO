@@ -611,17 +611,15 @@ export function Dashboard() {
                                 </p>
                               )}
                             </div>
-                            <a
-                              href={file.fileUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleFileDownload(file.fileUrl, file.fileName)}
+                              data-testid={`download-file-${file.id}`}
                               className="flex-shrink-0"
-                              onClick={(e) => e.stopPropagation()}
                             >
-                              <Button size="sm" variant="ghost" data-testid={`download-file-${file.id}`}>
-                                <Download className="h-4 w-4" />
-                              </Button>
-                            </a>
+                              <Download className="h-4 w-4" />
+                            </Button>
                           </div>
                         );
                       })}
@@ -633,20 +631,18 @@ export function Dashboard() {
                       .filter(f => f.scheduleId === selectedSchedule.id && f.fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i))
                       .slice(0, 4)
                       .map(file => (
-                        <a
+                        <button
                           key={file.id}
-                          href={file.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          onClick={() => handleFileDownload(file.fileUrl, file.fileName)}
                           className="relative aspect-video rounded-lg overflow-hidden bg-muted hover-elevate"
+                          data-testid={`preview-${file.id}`}
                         >
                           <img
                             src={file.fileUrl}
                             alt={file.fileName}
                             className="w-full h-full object-cover"
-                            data-testid={`preview-${file.id}`}
                           />
-                        </a>
+                        </button>
                       ))}
                   </div>
                 </div>
