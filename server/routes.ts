@@ -80,8 +80,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied" });
       }
 
-      // Generate presigned URL for download
-      const downloadURL = await objectStorageService.getDownloadURL(url);
+      // Generate presigned URL for download using the file's bucket and name
+      const [metadata] = await objectFile.getMetadata();
+      const gcsUrl = `https://storage.googleapis.com/${objectFile.bucket.name}/${objectFile.name}`;
+      const downloadURL = await objectStorageService.getDownloadURL(gcsUrl);
       res.json({ downloadURL });
     } catch (error) {
       console.error("Error generating download URL:", error);
