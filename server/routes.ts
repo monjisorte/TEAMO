@@ -3679,9 +3679,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { cancel_at_period_end: true }
       );
 
+      console.log("Subscription object:", {
+        id: subscription.id,
+        current_period_end: subscription.current_period_end,
+        current_period_end_type: typeof subscription.current_period_end,
+        cancel_at_period_end: subscription.cancel_at_period_end
+      });
+
       const currentPeriodEnd = subscription.current_period_end 
         ? new Date(subscription.current_period_end * 1000)
         : null;
+
+      console.log("Converted currentPeriodEnd:", currentPeriodEnd);
 
       await db.update(teams)
         .set({ 
