@@ -64,6 +64,8 @@ export const teams = pgTable("teams", {
   stripeCustomerId: text("stripe_customer_id"), // Stripe Customer ID
   stripeSubscriptionId: text("stripe_subscription_id"), // Stripe Subscription ID
   subscriptionStatus: text("subscription_status").default("active"), // "active" | "canceled" | "past_due" | "incomplete"
+  subscriptionCancelAtPeriodEnd: boolean("subscription_cancel_at_period_end").default(false), // キャンセル予定かどうか
+  subscriptionCurrentPeriodEnd: timestamp("subscription_current_period_end"), // 現在の請求期間終了日
   storageUsed: integer("storage_used").notNull().default(0), // 使用中のストレージ容量（バイト）
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

@@ -218,6 +218,8 @@ export default function SubscriptionPage() {
     subscriptionPlan: string;
     subscriptionStatus: string;
     stripeSubscriptionId: string | null;
+    subscriptionCancelAtPeriodEnd: boolean | null;
+    subscriptionCurrentPeriodEnd: string | null;
     storageUsed: number;
   }>({
     queryKey: ["/api/teams", teamId],
@@ -395,6 +397,15 @@ export default function SubscriptionPage() {
 
   const isBasicPlan = team?.subscriptionPlan === "basic";
   const isActive = team?.subscriptionStatus === "active";
+  const isCanceled = team?.subscriptionCancelAtPeriodEnd === true;
+  
+  // Format the period end date
+  const periodEndDate = team?.subscriptionCurrentPeriodEnd 
+    ? new Date(team.subscriptionCurrentPeriodEnd)
+    : null;
+  const periodEndText = periodEndDate
+    ? `${periodEndDate.getMonth() + 1}月${periodEndDate.getDate()}日まで利用可能`
+    : "次回更新日まで利用可能";
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -556,8 +567,8 @@ export default function SubscriptionPage() {
                 <Crown className="h-5 w-5 text-primary" />
                 ベーシックプラン
               </div>
-              {isBasicPlan && <Badge variant="default" data-testid="badge-current-basic">
-                {isActive ? "現在のプラン" : "次回更新日まで利用可能"}
+              {isBasicPlan && <Badge variant={isCanceled ? "secondary" : "default"} data-testid="badge-current-basic">
+                {isCanceled ? periodEndText : "現在のプラン"}
               </Badge>}
             </CardTitle>
             <CardDescription className="text-2xl font-bold">
@@ -605,7 +616,7 @@ export default function SubscriptionPage() {
               </Button>
             )}
             
-            {isBasicPlan && isActive && (
+            {isBasicPlan && isActive && !isCanceled && (
               <Button 
                 variant="outline" 
                 className="w-full" 
@@ -614,6 +625,12 @@ export default function SubscriptionPage() {
               >
                 フリープランにダウングレード
               </Button>
+            )}
+            
+            {isBasicPlan && isCanceled && (
+              <div className="p-3 bg-muted rounded-md text-sm text-muted-foreground text-center">
+                {periodEndText}でフリープランに変更されます
+              </div>
             )}
           </CardContent>
         </Card>

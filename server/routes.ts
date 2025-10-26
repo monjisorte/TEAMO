@@ -3682,6 +3682,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await db.update(teams)
         .set({ 
           subscriptionStatus: subscription.status,
+          subscriptionCancelAtPeriodEnd: subscription.cancel_at_period_end,
+          subscriptionCurrentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
         })
         .where(eq(teams.id, teamId));
 
