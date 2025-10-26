@@ -409,31 +409,24 @@ export default function SubscriptionPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">サブスクリプションプラン</h1>
-        <p className="text-muted-foreground">
-          チームに最適なプランをお選びください
-        </p>
-      </div>
-
       <Card 
         className="border-0 shadow-xl mb-6"
         data-testid="card-subscription-plan"
       >
         <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 p-3">
+            <div className="rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 p-2.5">
               {team?.subscriptionPlan === "basic" ? (
-                <Crown className="h-5 w-5 text-white" />
+                <Crown className="h-4 w-4 text-white" />
               ) : (
-                <Zap className="h-5 w-5 text-white" />
+                <Zap className="h-4 w-4 text-white" />
               )}
             </div>
             <div>
-              <CardTitle className="text-lg">
+              <CardTitle className="text-base">
                 {team?.subscriptionPlan === "basic" ? "ベーシックプラン" : "フリープラン"}
               </CardTitle>
-              <CardDescription className="text-sm">
+              <CardDescription className="text-xs">
                 {team?.subscriptionPlan === "basic" 
                   ? "すべての機能を利用可能" 
                   : "アップグレードして無制限に"}
@@ -443,14 +436,14 @@ export default function SubscriptionPage() {
           <div className="text-right">
             {team?.subscriptionPlan === "basic" ? (
               <>
-                <div className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                <div className="text-xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
                   ¥2,000
                 </div>
                 <p className="text-xs text-muted-foreground">/月</p>
               </>
             ) : (
               <>
-                <div className="text-2xl font-bold text-muted-foreground">
+                <div className="text-xl font-bold text-muted-foreground">
                   ¥0
                 </div>
                 <p className="text-xs text-muted-foreground">/月</p>
@@ -518,11 +511,11 @@ export default function SubscriptionPage() {
       <div className="grid md:grid-cols-2 gap-6">
         <Card className={!isBasicPlan ? "border-2" : ""}>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+            <CardTitle className="flex items-center justify-between text-base">
               フリープラン
               {!isBasicPlan && <Badge variant="secondary" data-testid="badge-current-free">現在のプラン</Badge>}
             </CardTitle>
-            <CardDescription className="text-2xl font-bold">
+            <CardDescription className="text-xl font-bold">
               無料
             </CardDescription>
           </CardHeader>
@@ -562,16 +555,16 @@ export default function SubscriptionPage() {
 
         <Card className={isBasicPlan && isActive ? "border-2 border-primary" : ""}>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+            <CardTitle className="flex items-center justify-between text-base">
               <div className="flex items-center gap-2">
-                <Crown className="h-5 w-5 text-primary" />
+                <Crown className="h-4 w-4 text-primary" />
                 ベーシックプラン
               </div>
               {isBasicPlan && <Badge variant={isCanceled ? "secondary" : "default"} data-testid="badge-current-basic">
                 {isCanceled ? periodEndText : "現在のプラン"}
               </Badge>}
             </CardTitle>
-            <CardDescription className="text-2xl font-bold">
+            <CardDescription className="text-xl font-bold">
               ¥2,000 <span className="text-sm font-normal text-muted-foreground">/月</span>
             </CardDescription>
           </CardHeader>
