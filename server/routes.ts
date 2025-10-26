@@ -3557,45 +3557,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       priceId = price.id;
 
-      // Create subscription (ベーシックプラン 2,000円/月)
-      const subscription = await stripe.subscriptions.create({
+      // Create Stripe Checkout Session for subscription
+      const session = await stripe.checkout.sessions.create({
         customer: customerId,
-        items: [{
-          price: priceId
+        payment_method_types: ['card'],
+        line_items: [{
+          price: priceId,
+          quantity: 1,
         }],
-        payment_behavior: 'default_incomplete',
-        payment_settings: {
-          save_default_payment_method: 'on_subscription'
-        },
-        expand: ['latest_invoice.payment_intent'],
+        mode: 'subscription',
+        success_url: `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/coach/subscription?success=true`,
+        cancel_url: `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/coach/subscription?canceled=true`,
         metadata: {
           teamId: teamData.id,
+        },
+        subscription_data: {
+          metadata: {
+            teamId: teamData.id,
+          }
         }
       });
 
-      // Update team with subscription info
-      await db.update(teams)
-        .set({ 
-          stripeSubscriptionId: subscription.id,
-          subscriptionStatus: subscription.status,
-        })
-        .where(eq(teams.id, teamId));
-
-      console.log("Subscription created:", subscription.id);
-      console.log("Subscription status:", subscription.status);
-      console.log("Latest invoice:", subscription.latest_invoice);
-      
-      const latestInvoice = subscription.latest_invoice as Stripe.Invoice;
-      console.log("Latest invoice type:", typeof latestInvoice);
-      console.log("Latest invoice payment_intent:", (latestInvoice as any)?.payment_intent);
-      
-      const paymentIntent = (latestInvoice as any).payment_intent as Stripe.PaymentIntent;
-      console.log("Payment intent:", paymentIntent);
-      console.log("Client secret:", paymentIntent?.client_secret);
-
       res.json({
-        subscriptionId: subscription.id,
-        clientSecret: paymentIntent?.client_secret,
+        sessionId: session.id,
+        sessionUrl: session.url,
       });
     } catch (error: any) {
       console.error("Error creating subscription:", error);
