@@ -97,13 +97,14 @@ export default function SubscriptionPage() {
     ? JSON.parse(coachData).teamId 
     : localStorage.getItem("teamId");
 
-  // Check for success/cancel parameters in URL
+  // Check for success/cancel parameters in URL OR pending session in localStorage
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const success = params.get('success');
     const sessionId = params.get('session_id');
     const canceled = params.get('canceled');
     
+    // Check for URL parameters first (from Stripe redirect)
     if (success === 'true' && sessionId && teamId) {
       // Verify the payment with the server
       const verifyPayment = async () => {
@@ -125,6 +126,8 @@ export default function SubscriptionPage() {
             // Invalidate queries to refetch latest data
             queryClient.invalidateQueries({ queryKey: ["/api/teams", teamId] });
             queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+            // Clear pending session
+            localStorage.removeItem('pending_stripe_session');
           } else {
             toast({
               title: "エラー",
@@ -152,8 +155,60 @@ export default function SubscriptionPage() {
         description: "決済がキャンセルされました。",
         variant: "destructive",
       });
+      // Clear pending session
+      localStorage.removeItem('pending_stripe_session');
       // Clear URL parameters
       setLocation('/coach/subscription', { replace: true });
+    } else {
+      // Check for pending session in localStorage (user returned after payment in new tab)
+      const pendingSessionData = localStorage.getItem('pending_stripe_session');
+      if (pendingSessionData && teamId) {
+        try {
+          const { sessionId: pendingSessionId, teamId: pendingTeamId, timestamp } = JSON.parse(pendingSessionData);
+          
+          // Only check if session is less than 1 hour old and matches current team
+          const oneHourAgo = Date.now() - (60 * 60 * 1000);
+          if (timestamp > oneHourAgo && pendingTeamId === teamId) {
+            console.log("Found pending session, verifying:", pendingSessionId);
+            
+            // Verify the payment
+            const verifyPendingPayment = async () => {
+              try {
+                const response = await apiRequest("POST", "/api/subscription/verify", {
+                  sessionId: pendingSessionId,
+                  teamId: pendingTeamId
+                });
+                
+                const data = await response.json();
+                console.log("Pending session verification response:", data);
+                
+                if (data.success) {
+                  toast({
+                    title: "決済完了",
+                    description: "ベーシックプランへのアップグレードが完了しました。",
+                  });
+                  // Invalidate queries to refetch latest data
+                  queryClient.invalidateQueries({ queryKey: ["/api/teams", teamId] });
+                  queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+                  // Clear pending session
+                  localStorage.removeItem('pending_stripe_session');
+                }
+              } catch (error) {
+                console.error("Error verifying pending payment:", error);
+                // Don't show error toast for pending verification, just log it
+              }
+            };
+            
+            verifyPendingPayment();
+          } else {
+            // Session is too old or for different team, remove it
+            localStorage.removeItem('pending_stripe_session');
+          }
+        } catch (error) {
+          console.error("Error parsing pending session data:", error);
+          localStorage.removeItem('pending_stripe_session');
+        }
+      }
     }
   }, [teamId, toast, setLocation]);
 
@@ -196,9 +251,22 @@ export default function SubscriptionPage() {
       console.log("Session URL:", data.sessionUrl);
       
       if (data.sessionUrl) {
-        console.log("Redirecting to Stripe Checkout:", data.sessionUrl);
-        // Redirect to Stripe Checkout
-        window.location.href = data.sessionUrl;
+        console.log("Opening Stripe Checkout in new window:", data.sessionUrl);
+        // Save session ID for later verification
+        localStorage.setItem('pending_stripe_session', JSON.stringify({
+          sessionId: data.sessionId,
+          teamId: teamId,
+          timestamp: Date.now()
+        }));
+        // Open Stripe Checkout in a new window
+        window.open(data.sessionUrl, '_blank');
+        
+        // Show message to user
+        toast({
+          title: "決済ページを開きました",
+          description: "新しいタブでStripeの決済ページが開きます。決済完了後、このページに戻ってきてください。",
+        });
+        setIsUpgrading(false);
       } else {
         console.error("No sessionUrl in response");
         toast({
