@@ -2361,6 +2361,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "teamId and csvData are required" });
       }
       
+      // Get team info to check plan
+      const team = await db.select().from(teams).where(eq(teams.id, teamId as string)).limit(1);
+      if (team.length === 0) {
+        return res.status(404).json({ error: "Team not found" });
+      }
+      
       // Normalize line endings (handle Windows \r\n, Mac \r, Unix \n)
       const normalizedData = csvData.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
       
@@ -2372,6 +2378,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Skip header
       const dataLines = lines.slice(1);
+      
+      // Check free plan member limit before processing
+      if (team[0].subscriptionPlan === "free") {
+        // Get current member count
+        const currentMembers = await db.select().from(students).where(eq(students.teamId, teamId as string));
+        const currentMemberCount = currentMembers.length;
+        
+        // Count how many new members would be created (not existing emails)
+        const existingEmails = new Set(currentMembers.map(m => m.email.toLowerCase()));
+        let newMemberCount = 0;
+        
+        for (const line of dataLines) {
+          const trimmedLine = line.trim();
+          if (!trimmedLine) continue;
+          
+          // Quick parse to get email (5th field)
+          const fields: string[] = [];
+          let currentField = '';
+          let inQuotes = false;
+          
+          for (let j = 0; j < trimmedLine.length; j++) {
+            const char = trimmedLine[j];
+            const nextChar = trimmedLine[j + 1];
+            
+            if (char === '"') {
+              if (inQuotes && nextChar === '"') {
+                currentField += '"';
+                j++;
+              } else {
+                inQuotes = !inQuotes;
+              }
+            } else if (char === ',' && !inQuotes) {
+              fields.push(currentField);
+              currentField = '';
+            } else {
+              currentField += char;
+            }
+          }
+          fields.push(currentField);
+          
+          if (fields.length >= 5 && fields[4]) {
+            const email = fields[4].trim().toLowerCase();
+            if (!existingEmails.has(email)) {
+              newMemberCount++;
+            }
+          }
+        }
+        
+        // Check if total would exceed limit
+        if (currentMemberCount + newMemberCount > 100) {
+          return res.status(403).json({ 
+            error: `Freeプランの上限（100名）を超えるため、インポートできません。現在のメンバー数: ${currentMemberCount}名、新規追加: ${newMemberCount}名、合計: ${currentMemberCount + newMemberCount}名。Basicプランにアップグレードしてください。` 
+          });
+        }
+      }
       
       // Get all categories for the team
       const allCategories = await db.select().from(categories).where(eq(categories.teamId, teamId as string));
