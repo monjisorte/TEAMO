@@ -302,13 +302,14 @@ function CoachPortalContent({ coachId, onLogout }: { coachId: string; onLogout: 
   }, [coachError, onLogout]);
 
   // Fetch team info
-  const { data: teams } = useQuery<Array<{ id: string; name: string }>>({
+  const { data: teams } = useQuery<Array<{ id: string; name: string; subscriptionPlan: string }>>({
     queryKey: ["/api/teams"],
     enabled: !!coach?.teamId,
   });
 
   const team = teams?.find(t => t.id === coach?.teamId);
   const teamName = team?.name || "チーム";
+  const subscriptionPlan = team?.subscriptionPlan || "free";
 
   if (coachLoading || !coach) {
     return (
@@ -341,6 +342,12 @@ function CoachPortalContent({ coachId, onLogout }: { coachId: string; onLogout: 
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Badge 
+                variant={subscriptionPlan === "basic" ? "default" : "secondary"}
+                data-testid="badge-subscription-plan"
+              >
+                {subscriptionPlan === "basic" ? "Basic" : "Free"}
+              </Badge>
               <ThemeToggle />
               <Button 
                 variant="outline" 
