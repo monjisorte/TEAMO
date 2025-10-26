@@ -3581,8 +3581,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .where(eq(teams.id, teamId));
 
+      console.log("Subscription created:", subscription.id);
+      console.log("Subscription status:", subscription.status);
+      console.log("Latest invoice:", subscription.latest_invoice);
+      
       const latestInvoice = subscription.latest_invoice as Stripe.Invoice;
+      console.log("Latest invoice type:", typeof latestInvoice);
+      console.log("Latest invoice payment_intent:", (latestInvoice as any)?.payment_intent);
+      
       const paymentIntent = (latestInvoice as any).payment_intent as Stripe.PaymentIntent;
+      console.log("Payment intent:", paymentIntent);
+      console.log("Client secret:", paymentIntent?.client_secret);
 
       res.json({
         subscriptionId: subscription.id,
