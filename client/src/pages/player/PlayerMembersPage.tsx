@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,6 +13,11 @@ interface PlayerMembersPageProps {
 }
 
 export default function PlayerMembersPage({ teamId }: PlayerMembersPageProps) {
+  // Set page title
+  useEffect(() => {
+    document.title = "メンバー覧 | TEAMO";
+  }, []);
+
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
 
   const { data: categories = [] } = useQuery<Category[]>({

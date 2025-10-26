@@ -15,6 +15,11 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { getFullName } from "@/lib/nameUtils";
 
 export default function TuitionPage() {
+  // Set page title
+  useEffect(() => {
+    document.title = "会費管理 | TEAMOコーチ";
+  }, []);
+
   const { toast } = useToast();
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;

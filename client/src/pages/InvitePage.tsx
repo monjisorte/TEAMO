@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,11 @@ import { useToast } from "@/hooks/use-toast";
 import type { Team } from "@shared/schema";
 
 export default function InvitePage() {
+  // Set page title
+  useEffect(() => {
+    document.title = "招待管理 | TEAMOコーチ";
+  }, []);
+
   const { toast } = useToast();
   
   // Get coach's teamId from localStorage

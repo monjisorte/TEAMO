@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,11 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Sport } from "@shared/schema";
 
 export default function AdminSports() {
+  // Set page title
+  useEffect(() => {
+    document.title = "スポーツ管理 | TEAMO管理者";
+  }, []);
+
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingSport, setEditingSport] = useState<Sport | null>(null);

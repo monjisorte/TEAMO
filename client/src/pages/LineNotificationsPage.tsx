@@ -1,7 +1,13 @@
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bell } from "lucide-react";
 
 export default function LineNotificationsPage() {
+  // Set page title
+  useEffect(() => {
+    document.title = "LINE通知 | TEAMOコーチ";
+  }, []);
+
   return (
     <div className="space-y-6">
       <div>

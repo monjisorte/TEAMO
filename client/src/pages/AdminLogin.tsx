@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,6 +28,11 @@ interface AdminLoginProps {
 }
 
 export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
+  // Set page title
+  useEffect(() => {
+    document.title = "管理者ログイン | TEAMO管理者";
+  }, []);
+
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 

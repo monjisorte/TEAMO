@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,6 +12,11 @@ interface PlayerCoachesPageProps {
 }
 
 export default function PlayerCoachesPage({ teamId }: PlayerCoachesPageProps) {
+  // Set page title
+  useEffect(() => {
+    document.title = "コーチ一覧 | TEAMO";
+  }, []);
+
   const { data: coaches, isLoading } = useQuery<Coach[]>({
     queryKey: ["/api/team", teamId, "coaches"],
   });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,11 @@ interface TeamDetails extends TeamWithStats {
 }
 
 export default function AdminTeams() {
+  // Set page title
+  useEffect(() => {
+    document.title = "チーム管理 | TEAMO管理者";
+  }, []);
+
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
   const { data: teams, isLoading } = useQuery<TeamWithStats[]>({

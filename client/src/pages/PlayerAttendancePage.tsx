@@ -9,6 +9,11 @@ interface PlayerAttendancePageProps {
 }
 
 export default function PlayerAttendancePage({ playerId, teamId }: PlayerAttendancePageProps) {
+  // Set page title
+  useEffect(() => {
+    document.title = "出欠管理 | TEAMO";
+  }, []);
+
   // Get player type from localStorage
   const [playerType, setPlayerType] = useState<string | undefined>(() => {
     const playerData = localStorage.getItem("playerData");

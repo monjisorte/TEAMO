@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,6 +31,11 @@ const adminSchema = z.object({
 type AdminFormData = z.infer<typeof adminSchema>;
 
 export default function AdminAccounts() {
+  // Set page title
+  useEffect(() => {
+    document.title = "アカウント管理 | TEAMO管理者";
+  }, []);
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 

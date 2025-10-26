@@ -9,6 +9,11 @@ interface PlayerCalendarPageProps {
 }
 
 export default function PlayerCalendarPage({ playerId, teamId }: PlayerCalendarPageProps) {
+  // Set page title
+  useEffect(() => {
+    document.title = "TEAMO【ティーモ】クラブ運営サポートサイト";
+  }, []);
+
   // Get player type from localStorage
   const [playerType, setPlayerType] = useState<string | undefined>(() => {
     const playerData = localStorage.getItem("playerData");

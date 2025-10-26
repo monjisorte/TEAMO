@@ -100,6 +100,11 @@ interface SiblingLink {
 }
 
 export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePageProps) {
+  // Set page title
+  useEffect(() => {
+    document.title = "プロフィール | TEAMO";
+  }, []);
+
   const { toast } = useToast();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [photoFile, setPhotoFile] = useState<File | null>(null);

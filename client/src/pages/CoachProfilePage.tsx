@@ -45,6 +45,11 @@ const emailSchema = z.object({
 type EmailFormData = z.infer<typeof emailSchema>;
 
 export default function CoachProfilePage() {
+  // Set page title
+  useEffect(() => {
+    document.title = "プロフィール設定 | TEAMOコーチ";
+  }, []);
+
   const { toast } = useToast();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);

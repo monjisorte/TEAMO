@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -38,6 +38,11 @@ interface MembersPageProps {
 }
 
 export default function MembersPage({ teamId }: MembersPageProps) {
+  // Set page title
+  useEffect(() => {
+    document.title = "メンバー管理 | TEAMOコーチ";
+  }, []);
+
   const { toast } = useToast();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);

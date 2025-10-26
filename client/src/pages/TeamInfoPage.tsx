@@ -23,6 +23,11 @@ const SPORT_TYPES = [
 ];
 
 export default function TeamInfoPage() {
+  // Set page title
+  useEffect(() => {
+    document.title = "チーム情報 | TEAMOコーチ";
+  }, []);
+
   const { toast } = useToast();
   const [isEditingBasicInfo, setIsEditingBasicInfo] = useState(false);
   const [isEditingFees, setIsEditingFees] = useState(false);

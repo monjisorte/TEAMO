@@ -24,6 +24,11 @@ const setupSchema = z.object({
 type SetupFormData = z.infer<typeof setupSchema>;
 
 export default function AdminSetup() {
+  // Set page title
+  useEffect(() => {
+    document.title = "管理者セットアップ | TEAMO管理者";
+  }, []);
+
   const [isLoading, setIsLoading] = useState(false);
   const [setupNeeded, setSetupNeeded] = useState<boolean | null>(null);
   const { toast } = useToast();

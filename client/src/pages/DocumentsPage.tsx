@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,11 @@ import type { UploadResult } from "@uppy/core";
 import type { Folder as FolderType, SharedDocument } from "@shared/schema";
 
 export default function DocumentsPage() {
+  // Set page title
+  useEffect(() => {
+    document.title = "共有資料 | TEAMOコーチ";
+  }, []);
+
   const { toast } = useToast();
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState("");

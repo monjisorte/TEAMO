@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, UserCircle, GraduationCap, Calendar } from "lucide-react";
@@ -10,6 +11,11 @@ interface AdminStats {
 }
 
 export default function AdminDashboard() {
+  // Set page title
+  useEffect(() => {
+    document.title = "管理ダッシュボード | TEAMO管理者";
+  }, []);
+
   const { data: stats, isLoading } = useQuery<AdminStats>({
     queryKey: ["/api/admin/stats"],
   });

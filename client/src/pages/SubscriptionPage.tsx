@@ -86,6 +86,11 @@ function SubscribeForm({ teamId, onSuccess }: { teamId: string, onSuccess: () =>
 }
 
 export default function SubscriptionPage() {
+  // Set page title
+  useEffect(() => {
+    document.title = "サブスクリプション | TEAMOコーチ";
+  }, []);
+
   const { toast } = useToast();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isUpgrading, setIsUpgrading] = useState(false);
