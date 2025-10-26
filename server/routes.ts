@@ -3684,9 +3684,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         teamData.stripeSubscriptionId
       );
 
+      console.log("Retrieved subscription:", {
+        id: subscription.id,
+        current_period_end: subscription.current_period_end,
+        current_period_end_type: typeof subscription.current_period_end,
+        cancel_at_period_end: subscription.cancel_at_period_end,
+        status: subscription.status
+      });
+
       const currentPeriodEnd = subscription.current_period_end 
         ? new Date(subscription.current_period_end * 1000)
         : null;
+
+      console.log("Date to save:", currentPeriodEnd, currentPeriodEnd ? currentPeriodEnd.toISOString() : "null");
 
       await db.update(teams)
         .set({ 
@@ -3708,6 +3718,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error canceling subscription:", error);
       res.status(500).json({ error: error.message || "Failed to cancel subscription" });
+    }
+  });
+
+  // Reactivate a canceled subscription
+  app.post("/api/subscription/reactivate", isAuthenticated, async (req, res) => {
+    try {
+      const { teamId } = req.body;
+      
+      if (!teamId) {
+        return res.status(400).json({ error: "Team ID is required" });
+      }
+
+      const team = await db.select().from(teams).where(eq(teams.id, teamId)).limit(1);
+      if (!team || team.length === 0) {
+        return res.status(404).json({ error: "Team not found" });
+      }
+
+      const teamData = team[0];
+      
+      if (!teamData.stripeSubscriptionId) {
+        return res.status(400).json({ error: "No subscription found" });
+      }
+
+      // Reactivate subscription by removing cancel_at_period_end
+      await stripe.subscriptions.update(
+        teamData.stripeSubscriptionId,
+        { cancel_at_period_end: false }
+      );
+
+      // Retrieve the full subscription details
+      const subscription = await stripe.subscriptions.retrieve(
+        teamData.stripeSubscriptionId
+      );
+
+      const currentPeriodEnd = subscription.current_period_end 
+        ? new Date(subscription.current_period_end * 1000)
+        : null;
+
+      await db.update(teams)
+        .set({ 
+          subscriptionStatus: subscription.status,
+          subscriptionCancelAtPeriodEnd: false,
+          subscriptionCurrentPeriodEnd: currentPeriodEnd,
+        })
+        .where(eq(teams.id, teamId));
+
+      res.json({ 
+        success: true,
+        subscription: {
+          id: subscription.id,
+          status: subscription.status,
+          cancel_at_period_end: subscription.cancel_at_period_end,
+          current_period_end: subscription.current_period_end
+        }
+      });
+    } catch (error: any) {
+      console.error("Error reactivating subscription:", error);
+      res.status(500).json({ error: error.message || "Failed to reactivate subscription" });
     }
   });
 
