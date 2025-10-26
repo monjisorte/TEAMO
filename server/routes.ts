@@ -3575,7 +3575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           quantity: 1,
         }],
         mode: 'subscription',
-        success_url: `${baseUrl}/coach/subscription?success=true`,
+        success_url: `${baseUrl}/coach/subscription?success=true&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/coach/subscription?canceled=true`,
         metadata: {
           teamId: teamData.id,
@@ -3597,6 +3597,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error creating subscription:", error);
       res.status(500).json({ error: error.message || "Failed to create subscription" });
+    }
+  });
+
+  // Verify and complete subscription after successful payment
+  app.post("/api/subscription/verify", isAuthenticated, async (req, res) => {
+    try {
+      const { sessionId, teamId } = req.body;
+      
+      if (!sessionId || !teamId) {
+        return res.status(400).json({ error: "Session ID and Team ID are required" });
+      }
+
+      console.log("Verifying session:", sessionId, "for team:", teamId);
+
+      // Retrieve the session from Stripe
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      
+      console.log("Session status:", session.status);
+      console.log("Payment status:", session.payment_status);
+      console.log("Subscription ID:", session.subscription);
+
+      if (session.payment_status === 'paid' && session.subscription) {
+        // Get subscription details
+        const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+        
+        console.log("Subscription status:", subscription.status);
+        console.log("Updating team:", teamId);
+
+        // Update team with subscription info
+        await db.update(teams)
+          .set({
+            stripeSubscriptionId: subscription.id,
+            subscriptionStatus: subscription.status,
+            subscriptionPlan: subscription.status === 'active' ? 'basic' : 'free'
+          })
+          .where(eq(teams.id, teamId));
+
+        console.log("Team updated successfully");
+
+        res.json({ 
+          success: true,
+          subscription: {
+            id: subscription.id,
+            status: subscription.status,
+            plan: subscription.status === 'active' ? 'basic' : 'free'
+          }
+        });
+      } else {
+        res.status(400).json({ error: "Payment not completed" });
+      }
+    } catch (error: any) {
+      console.error("Error verifying subscription:", error);
+      res.status(500).json({ error: error.message || "Failed to verify subscription" });
     }
   });
 

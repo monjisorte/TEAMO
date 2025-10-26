@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -88,12 +89,73 @@ export default function SubscriptionPage() {
   const { toast } = useToast();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isUpgrading, setIsUpgrading] = useState(false);
+  const [, setLocation] = useLocation();
 
   // Get teamId from coachData (for coaches) or directly from localStorage (for players)
   const coachData = localStorage.getItem("coachData");
   const teamId = coachData 
     ? JSON.parse(coachData).teamId 
     : localStorage.getItem("teamId");
+
+  // Check for success/cancel parameters in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const success = params.get('success');
+    const sessionId = params.get('session_id');
+    const canceled = params.get('canceled');
+    
+    if (success === 'true' && sessionId && teamId) {
+      // Verify the payment with the server
+      const verifyPayment = async () => {
+        try {
+          console.log("Verifying payment with session ID:", sessionId);
+          const response = await apiRequest("POST", "/api/subscription/verify", {
+            sessionId,
+            teamId
+          });
+          
+          const data = await response.json();
+          console.log("Verification response:", data);
+          
+          if (data.success) {
+            toast({
+              title: "決済完了",
+              description: "ベーシックプランへのアップグレードが完了しました。",
+            });
+            // Invalidate queries to refetch latest data
+            queryClient.invalidateQueries({ queryKey: ["/api/teams", teamId] });
+            queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+          } else {
+            toast({
+              title: "エラー",
+              description: "決済の確認に失敗しました。サポートにお問い合わせください。",
+              variant: "destructive",
+            });
+          }
+        } catch (error) {
+          console.error("Error verifying payment:", error);
+          toast({
+            title: "エラー",
+            description: "決済の確認に失敗しました。",
+            variant: "destructive",
+          });
+        } finally {
+          // Clear URL parameters
+          setLocation('/coach/subscription', { replace: true });
+        }
+      };
+      
+      verifyPayment();
+    } else if (canceled === 'true') {
+      toast({
+        title: "キャンセル",
+        description: "決済がキャンセルされました。",
+        variant: "destructive",
+      });
+      // Clear URL parameters
+      setLocation('/coach/subscription', { replace: true });
+    }
+  }, [teamId, toast, setLocation]);
 
   const { data: team, isLoading } = useQuery<{
     id: string;
