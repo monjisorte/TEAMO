@@ -3,11 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Crown, Loader2 } from "lucide-react";
+import { Check, Crown, Loader2, Zap, Users, FileText } from "lucide-react";
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import type { Student } from "@shared/schema";
 
 if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
   throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
@@ -96,10 +97,19 @@ export default function SubscriptionPage() {
     subscriptionPlan: string;
     subscriptionStatus: string;
     stripeSubscriptionId: string | null;
+    storageUsed: number;
   }>({
     queryKey: ["/api/teams", teamId],
     enabled: !!teamId,
   });
+
+  // Fetch students to get member count
+  const { data: students = [] } = useQuery<Student[]>({
+    queryKey: ["/api/students"],
+    enabled: !!teamId,
+  });
+
+  const teamMembers = students.filter(s => s.teamId === teamId).length;
 
   const handleUpgrade = async () => {
     if (!teamId) return;
@@ -192,6 +202,70 @@ export default function SubscriptionPage() {
           チームに最適なプランをお選びください
         </p>
       </div>
+
+      <Card 
+        className="border-0 shadow-xl mb-6"
+        data-testid="card-subscription-plan"
+      >
+        <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 p-3">
+              {team?.subscriptionPlan === "basic" ? (
+                <Crown className="h-5 w-5 text-white" />
+              ) : (
+                <Zap className="h-5 w-5 text-white" />
+              )}
+            </div>
+            <div>
+              <CardTitle className="text-lg">
+                {team?.subscriptionPlan === "basic" ? "ベーシックプラン" : "フリープラン"}
+              </CardTitle>
+              <CardDescription className="text-sm">
+                {team?.subscriptionPlan === "basic" 
+                  ? "すべての機能を利用可能" 
+                  : "アップグレードして無制限に"}
+              </CardDescription>
+            </div>
+          </div>
+          <div className="text-right">
+            {team?.subscriptionPlan === "basic" ? (
+              <>
+                <div className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                  ¥2,000
+                </div>
+                <p className="text-xs text-muted-foreground">/月</p>
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-muted-foreground">
+                  ¥0
+                </div>
+                <p className="text-xs text-muted-foreground">/月</p>
+              </>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <Users className="h-4 w-4" />
+              <span>
+                {team?.subscriptionPlan === "basic" 
+                  ? "無制限" 
+                  : `${teamMembers}/100名`}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <FileText className="h-4 w-4" />
+              <span>
+                {team?.subscriptionPlan === "basic" 
+                  ? "無制限" 
+                  : `${Math.round((team?.storageUsed || 0) / (1024 * 1024))}MB/50MB`}
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {team && isBasicPlan && isActive && (
         <Card className="mb-6 border-primary">
