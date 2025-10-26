@@ -89,7 +89,11 @@ export default function SubscriptionPage() {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isUpgrading, setIsUpgrading] = useState(false);
 
-  const teamId = localStorage.getItem("teamId");
+  // Get teamId from coachData (for coaches) or directly from localStorage (for players)
+  const coachData = localStorage.getItem("coachData");
+  const teamId = coachData 
+    ? JSON.parse(coachData).teamId 
+    : localStorage.getItem("teamId");
 
   const { data: team, isLoading } = useQuery<{
     id: string;
