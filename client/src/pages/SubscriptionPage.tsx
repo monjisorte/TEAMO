@@ -287,6 +287,60 @@ export default function SubscriptionPage() {
     }
   };
 
+  const handleCheckPayment = async () => {
+    const pendingSessionData = localStorage.getItem('pending_stripe_session');
+    if (!pendingSessionData) {
+      toast({
+        title: "エラー",
+        description: "保留中の決済情報が見つかりません。",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { sessionId, teamId: pendingTeamId } = JSON.parse(pendingSessionData);
+      
+      console.log("Manually verifying payment with session ID:", sessionId);
+      setIsUpgrading(true);
+      
+      const response = await apiRequest("POST", "/api/subscription/verify", {
+        sessionId,
+        teamId: pendingTeamId
+      });
+      
+      const data = await response.json();
+      console.log("Manual verification response:", data);
+      
+      if (data.success) {
+        toast({
+          title: "決済完了",
+          description: "ベーシックプランへのアップグレードが完了しました。",
+        });
+        // Invalidate queries to refetch latest data
+        queryClient.invalidateQueries({ queryKey: ["/api/teams", teamId] });
+        queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+        // Clear pending session
+        localStorage.removeItem('pending_stripe_session');
+      } else {
+        toast({
+          title: "未完了",
+          description: "決済が完了していないか、確認に失敗しました。",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error checking payment:", error);
+      toast({
+        title: "エラー",
+        description: "決済の確認に失敗しました。",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
   const handleCancelSubscription = async () => {
     if (!teamId || !window.confirm("本当にサブスクリプションをキャンセルしますか？")) return;
 
@@ -414,6 +468,41 @@ export default function SubscriptionPage() {
           </div>
         </CardContent>
       </Card>
+
+      {!isBasicPlan && localStorage.getItem('pending_stripe_session') && (
+        <Card className="mb-6 border-amber-500 bg-amber-50 dark:bg-amber-950/20">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 text-amber-500 animate-spin" />
+                  決済を確認してください
+                </CardTitle>
+                <CardDescription>
+                  Stripeでの決済が完了している場合、下のボタンをクリックして確認してください
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={handleCheckPayment}
+              disabled={isUpgrading}
+              data-testid="button-check-payment"
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+            >
+              {isUpgrading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  確認中...
+                </>
+              ) : (
+                "決済を確認"
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {team && isBasicPlan && isActive && (
         <Card className="mb-6 border-primary">
