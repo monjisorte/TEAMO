@@ -56,6 +56,12 @@ export default function DocumentsPage() {
     enabled: !!teamId,
   });
 
+  // Get team info for storage usage
+  const { data: team } = useQuery<{ id: string; storageUsed: number; subscriptionPlan: string }>({
+    queryKey: [`/api/teams/${teamId}`],
+    enabled: !!teamId,
+  });
+
   const createFolderMutation = useMutation({
     mutationFn: async (name: string) => {
       return await apiRequest("POST", "/api/folders", {
@@ -167,10 +173,21 @@ export default function DocumentsPage() {
     }
   }, [currentFolderId, teamId, toast]);
 
+  const storageUsedMB = team?.storageUsed ? (team.storageUsed / (1024 * 1024)).toFixed(2) : '0.00';
+  const maxStorageMB = team?.subscriptionPlan === 'free' ? '50.00' : '∞';
+  const storagePercentage = team?.subscriptionPlan === 'free' ? (team.storageUsed / (50 * 1024 * 1024) * 100).toFixed(1) : 0;
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end gap-2">
-        <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
+      <div className="flex items-center justify-between gap-4">
+        <div className="text-sm text-muted-foreground" data-testid="text-storage-usage">
+          ストレージ使用量: <span className="font-semibold">{storageUsedMB} MB</span> / {maxStorageMB} MB
+          {team?.subscriptionPlan === 'free' && (
+            <span className="ml-2 text-xs">({storagePercentage}%)</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
             <DialogTrigger asChild>
               <Button className="rounded-xl" data-testid="button-create-folder">
                 <FolderPlus className="w-4 h-4 mr-2" />
@@ -201,9 +218,9 @@ export default function DocumentsPage() {
                 </Button>
               </div>
             </DialogContent>
-        </Dialog>
+          </Dialog>
         
-        <ObjectUploader
+          <ObjectUploader
             key={currentFolderId || 'root'}
             maxNumberOfFiles={1}
             maxFileSize={52428800}
@@ -211,9 +228,10 @@ export default function DocumentsPage() {
             onComplete={handleUploadComplete}
             buttonClassName="rounded-xl"
           >
-          <FilePlus className="w-4 h-4 mr-2" />
-          ファイルアップロード
-        </ObjectUploader>
+            <FilePlus className="w-4 h-4 mr-2" />
+            ファイルアップロード
+          </ObjectUploader>
+        </div>
       </div>
 
       {currentFolderId && (

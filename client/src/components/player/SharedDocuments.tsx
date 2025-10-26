@@ -48,6 +48,12 @@ export default function SharedDocuments({ teamId }: SharedDocumentsProps) {
     enabled: !!teamId,
   });
 
+  // Get team info for storage usage
+  const { data: team } = useQuery<{ id: string; storageUsed: number; subscriptionPlan: string }>({
+    queryKey: [`/api/teams/${teamId}`],
+    enabled: !!teamId,
+  });
+
   const isLoading = foldersLoading || documentsLoading;
 
   if (isLoading) {
@@ -60,6 +66,10 @@ export default function SharedDocuments({ teamId }: SharedDocumentsProps) {
     );
   }
 
+  const storageUsedMB = team?.storageUsed ? (team.storageUsed / (1024 * 1024)).toFixed(2) : '0.00';
+  const maxStorageMB = team?.subscriptionPlan === 'free' ? '50.00' : '∞';
+  const storagePercentage = team?.subscriptionPlan === 'free' ? (team.storageUsed / (50 * 1024 * 1024) * 100).toFixed(1) : 0;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -67,6 +77,12 @@ export default function SharedDocuments({ teamId }: SharedDocumentsProps) {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             共有資料
           </h1>
+          <div className="mt-2 text-sm text-muted-foreground" data-testid="text-storage-usage">
+            ストレージ使用量: <span className="font-semibold">{storageUsedMB} MB</span> / {maxStorageMB} MB
+            {team?.subscriptionPlan === 'free' && (
+              <span className="ml-2 text-xs">({storagePercentage}%)</span>
+            )}
+          </div>
         </div>
       </div>
 
