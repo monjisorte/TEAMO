@@ -3674,23 +3674,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Cancel subscription at period end
-      const subscription = await stripe.subscriptions.update(
+      await stripe.subscriptions.update(
         teamData.stripeSubscriptionId,
         { cancel_at_period_end: true }
       );
 
-      console.log("Subscription object:", {
-        id: subscription.id,
-        current_period_end: subscription.current_period_end,
-        current_period_end_type: typeof subscription.current_period_end,
-        cancel_at_period_end: subscription.cancel_at_period_end
-      });
+      // Retrieve the full subscription details to get current_period_end
+      const subscription = await stripe.subscriptions.retrieve(
+        teamData.stripeSubscriptionId
+      );
 
       const currentPeriodEnd = subscription.current_period_end 
         ? new Date(subscription.current_period_end * 1000)
         : null;
-
-      console.log("Converted currentPeriodEnd:", currentPeriodEnd);
 
       await db.update(teams)
         .set({ 
