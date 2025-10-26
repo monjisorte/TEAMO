@@ -283,6 +283,10 @@ export default function SubscriptionPage() {
             <div className="space-y-2">
               <div className="flex items-start gap-2">
                 <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                <span className="text-sm">フリープランのすべての機能</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <span className="text-sm font-semibold">無制限のチームメンバー</span>
               </div>
               <div className="flex items-start gap-2">
@@ -292,22 +296,6 @@ export default function SubscriptionPage() {
               <div className="flex items-start gap-2">
                 <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <span className="text-sm font-semibold">すべてのイベント履歴を保存</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">スケジュール管理</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">繰り返しイベント機能</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">出欠管理機能</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">会費管理機能</span>
               </div>
             </div>
 
