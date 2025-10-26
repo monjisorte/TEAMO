@@ -128,12 +128,17 @@ export default function SubscriptionPage() {
     setIsUpgrading(true);
     try {
       const response = await apiRequest("POST", "/api/subscription/create", { teamId });
+      console.log("Response status:", response.status);
       const data = await response.json();
+      console.log("Response data:", data);
+      console.log("Session URL:", data.sessionUrl);
       
       if (data.sessionUrl) {
+        console.log("Redirecting to:", data.sessionUrl);
         // Redirect to Stripe Checkout
         window.location.href = data.sessionUrl;
       } else {
+        console.error("No sessionUrl in response");
         toast({
           title: "エラー",
           description: data.error || "サブスクリプションの作成に失敗しました",
@@ -142,6 +147,7 @@ export default function SubscriptionPage() {
         setIsUpgrading(false);
       }
     } catch (error) {
+      console.error("Subscription creation error:", error);
       toast({
         title: "エラー",
         description: "サブスクリプションの作成に失敗しました",
