@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Users, MapPin, Plus, Clock, FileText, Download, ArrowRight } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Calendar, Users, MapPin, Plus, Clock, FileText, Download, ArrowRight, Crown, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Schedule, Student, Category, Attendance, ActivityLog } from "@shared/schema";
+import type { Schedule, Student, Category, Attendance, ActivityLog, Team } from "@shared/schema";
 import { getFullName } from "@/lib/nameUtils";
 
 interface DashboardStats {
@@ -60,6 +60,13 @@ export function Dashboard() {
     },
     enabled: !!teamId,
   });
+
+  // Fetch team information for subscription details
+  const { data: teams = [] } = useQuery<Team[]>({
+    queryKey: ["/api/teams"],
+  });
+
+  const currentTeam = teams.find(t => t.id === teamId);
 
   // Fetch team members for the dialog
   const { data: students = [] } = useQuery<Student[]>({
@@ -299,6 +306,77 @@ export function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <Card 
+        className="border-0 shadow-xl cursor-pointer hover-elevate transition-all"
+        onClick={() => setLocation('/subscription')}
+        data-testid="card-subscription-plan"
+      >
+        <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 p-3">
+              {currentTeam?.subscriptionPlan === "basic" ? (
+                <Crown className="h-5 w-5 text-white" />
+              ) : (
+                <Zap className="h-5 w-5 text-white" />
+              )}
+            </div>
+            <div>
+              <CardTitle className="text-lg">
+                {currentTeam?.subscriptionPlan === "basic" ? "ベーシックプラン" : "フリープラン"}
+              </CardTitle>
+              <CardDescription className="text-sm">
+                {currentTeam?.subscriptionPlan === "basic" 
+                  ? "すべての機能を利用可能" 
+                  : "アップグレードして無制限に"}
+              </CardDescription>
+            </div>
+          </div>
+          <div className="text-right">
+            {currentTeam?.subscriptionPlan === "basic" ? (
+              <>
+                <div className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                  ¥2,000
+                </div>
+                <p className="text-xs text-muted-foreground">/月</p>
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-muted-foreground">
+                  ¥0
+                </div>
+                <p className="text-xs text-muted-foreground">/月</p>
+              </>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Users className="h-4 w-4" />
+                <span>
+                  {currentTeam?.subscriptionPlan === "basic" 
+                    ? "無制限" 
+                    : `${stats?.teamMembers || 0}/100名`}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <FileText className="h-4 w-4" />
+                <span>
+                  {currentTeam?.subscriptionPlan === "basic" 
+                    ? "無制限" 
+                    : `${Math.round((currentTeam?.storageUsed || 0) / (1024 * 1024))}MB/50MB`}
+                </span>
+              </div>
+            </div>
+            <Button variant="ghost" size="sm" className="gap-1" data-testid="button-manage-subscription">
+              管理
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-8 md:grid-cols-[3fr_2fr]">
         <Card className="border-0 shadow-xl">

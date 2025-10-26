@@ -473,6 +473,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cleanup old schedules for free plan teams (1 month retention)
+  // This endpoint should be called by a scheduled job or admin only
+  app.post("/api/schedules/cleanup-old", isAuthenticated, async (req, res) => {
+    try {
+      // Get all teams on free plan
+      const freeTeams = await db.select().from(teams).where(eq(teams.subscriptionPlan, "free"));
+      
+      if (freeTeams.length === 0) {
+        return res.status(200).json({ message: "No free plan teams found", deletedCount: 0 });
+      }
+
+      // Calculate the cutoff date (1 month ago)
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+      const cutoffDate = oneMonthAgo.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+
+      let totalDeleted = 0;
+
+      // For each free team, delete schedules older than 1 month
+      for (const team of freeTeams) {
+        const oldSchedules = await db.select()
+          .from(schedules)
+          .where(
+            and(
+              eq(schedules.teamId, team.id),
+              drizzleSql`${schedules.date} < ${cutoffDate}`
+            )
+          );
+
+        if (oldSchedules.length > 0) {
+          // Delete old schedules
+          await db.delete(schedules)
+            .where(
+              and(
+                eq(schedules.teamId, team.id),
+                drizzleSql`${schedules.date} < ${cutoffDate}`
+              )
+            );
+
+          totalDeleted += oldSchedules.length;
+          console.log(`Deleted ${oldSchedules.length} old schedules for team ${team.name} (${team.id})`);
+        }
+      }
+
+      res.status(200).json({ 
+        message: `Successfully deleted old schedules for ${freeTeams.length} free plan teams`,
+        deletedCount: totalDeleted,
+        teamsProcessed: freeTeams.length
+      });
+    } catch (error) {
+      console.error("Error cleaning up old schedules:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Attendance Endpoints
   app.get("/api/attendances", isAuthenticated, async (req, res) => {
     try {
@@ -1001,6 +1056,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const team = await db.select().from(teams).where(eq(teams.teamCode, baseTeamCode)).limit(1);
       if (team.length === 0) {
         return res.status(404).json({ error: "Invalid team code" });
+      }
+
+      // Check team member limit for free plan
+      if (team[0].subscriptionPlan === "free") {
+        const currentMembers = await db.select().from(students).where(eq(students.teamId, team[0].id));
+        if (currentMembers.length >= 100) {
+          return res.status(403).json({ error: "Team has reached the maximum number of members (100) for the free plan. Please upgrade to add more members." });
+        }
       }
 
       // Check if email already exists
@@ -2102,6 +2165,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "User not authenticated" });
       }
 
+      // Check storage limit for free plan
+      const team = await db.select().from(teams).where(eq(teams.id, teamId)).limit(1);
+      if (team.length > 0 && team[0].subscriptionPlan === "free") {
+        const currentStorageUsed = team[0].storageUsed || 0;
+        const maxStorage = 50 * 1024 * 1024; // 50MB in bytes
+        
+        if (currentStorageUsed + (fileSize || 0) > maxStorage) {
+          return res.status(403).json({ 
+            error: `Storage limit exceeded. Free plan allows up to 50MB. Current usage: ${Math.round(currentStorageUsed / (1024 * 1024))}MB. Please upgrade to the Basic plan for unlimited storage.` 
+          });
+        }
+      }
+
       const objectStorageService = new ObjectStorageService();
       
       // Set ACL policy for the uploaded file (team-wide public visibility)
@@ -2123,6 +2199,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fileSize,
       }).returning();
 
+      // Update team storage usage
+      if (team.length > 0) {
+        await db.update(teams)
+          .set({ storageUsed: (team[0].storageUsed || 0) + (fileSize || 0) })
+          .where(eq(teams.id, teamId));
+      }
+
       res.status(201).json(newDocument[0]);
     } catch (error) {
       console.error("Error creating document:", error);
@@ -2134,7 +2217,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
 
-      await db.delete(sharedDocuments).where(eq(sharedDocuments.id, id));
+      // Get document info before deleting
+      const document = await db.select().from(sharedDocuments).where(eq(sharedDocuments.id, id)).limit(1);
+      
+      if (document.length > 0) {
+        // Delete the document
+        await db.delete(sharedDocuments).where(eq(sharedDocuments.id, id));
+        
+        // Update team storage usage
+        const team = await db.select().from(teams).where(eq(teams.id, document[0].teamId)).limit(1);
+        if (team.length > 0) {
+          const currentStorage = Number(team[0].storageUsed) || 0;
+          const fileSize = Number(document[0].fileSize) || 0;
+          const newStorageUsed = Math.max(0, currentStorage - fileSize);
+          await db.update(teams)
+            .set({ storageUsed: newStorageUsed })
+            .where(eq(teams.id, document[0].teamId));
+        }
+      }
+      
       res.status(200).json({ success: true });
     } catch (error) {
       console.error("Error deleting document:", error);
