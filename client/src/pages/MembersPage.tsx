@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Download, Upload } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +19,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { Student, Category, StudentCategory } from "@shared/schema";
 import { Users, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -35,6 +43,9 @@ export default function MembersPage({ teamId }: MembersPageProps) {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ステータスラベルのヘルパー関数
   const getPlayerTypeLabel = (playerType: string | null | undefined) => {
@@ -212,6 +223,89 @@ export default function MembersPage({ teamId }: MembersPageProps) {
     }
   };
 
+  // CSV Export
+  const handleExport = async () => {
+    try {
+      const response = await fetch(`/api/students/export?teamId=${teamId}`, {
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        throw new Error("Export failed");
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `members_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "エクスポート完了",
+        description: "メンバー一覧をCSVファイルでダウンロードしました",
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({
+        title: "エラー",
+        description: "CSVエクスポートに失敗しました",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // CSV Import mutation
+  const importMutation = useMutation({
+    mutationFn: async (csvData: string) => {
+      return await apiRequest("POST", "/api/students/import", { teamId, csvData });
+    },
+    onSuccess: async (data: any) => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/students"] });
+      toast({
+        title: "インポート完了",
+        description: data.message || "インポートが完了しました",
+      });
+      setImportDialogOpen(false);
+      setCsvFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "エラー",
+        description: error.message || "CSVインポートに失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleImport = async () => {
+    if (!csvFile) {
+      toast({
+        title: "エラー",
+        description: "CSVファイルを選択してください",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const text = await csvFile.text();
+      importMutation.mutate(text);
+    } catch (error) {
+      toast({
+        title: "エラー",
+        description: "ファイルの読み込みに失敗しました",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -222,24 +316,47 @@ export default function MembersPage({ teamId }: MembersPageProps) {
 
   return (
     <div className="space-y-6 pb-16 md:pb-24">
-
-      {categories.length > 0 && (
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-            <SelectTrigger className="w-64" data-testid="select-category-filter">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全て</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {categories.length > 0 && (
+            <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+              <SelectTrigger className="w-64" data-testid="select-category-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全て</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
-      )}
+        
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setImportDialogOpen(true)}
+            data-testid="button-import-csv"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            インポート
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExport}
+            disabled={students.length === 0}
+            data-testid="button-export-csv"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            エクスポート
+          </Button>
+        </div>
+      </div>
 
       {students.length === 0 ? (
         <Card>
@@ -468,6 +585,70 @@ export default function MembersPage({ teamId }: MembersPageProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>CSVインポート</DialogTitle>
+            <DialogDescription>
+              メンバー一覧をCSVファイルから一括登録・更新できます。
+              <br />
+              既存のメールアドレスがある場合は更新、ない場合は新規作成されます。
+              <br />
+              新規作成時のデフォルトパスワードは <code className="bg-muted px-1 rounded">password123</code> です。
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label>CSVファイル</Label>
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                data-testid="input-csv-file"
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                フォーマット: 姓,名,姓（カナ）,名（カナ）,メールアドレス,学校名,生年月日,背番号,メンバータイプ,所属カテゴリ
+                <br />
+                所属カテゴリが複数ある場合はセミコロン（;）区切りで入力してください。
+              </p>
+            </div>
+            
+            {csvFile && (
+              <div className="p-3 bg-muted rounded-md">
+                <p className="text-sm">
+                  選択ファイル: <span className="font-semibold">{csvFile.name}</span>
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setImportDialogOpen(false);
+                setCsvFile(null);
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = '';
+                }
+              }}
+              data-testid="button-cancel-import"
+            >
+              キャンセル
+            </Button>
+            <Button
+              onClick={handleImport}
+              disabled={!csvFile || importMutation.isPending}
+              data-testid="button-confirm-import"
+            >
+              {importMutation.isPending ? "インポート中..." : "インポート"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

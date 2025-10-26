@@ -2278,6 +2278,251 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Export students as CSV
+  app.get("/api/students/export", isAuthenticated, async (req, res) => {
+    try {
+      const { teamId } = req.query;
+      
+      if (!teamId) {
+        return res.status(400).json({ error: "teamId is required" });
+      }
+      
+      // Get all students for the team
+      const allStudents = await db.select().from(students).where(eq(students.teamId, teamId as string));
+      
+      // Get all categories for the team
+      const allCategories = await db.select().from(categories).where(eq(categories.teamId, teamId as string));
+      const categoryMap = new Map(allCategories.map(c => [c.id, c.name]));
+      
+      // Get all student-category relationships
+      const allStudentCategories = await db.select().from(studentCategories);
+      
+      // Build CSV header
+      const header = '姓,名,姓（カナ）,名（カナ）,メールアドレス,学校名,生年月日,背番号,メンバータイプ,所属カテゴリ\n';
+      
+      // Build CSV rows
+      const rows = allStudents.map(student => {
+        // Get categories for this student
+        const studentCats = allStudentCategories
+          .filter(sc => sc.studentId === student.id)
+          .map(sc => categoryMap.get(sc.categoryId) || '')
+          .filter(name => name)
+          .join(';');
+        
+        const playerTypeMap: Record<string, string> = {
+          'team': 'チーム生',
+          'school': 'スクール生',
+          'inactive': '休部'
+        };
+        const playerTypeLabel = student.playerType ? (playerTypeMap[student.playerType] || student.playerType) : '';
+        
+        return [
+          student.lastName || '',
+          student.firstName || '',
+          student.lastNameKana || '',
+          student.firstNameKana || '',
+          student.email || '',
+          student.schoolName || '',
+          student.birthDate || '',
+          student.jerseyNumber || '',
+          playerTypeLabel,
+          studentCats
+        ].map(field => {
+          // Escape quotes and wrap in quotes if contains comma, quote, or newline
+          const str = String(field);
+          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return '"' + str.replace(/"/g, '""') + '"';
+          }
+          return str;
+        }).join(',');
+      }).join('\n');
+      
+      const csv = header + rows;
+      
+      // Set headers for file download
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="members_${new Date().toISOString().split('T')[0]}.csv"`);
+      
+      // Add BOM for Excel to recognize UTF-8
+      res.write('\ufeff');
+      res.end(csv);
+    } catch (error) {
+      console.error("Error exporting students:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Import students from CSV
+  app.post("/api/students/import", isAuthenticated, async (req, res) => {
+    try {
+      const { teamId, csvData } = req.body;
+      
+      if (!teamId || !csvData) {
+        return res.status(400).json({ error: "teamId and csvData are required" });
+      }
+      
+      // Normalize line endings (handle Windows \r\n, Mac \r, Unix \n)
+      const normalizedData = csvData.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      
+      // Parse CSV
+      const lines = normalizedData.split('\n').filter((line: string) => line.trim());
+      if (lines.length < 2) {
+        return res.status(400).json({ error: "CSVデータが空です" });
+      }
+      
+      // Skip header
+      const dataLines = lines.slice(1);
+      
+      // Get all categories for the team
+      const allCategories = await db.select().from(categories).where(eq(categories.teamId, teamId as string));
+      // Trim category names for matching
+      const categoryNameMap = new Map(allCategories.map(c => [c.name.trim(), c.id]));
+      
+      const playerTypeReverseMap: Record<string, string> = {
+        'チーム生': 'team',
+        'スクール生': 'school',
+        '休部': 'inactive'
+      };
+      
+      let imported = 0;
+      let updated = 0;
+      let errors: string[] = [];
+      
+      for (let i = 0; i < dataLines.length; i++) {
+        try {
+          const line = dataLines[i].trim();
+          if (!line) continue;
+          
+          // Parse CSV line (handle quoted fields)
+          const fields: string[] = [];
+          let currentField = '';
+          let inQuotes = false;
+          
+          for (let j = 0; j < line.length; j++) {
+            const char = line[j];
+            const nextChar = line[j + 1];
+            
+            if (char === '"') {
+              if (inQuotes && nextChar === '"') {
+                currentField += '"';
+                j++; // skip next quote
+              } else {
+                inQuotes = !inQuotes;
+              }
+            } else if (char === ',' && !inQuotes) {
+              fields.push(currentField);
+              currentField = '';
+            } else {
+              currentField += char;
+            }
+          }
+          fields.push(currentField);
+          
+          if (fields.length < 5) {
+            errors.push(`行${i + 2}: 必須フィールドが不足しています`);
+            continue;
+          }
+          
+          const [lastName, firstName, lastNameKana, firstNameKana, email, schoolName, birthDate, jerseyNumberStr, playerTypeLabel, categoriesStr] = fields;
+          
+          if (!lastName || !firstName || !email) {
+            errors.push(`行${i + 2}: 姓、名、メールアドレスは必須です`);
+            continue;
+          }
+          
+          // Check if student already exists
+          const existing = await db.select().from(students).where(eq(students.email, email.trim())).limit(1);
+          
+          const playerType = playerTypeLabel ? (playerTypeReverseMap[playerTypeLabel.trim()] || null) : null;
+          const jerseyNumber = jerseyNumberStr ? parseInt(jerseyNumberStr.trim()) : null;
+          
+          if (existing.length > 0) {
+            // Update existing student
+            await db.update(students)
+              .set({
+                lastName: lastName.trim(),
+                firstName: firstName.trim(),
+                lastNameKana: lastNameKana?.trim() || null,
+                firstNameKana: firstNameKana?.trim() || null,
+                schoolName: schoolName?.trim() || null,
+                birthDate: birthDate?.trim() || null,
+                jerseyNumber: jerseyNumber,
+                playerType: playerType,
+              })
+              .where(eq(students.id, existing[0].id));
+            
+            // Update categories
+            if (categoriesStr) {
+              // Delete existing categories
+              await db.delete(studentCategories).where(eq(studentCategories.studentId, existing[0].id));
+              
+              // Add new categories
+              const catNames = categoriesStr.split(';').map(s => s.trim()).filter(s => s);
+              for (const catName of catNames) {
+                const catId = categoryNameMap.get(catName);
+                if (catId) {
+                  await db.insert(studentCategories).values({
+                    studentId: existing[0].id,
+                    categoryId: catId,
+                  });
+                }
+              }
+            }
+            
+            updated++;
+          } else {
+            // Create new student with default password
+            const defaultPassword = await hashPassword('password123');
+            
+            const [newStudent] = await db.insert(students).values({
+              lastName: lastName.trim(),
+              firstName: firstName.trim(),
+              lastNameKana: lastNameKana?.trim() || null,
+              firstNameKana: firstNameKana?.trim() || null,
+              email: email.trim(),
+              password: defaultPassword,
+              teamId: teamId,
+              schoolName: schoolName?.trim() || null,
+              birthDate: birthDate?.trim() || null,
+              jerseyNumber: jerseyNumber,
+              playerType: playerType,
+            }).returning();
+            
+            // Add categories
+            if (categoriesStr) {
+              const catNames = categoriesStr.split(';').map(s => s.trim()).filter(s => s);
+              for (const catName of catNames) {
+                const catId = categoryNameMap.get(catName);
+                if (catId) {
+                  await db.insert(studentCategories).values({
+                    studentId: newStudent.id,
+                    categoryId: catId,
+                  });
+                }
+              }
+            }
+            
+            imported++;
+          }
+        } catch (error) {
+          console.error(`Error processing line ${i + 2}:`, error);
+          errors.push(`行${i + 2}: 処理中にエラーが発生しました`);
+        }
+      }
+      
+      res.json({
+        success: true,
+        imported,
+        updated,
+        errors: errors.length > 0 ? errors : undefined,
+        message: `${imported}件追加、${updated}件更新しました${errors.length > 0 ? `（${errors.length}件エラー）` : ''}`
+      });
+    } catch (error) {
+      console.error("Error importing students:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   app.delete("/api/students/:id", isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
