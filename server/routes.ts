@@ -3587,6 +3587,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
+      console.log("Session created:", session.id);
+      console.log("Session URL:", session.url);
+      
       res.json({
         sessionId: session.id,
         sessionUrl: session.url,
