@@ -326,14 +326,6 @@ export default function CoachProfilePage() {
 
   return (
     <div className="container max-w-3xl py-8 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-          プロフィール設定
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          コーチプロフィール情報を管理
-        </p>
-      </div>
 
       {/* Basic Information */}
       <Card>

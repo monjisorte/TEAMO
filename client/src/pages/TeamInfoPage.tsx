@@ -196,14 +196,6 @@ export default function TeamInfoPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          チーム情報
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          チームの基本情報と料金設定を管理します
-        </p>
-      </div>
 
       {/* 基本情報 */}
       <Card>

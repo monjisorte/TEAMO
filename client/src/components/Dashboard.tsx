@@ -235,10 +235,6 @@ export function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">ダッシュボード</h1>
-        <p className="text-muted-foreground mt-2 text-lg">チームの活動状況を確認</p>
-      </div>
 
       <div className="grid grid-cols-3 gap-3 md:gap-6">
         <Card className="border-0 shadow-lg">

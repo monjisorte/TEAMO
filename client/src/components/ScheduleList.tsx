@@ -610,10 +610,7 @@ export function ScheduleList() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">スケジュール管理</h1>
-        </div>
+      <div className="flex items-center justify-end gap-4">
         <Button 
           className="h-12 px-6 rounded-xl text-base" 
           onClick={() => setShowAddDialog(true)}
