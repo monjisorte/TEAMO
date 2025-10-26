@@ -504,34 +504,6 @@ export default function SubscriptionPage() {
         </Card>
       )}
 
-      {team && isBasicPlan && isActive && (
-        <Card className="mb-6 border-primary">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Crown className="h-5 w-5 text-primary" />
-                  現在のプラン: ベーシック
-                </CardTitle>
-                <CardDescription>
-                  すべての機能をご利用いただけます
-                </CardDescription>
-              </div>
-              <Badge variant="default" data-testid="badge-plan-status">アクティブ</Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              variant="outline" 
-              onClick={handleCancelSubscription}
-              data-testid="button-cancel-subscription"
-            >
-              サブスクリプションをキャンセル
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
       <div className="grid md:grid-cols-2 gap-6">
         <Card className={!isBasicPlan ? "border-2" : ""}>
           <CardHeader>
@@ -584,7 +556,9 @@ export default function SubscriptionPage() {
                 <Crown className="h-5 w-5 text-primary" />
                 ベーシックプラン
               </div>
-              {isBasicPlan && isActive && <Badge variant="default" data-testid="badge-current-basic">現在のプラン</Badge>}
+              {isBasicPlan && <Badge variant="default" data-testid="badge-current-basic">
+                {isActive ? "現在のプラン" : "次回更新日まで利用可能"}
+              </Badge>}
             </CardTitle>
             <CardDescription className="text-2xl font-bold">
               ¥2,000 <span className="text-sm font-normal text-muted-foreground">/月</span>
@@ -628,6 +602,17 @@ export default function SubscriptionPage() {
                     ベーシックプランにアップグレード
                   </>
                 )}
+              </Button>
+            )}
+            
+            {isBasicPlan && isActive && (
+              <Button 
+                variant="outline" 
+                className="w-full" 
+                onClick={handleCancelSubscription}
+                data-testid="button-downgrade-to-free"
+              >
+                フリープランにダウングレード
               </Button>
             )}
           </CardContent>
