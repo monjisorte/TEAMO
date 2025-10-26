@@ -24,6 +24,9 @@ if (!stripeSecretKey) {
   throw new Error('Missing required Stripe secret key');
 }
 
+// Log the key prefix for debugging (only first 7 characters to avoid exposing the key)
+console.log('Using Stripe key:', stripeSecretKey.substring(0, 7) + '...');
+
 const stripe = new Stripe(stripeSecretKey, {
   apiVersion: "2025-09-30.clover",
 });
