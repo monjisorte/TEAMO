@@ -112,23 +112,38 @@ export default function SubscriptionPage() {
   const teamMembers = students.filter(s => s.teamId === teamId).length;
 
   const handleUpgrade = async () => {
-    if (!teamId) return;
+    console.log("handleUpgrade called, teamId:", teamId);
+    if (!teamId) {
+      console.error("No teamId found");
+      toast({
+        title: "エラー",
+        description: "チーム情報が見つかりません。再度ログインしてください。",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsUpgrading(true);
+    console.log("Starting subscription creation...");
     try {
       const response = await apiRequest("POST", "/api/subscription/create", { teamId });
+      console.log("Response status:", response.status);
       const data = await response.json();
+      console.log("Response data:", data);
       
       if (data.clientSecret) {
+        console.log("Client secret received, showing payment form");
         setClientSecret(data.clientSecret);
       } else {
+        console.error("No client secret in response:", data);
         toast({
           title: "エラー",
-          description: "サブスクリプションの作成に失敗しました",
+          description: data.error || "サブスクリプションの作成に失敗しました",
           variant: "destructive",
         });
       }
     } catch (error) {
+      console.error("Error creating subscription:", error);
       toast({
         title: "エラー",
         description: "サブスクリプションの作成に失敗しました",
