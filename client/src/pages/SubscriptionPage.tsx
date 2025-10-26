@@ -465,7 +465,7 @@ export default function SubscriptionPage() {
               <span>
                 {team?.subscriptionPlan === "basic" 
                   ? "無制限" 
-                  : `${teamMembers}/100名`}
+                  : `${teamMembers}/5名`}
               </span>
             </div>
             <div className="flex items-center gap-1">
@@ -473,7 +473,7 @@ export default function SubscriptionPage() {
               <span>
                 {team?.subscriptionPlan === "basic" 
                   ? "無制限" 
-                  : `${Math.round((team?.storageUsed || 0) / (1024 * 1024))}MB/50MB`}
+                  : `${Math.round((team?.storageUsed || 0) / (1024 * 1024))}MB/10MB`}
               </span>
             </div>
           </div>
@@ -530,11 +530,11 @@ export default function SubscriptionPage() {
             <div className="space-y-2">
               <div className="flex items-start gap-2">
                 <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">チームメンバー100名まで</span>
+                <span className="text-sm">チームメンバー5名まで</span>
               </div>
               <div className="flex items-start gap-2">
                 <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">共有資料：50MBまで</span>
+                <span className="text-sm">共有資料：10MBまで</span>
               </div>
               <div className="flex items-start gap-2">
                 <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />

@@ -1070,8 +1070,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check team member limit for free plan
       if (team[0].subscriptionPlan === "free") {
         const currentMembers = await db.select().from(students).where(eq(students.teamId, team[0].id));
-        if (currentMembers.length >= 100) {
-          return res.status(403).json({ error: "Team has reached the maximum number of members (100) for the free plan. Please upgrade to add more members." });
+        if (currentMembers.length >= 5) {
+          return res.status(403).json({ error: "Team has reached the maximum number of members (5) for the free plan. Please upgrade to add more members." });
         }
       }
 
@@ -2180,11 +2180,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (team.length > 0 && team[0].subscriptionPlan === "free") {
         const currentStorageUsed = team[0].storageUsed || 0;
-        const maxStorage = 50 * 1024 * 1024; // 50MB in bytes
+        const maxStorage = 10 * 1024 * 1024; // 10MB in bytes
         
         if (currentStorageUsed + fileSizeNum > maxStorage) {
           return res.status(403).json({ 
-            error: `Storage limit exceeded. Free plan allows up to 50MB. Current usage: ${Math.round(currentStorageUsed / (1024 * 1024))}MB. Please upgrade to the Basic plan for unlimited storage.` 
+            error: `Storage limit exceeded. Free plan allows up to 10MB. Current usage: ${Math.round(currentStorageUsed / (1024 * 1024))}MB. Please upgrade to the Basic plan for unlimited storage.` 
           });
         }
       }
@@ -2427,9 +2427,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Check if total would exceed limit
-        if (currentMemberCount + newMemberCount > 100) {
+        if (currentMemberCount + newMemberCount > 5) {
           return res.status(403).json({ 
-            error: `Freeプランの上限（100名）を超えるため、インポートできません。現在のメンバー数: ${currentMemberCount}名、新規追加: ${newMemberCount}名、合計: ${currentMemberCount + newMemberCount}名。Basicプランにアップグレードしてください。` 
+            error: `Freeプランの上限（5名）を超えるため、インポートできません。現在のメンバー数: ${currentMemberCount}名、新規追加: ${newMemberCount}名、合計: ${currentMemberCount + newMemberCount}名。Basicプランにアップグレードしてください。` 
           });
         }
       }

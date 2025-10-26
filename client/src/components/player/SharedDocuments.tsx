@@ -67,8 +67,8 @@ export default function SharedDocuments({ teamId }: SharedDocumentsProps) {
   }
 
   const storageUsedMB = team?.storageUsed ? (team.storageUsed / (1024 * 1024)).toFixed(2) : '0.00';
-  const maxStorageMB = team?.subscriptionPlan === 'free' ? '50.00' : '∞';
-  const storagePercentage = team?.subscriptionPlan === 'free' ? (team.storageUsed / (50 * 1024 * 1024) * 100).toFixed(1) : 0;
+  const maxStorageMB = team?.subscriptionPlan === 'free' ? '10.00' : '∞';
+  const storagePercentage = team?.subscriptionPlan === 'free' ? (team.storageUsed / (10 * 1024 * 1024) * 100).toFixed(1) : 0;
 
   return (
     <div className="space-y-6">
