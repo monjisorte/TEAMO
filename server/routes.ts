@@ -13,6 +13,14 @@ import { eq, and, inArray, isNull, or, count, sql as drizzleSql, desc, gt, asc }
 import { generateTeamCode, hashPassword, verifyPassword } from "./utils";
 import { Resend } from "resend";
 import crypto from "crypto";
+import Stripe from "stripe";
+
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+}
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2025-09-30.clover",
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
@@ -3346,6 +3354,249 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching team sibling status:", error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Stripe subscription endpoints
+  // Create a subscription for a team (upgrade to Basic plan)
+  app.post("/api/subscription/create", isAuthenticated, async (req, res) => {
+    try {
+      const { teamId } = req.body;
+      
+      if (!teamId) {
+        return res.status(400).json({ error: "Team ID is required" });
+      }
+
+      // Get team
+      const team = await db.select().from(teams).where(eq(teams.id, teamId)).limit(1);
+      if (!team || team.length === 0) {
+        return res.status(404).json({ error: "Team not found" });
+      }
+
+      const teamData = team[0];
+
+      // Check if team already has a subscription
+      if (teamData.stripeSubscriptionId) {
+        const subscription = await stripe.subscriptions.retrieve(teamData.stripeSubscriptionId);
+        if (subscription.status === "active" || subscription.status === "trialing") {
+          return res.status(400).json({ error: "Team already has an active subscription" });
+        }
+      }
+
+      // Create or retrieve Stripe customer
+      let customerId = teamData.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: teamData.contactEmail,
+          name: teamData.name,
+          metadata: {
+            teamId: teamData.id,
+            teamName: teamData.name,
+          }
+        });
+        customerId = customer.id;
+        
+        // Update team with customer ID
+        await db.update(teams)
+          .set({ stripeCustomerId: customerId })
+          .where(eq(teams.id, teamId));
+      }
+
+      // Create subscription (ベーシックプラン 2,000円/月)
+      const subscription = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [{
+          price_data: {
+            currency: "jpy",
+            unit_amount: 2000,
+            recurring: {
+              interval: "month"
+            },
+            product_data: {
+              name: "ベーシックプラン",
+              description: "無制限のチームメンバー、共有資料、イベント履歴"
+            }
+          } as any
+        }],
+        payment_behavior: 'default_incomplete',
+        payment_settings: {
+          save_default_payment_method: 'on_subscription'
+        },
+        expand: ['latest_invoice.payment_intent'],
+        metadata: {
+          teamId: teamData.id,
+        }
+      });
+
+      // Update team with subscription info
+      await db.update(teams)
+        .set({ 
+          stripeSubscriptionId: subscription.id,
+          subscriptionStatus: subscription.status,
+        })
+        .where(eq(teams.id, teamId));
+
+      const latestInvoice = subscription.latest_invoice as Stripe.Invoice;
+      const paymentIntent = (latestInvoice as any).payment_intent as Stripe.PaymentIntent;
+
+      res.json({
+        subscriptionId: subscription.id,
+        clientSecret: paymentIntent?.client_secret,
+      });
+    } catch (error: any) {
+      console.error("Error creating subscription:", error);
+      res.status(500).json({ error: error.message || "Failed to create subscription" });
+    }
+  });
+
+  // Cancel a subscription
+  app.post("/api/subscription/cancel", isAuthenticated, async (req, res) => {
+    try {
+      const { teamId } = req.body;
+      
+      if (!teamId) {
+        return res.status(400).json({ error: "Team ID is required" });
+      }
+
+      const team = await db.select().from(teams).where(eq(teams.id, teamId)).limit(1);
+      if (!team || team.length === 0) {
+        return res.status(404).json({ error: "Team not found" });
+      }
+
+      const teamData = team[0];
+      
+      if (!teamData.stripeSubscriptionId) {
+        return res.status(400).json({ error: "No active subscription found" });
+      }
+
+      // Cancel subscription at period end
+      const subscription = await stripe.subscriptions.update(
+        teamData.stripeSubscriptionId,
+        { cancel_at_period_end: true }
+      );
+
+      await db.update(teams)
+        .set({ 
+          subscriptionStatus: subscription.status,
+        })
+        .where(eq(teams.id, teamId));
+
+      res.json({ 
+        success: true,
+        subscription: {
+          id: subscription.id,
+          status: subscription.status,
+          cancel_at_period_end: subscription.cancel_at_period_end,
+          current_period_end: (subscription as any).current_period_end
+        }
+      });
+    } catch (error: any) {
+      console.error("Error canceling subscription:", error);
+      res.status(500).json({ error: error.message || "Failed to cancel subscription" });
+    }
+  });
+
+  // Stripe webhook endpoint
+  app.post("/api/stripe/webhook", async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    
+    if (!sig) {
+      return res.status(400).send('No signature provided');
+    }
+
+    let event: Stripe.Event;
+
+    try {
+      // For webhook verification, you'll need to set STRIPE_WEBHOOK_SECRET
+      // Get it from Stripe dashboard after setting up webhook
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      
+      if (webhookSecret) {
+        event = stripe.webhooks.constructEvent(
+          req.body,
+          sig,
+          webhookSecret
+        );
+      } else {
+        // For development without webhook secret
+        event = JSON.parse(req.body);
+      }
+    } catch (err: any) {
+      console.error(`Webhook signature verification failed:`, err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Handle the event
+    try {
+      switch (event.type) {
+        case 'customer.subscription.created':
+        case 'customer.subscription.updated': {
+          const subscription = event.data.object as Stripe.Subscription;
+          const teamId = subscription.metadata?.teamId || 
+                        (subscription.customer as any)?.metadata?.teamId;
+          
+          if (teamId) {
+            await db.update(teams)
+              .set({
+                subscriptionStatus: subscription.status,
+                subscriptionPlan: subscription.status === 'active' ? 'basic' : 'free'
+              })
+              .where(eq(teams.id, teamId));
+          }
+          break;
+        }
+
+        case 'customer.subscription.deleted': {
+          const subscription = event.data.object as Stripe.Subscription;
+          const teamId = subscription.metadata?.teamId;
+          
+          if (teamId) {
+            await db.update(teams)
+              .set({
+                subscriptionStatus: 'canceled',
+                subscriptionPlan: 'free',
+                stripeSubscriptionId: null
+              })
+              .where(eq(teams.id, teamId));
+          }
+          break;
+        }
+
+        case 'invoice.payment_succeeded': {
+          const invoice = event.data.object as Stripe.Invoice;
+          // Handle successful payment
+          console.log('Payment succeeded for invoice:', invoice.id);
+          break;
+        }
+
+        case 'invoice.payment_failed': {
+          const invoice = event.data.object as Stripe.Invoice;
+          const customerId = invoice.customer as string;
+          
+          // Find team by customer ID and update status
+          const teamResults = await db.select()
+            .from(teams)
+            .where(eq(teams.stripeCustomerId, customerId))
+            .limit(1);
+          
+          if (teamResults.length > 0) {
+            await db.update(teams)
+              .set({ subscriptionStatus: 'past_due' })
+              .where(eq(teams.id, teamResults[0].id));
+          }
+          
+          console.error('Payment failed for invoice:', invoice.id);
+          break;
+        }
+
+        default:
+          console.log(`Unhandled event type ${event.type}`);
+      }
+
+      res.json({ received: true });
+    } catch (error) {
+      console.error('Error handling webhook event:', error);
+      res.status(500).json({ error: 'Webhook handler failed' });
     }
   });
 
