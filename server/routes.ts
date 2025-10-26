@@ -3512,21 +3512,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .where(eq(teams.id, teamId));
       }
 
+      // Create or get Product and Price for Basic plan
+      let priceId: string;
+      
+      // Check if product already exists (by metadata)
+      const products = await stripe.products.list({ limit: 10 });
+      let product = products.data.find(p => p.metadata.plan_type === 'basic');
+      
+      if (!product) {
+        // Create product
+        product = await stripe.products.create({
+          name: "ベーシックプラン",
+          description: "無制限のチームメンバー、共有資料、イベント履歴",
+          metadata: {
+            plan_type: 'basic'
+          }
+        });
+      }
+
+      // Check if price already exists for this product
+      const prices = await stripe.prices.list({ 
+        product: product.id,
+        active: true,
+        limit: 10
+      });
+      
+      let price = prices.data.find(p => 
+        p.currency === 'jpy' && 
+        p.unit_amount === 2000 && 
+        p.recurring?.interval === 'month'
+      );
+
+      if (!price) {
+        // Create price
+        price = await stripe.prices.create({
+          product: product.id,
+          currency: "jpy",
+          unit_amount: 2000,
+          recurring: {
+            interval: "month"
+          }
+        });
+      }
+
+      priceId = price.id;
+
       // Create subscription (ベーシックプラン 2,000円/月)
       const subscription = await stripe.subscriptions.create({
         customer: customerId,
         items: [{
-          price_data: {
-            currency: "jpy",
-            unit_amount: 2000,
-            recurring: {
-              interval: "month"
-            },
-            product_data: {
-              name: "ベーシックプラン",
-              description: "無制限のチームメンバー、共有資料、イベント履歴"
-            }
-          } as any
+          price: priceId
         }],
         payment_behavior: 'default_incomplete',
         payment_settings: {
