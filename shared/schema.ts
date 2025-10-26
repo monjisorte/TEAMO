@@ -60,6 +60,11 @@ export const teams = pgTable("teams", {
   insuranceFee: integer("insurance_fee"), // 保険料
   annualFeeMonth: integer("annual_fee_month"), // 年会費課金月 (1-12)
   insuranceFeeMonth: integer("insurance_fee_month"), // 保険料課金月 (1-12)
+  subscriptionPlan: text("subscription_plan").notNull().default("free"), // "free" | "basic"
+  stripeCustomerId: text("stripe_customer_id"), // Stripe Customer ID
+  stripeSubscriptionId: text("stripe_subscription_id"), // Stripe Subscription ID
+  subscriptionStatus: text("subscription_status").default("active"), // "active" | "canceled" | "past_due" | "incomplete"
+  storageUsed: integer("storage_used").notNull().default(0), // 使用中のストレージ容量（バイト）
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
