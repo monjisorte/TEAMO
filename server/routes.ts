@@ -2176,11 +2176,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check storage limit for free plan
       const team = await db.select().from(teams).where(eq(teams.id, teamId)).limit(1);
+      const fileSizeNum = Number(fileSize) || 0;
+      
       if (team.length > 0 && team[0].subscriptionPlan === "free") {
         const currentStorageUsed = team[0].storageUsed || 0;
         const maxStorage = 50 * 1024 * 1024; // 50MB in bytes
         
-        if (currentStorageUsed + (fileSize || 0) > maxStorage) {
+        if (currentStorageUsed + fileSizeNum > maxStorage) {
           return res.status(403).json({ 
             error: `Storage limit exceeded. Free plan allows up to 50MB. Current usage: ${Math.round(currentStorageUsed / (1024 * 1024))}MB. Please upgrade to the Basic plan for unlimited storage.` 
           });
@@ -2211,7 +2213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update team storage usage
       if (team.length > 0) {
         await db.update(teams)
-          .set({ storageUsed: (team[0].storageUsed || 0) + (fileSize || 0) })
+          .set({ storageUsed: (team[0].storageUsed || 0) + fileSizeNum })
           .where(eq(teams.id, teamId));
       }
 

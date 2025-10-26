@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, date, time, boolean, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, date, time, boolean, integer, bigint } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -66,7 +66,7 @@ export const teams = pgTable("teams", {
   subscriptionStatus: text("subscription_status").default("active"), // "active" | "canceled" | "past_due" | "incomplete"
   subscriptionCancelAtPeriodEnd: boolean("subscription_cancel_at_period_end").default(false), // キャンセル予定かどうか
   subscriptionCurrentPeriodEnd: timestamp("subscription_current_period_end"), // 現在の請求期間終了日
-  storageUsed: integer("storage_used").notNull().default(0), // 使用中のストレージ容量（バイト）
+  storageUsed: bigint("storage_used", { mode: "number" }).notNull().default(0), // 使用中のストレージ容量（バイト）
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
