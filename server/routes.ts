@@ -3558,6 +3558,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       priceId = price.id;
 
       // Create Stripe Checkout Session for subscription
+      // Get the base URL from environment
+      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+        : 'http://localhost:5000';
+      
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
         payment_method_types: ['card'],
@@ -3566,8 +3571,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           quantity: 1,
         }],
         mode: 'subscription',
-        success_url: `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/coach/subscription?success=true`,
-        cancel_url: `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/coach/subscription?canceled=true`,
+        success_url: `${baseUrl}/coach/subscription?success=true`,
+        cancel_url: `${baseUrl}/coach/subscription?canceled=true`,
         metadata: {
           teamId: teamData.id,
         },
