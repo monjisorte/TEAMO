@@ -134,9 +134,16 @@ export default function SubscriptionPage() {
       console.log("Session URL:", data.sessionUrl);
       
       if (data.sessionUrl) {
-        console.log("Redirecting to:", data.sessionUrl);
-        // Redirect to Stripe Checkout
-        window.location.href = data.sessionUrl;
+        console.log("Opening Stripe Checkout in new window:", data.sessionUrl);
+        // Open Stripe Checkout in a new window
+        window.open(data.sessionUrl, '_blank');
+        
+        // Show message to user
+        toast({
+          title: "決済ページを開きました",
+          description: "新しいタブでStripeの決済ページが開きます。決済完了後、このページに戻ってきてください。",
+        });
+        setIsUpgrading(false);
       } else {
         console.error("No sessionUrl in response");
         toast({
