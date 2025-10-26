@@ -248,11 +248,19 @@ export default function SubscriptionPage() {
               </div>
               <div className="flex items-start gap-2">
                 <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">基本的なスケジュール管理</span>
+                <span className="text-sm">スケジュール管理</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                <span className="text-sm">繰り返しイベント機能</span>
               </div>
               <div className="flex items-start gap-2">
                 <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <span className="text-sm">出欠管理機能</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                <span className="text-sm">会費管理機能</span>
               </div>
             </div>
           </CardContent>
@@ -287,19 +295,19 @@ export default function SubscriptionPage() {
               </div>
               <div className="flex items-start gap-2">
                 <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                <span className="text-sm">スケジュール管理</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <span className="text-sm">繰り返しイベント機能</span>
               </div>
               <div className="flex items-start gap-2">
                 <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                <span className="text-sm">出欠管理機能</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <span className="text-sm">会費管理機能</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">詳細なレポート機能</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">優先サポート</span>
               </div>
             </div>
 
