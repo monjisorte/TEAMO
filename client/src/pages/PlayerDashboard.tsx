@@ -44,9 +44,8 @@ export default function PlayerDashboard({ player, onLogout }: PlayerDashboardPro
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-base md:text-2xl font-bold" data-testid="text-player-name">
-              {getFullName(player.lastName, player.firstName)}
-              <span className="text-xs md:text-xl">さん</span>
+            <h1 className="text-2xl font-bold" data-testid="text-player-name">
+              {getFullName(player.lastName, player.firstName)}さん
             </h1>
             <p className="text-sm text-muted-foreground">{player.email}</p>
           </div>

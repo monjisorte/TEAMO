@@ -335,8 +335,9 @@ function CoachPortalContent({ coachId, onLogout }: { coachId: string; onLogout: 
             <div className="flex items-center gap-2 md:gap-4">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
               <div>
-                <h1 className="text-lg font-semibold" data-testid="text-coach-name">
-                  {displayName}さん
+                <h1 className="text-sm md:text-lg font-semibold" data-testid="text-coach-name">
+                  {displayName}
+                  <span className="text-xs md:text-base">さん</span>
                 </h1>
                 <p className="text-xs text-muted-foreground">{coach.email}</p>
               </div>
