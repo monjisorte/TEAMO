@@ -3680,11 +3680,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Handle the event
     try {
       switch (event.type) {
+        case 'checkout.session.completed': {
+          const session = event.data.object as Stripe.Checkout.Session;
+          const teamId = session.metadata?.teamId;
+          
+          console.log("Checkout session completed:", session.id);
+          console.log("Team ID:", teamId);
+          console.log("Subscription ID:", session.subscription);
+          
+          if (teamId && session.subscription) {
+            // Get subscription details
+            const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+            
+            console.log("Updating team subscription:", {
+              teamId,
+              subscriptionId: subscription.id,
+              status: subscription.status
+            });
+            
+            await db.update(teams)
+              .set({
+                stripeSubscriptionId: subscription.id,
+                subscriptionStatus: subscription.status,
+                subscriptionPlan: subscription.status === 'active' ? 'basic' : 'free'
+              })
+              .where(eq(teams.id, teamId));
+            
+            console.log("Team subscription updated successfully");
+          }
+          break;
+        }
+        
         case 'customer.subscription.created':
         case 'customer.subscription.updated': {
           const subscription = event.data.object as Stripe.Subscription;
           const teamId = subscription.metadata?.teamId || 
                         (subscription.customer as any)?.metadata?.teamId;
+          
+          console.log("Subscription event:", event.type);
+          console.log("Team ID:", teamId);
           
           if (teamId) {
             await db.update(teams)
@@ -3693,6 +3727,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 subscriptionPlan: subscription.status === 'active' ? 'basic' : 'free'
               })
               .where(eq(teams.id, teamId));
+            
+            console.log("Team subscription updated from subscription event");
           }
           break;
         }
@@ -3700,6 +3736,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         case 'customer.subscription.deleted': {
           const subscription = event.data.object as Stripe.Subscription;
           const teamId = subscription.metadata?.teamId;
+          
+          console.log("Subscription deleted for team:", teamId);
           
           if (teamId) {
             await db.update(teams)
