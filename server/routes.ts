@@ -2402,6 +2402,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Export tuition payments as CSV
+  app.get("/api/tuition-payments/export", isAuthenticated, async (req, res) => {
+    try {
+      const { teamId, year, month } = req.query;
+      
+      if (!teamId || !year || !month) {
+        return res.status(400).json({ error: "teamId, year, and month are required" });
+      }
+      
+      // Get all students for the team
+      const allStudents = await db.select().from(students).where(eq(students.teamId, teamId as string));
+      const studentMap = new Map(allStudents.map(s => [s.id, s]));
+      
+      // Get all tuition payments for the specified month
+      const allPayments = await db.select()
+        .from(tuitionPayments)
+        .where(and(
+          eq(tuitionPayments.teamId, teamId as string),
+          eq(tuitionPayments.year, parseInt(year as string)),
+          eq(tuitionPayments.month, parseInt(month as string))
+        ));
+      
+      const playerTypeMap: Record<string, string> = {
+        'team': 'チーム生',
+        'school': 'スクール生',
+        'inactive': '休部'
+      };
+      
+      // Build CSV header
+      const header = '姓,名,メールアドレス,メンバータイプ,月謝,割引,年会費,入会金,保険料,スポット,合計,入金状態\n';
+      
+      // Build CSV rows
+      const rows = allPayments.map(payment => {
+        const student = studentMap.get(payment.studentId);
+        if (!student) return null;
+        
+        const playerTypeLabel = student.playerType ? (playerTypeMap[student.playerType] || student.playerType) : '';
+        const isPaidLabel = payment.isPaid ? '入金済' : '未入金';
+        
+        return [
+          student.lastName || '',
+          student.firstName || '',
+          student.email || '',
+          playerTypeLabel,
+          payment.baseAmount || 0,
+          payment.discount || 0,
+          payment.annualFee || 0,
+          payment.entranceFee || 0,
+          payment.insuranceFee || 0,
+          payment.spotFee || 0,
+          payment.amount || 0,
+          isPaidLabel
+        ].map(field => {
+          // Escape quotes and wrap in quotes if contains comma, quote, or newline
+          const str = String(field);
+          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return '"' + str.replace(/"/g, '""') + '"';
+          }
+          return str;
+        }).join(',');
+      }).filter(row => row !== null).join('\n');
+      
+      const csv = header + rows;
+      
+      // Set headers for file download
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="tuition_${year}_${month}_${new Date().toISOString().split('T')[0]}.csv"`);
+      
+      // Add BOM for Excel to recognize UTF-8
+      res.write('\ufeff');
+      res.end(csv);
+    } catch (error) {
+      console.error("Error exporting tuition payments:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Import students from CSV
   app.post("/api/students/import", isAuthenticated, async (req, res) => {
     try {
