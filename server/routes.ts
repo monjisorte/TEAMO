@@ -2549,24 +2549,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           if (existing.length > 0) {
             // Update existing student
-            const updateData: any = {
-              lastName: lastName.trim(),
-              firstName: firstName.trim(),
-              lastNameKana: lastNameKana?.trim() || null,
-              firstNameKana: firstNameKana?.trim() || null,
-              schoolName: schoolName?.trim() || null,
-              birthDate: birthDate?.trim() || null,
-              jerseyNumber: jerseyNumber,
-              playerType: playerType,
-            };
-            
-            // 開始日：CSVに値がある場合のみ更新、空欄の場合は既存の値を保持
-            if (startDateStr?.trim()) {
-              updateData.startDate = startDateStr.trim();
-            }
-            
             await db.update(students)
-              .set(updateData)
+              .set({
+                lastName: lastName.trim(),
+                firstName: firstName.trim(),
+                lastNameKana: lastNameKana?.trim() || null,
+                firstNameKana: firstNameKana?.trim() || null,
+                schoolName: schoolName?.trim() || null,
+                birthDate: birthDate?.trim() || null,
+                jerseyNumber: jerseyNumber,
+                playerType: playerType,
+                startDate: startDateStr?.trim() || getNextMonthFirstDay(), // CSV指定値または翌月初日
+              })
               .where(eq(students.id, existing[0].id));
             
             // Update categories
