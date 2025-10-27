@@ -633,9 +633,46 @@ export function CalendarView({ schedules, categories, attendances, students, onS
 
                       {/* Attendance Info */}
                       <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4" />
-                          <h4 className="font-semibold">参加者情報</h4>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            <h4 className="font-semibold">参加者情報</h4>
+                          </div>
+                          {selectedDaySchedules.length > 1 && scheduleAttendances.length > 0 && (() => {
+                            const currentScheduleAttendanceIds = scheduleAttendances.map(a => a.id);
+                            const validSelectedCount = selectedParticipantIds.filter(id => 
+                              currentScheduleAttendanceIds.includes(id)
+                            ).length;
+                            
+                            return (
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2">
+                                  <Checkbox
+                                    id={`select-all-${schedule.id}`}
+                                    checked={validSelectedCount > 0 && validSelectedCount === currentScheduleAttendanceIds.length}
+                                    onCheckedChange={(checked) => toggleAllParticipants(!!checked, schedule.id)}
+                                    data-testid={`checkbox-select-all-${schedule.id}`}
+                                  />
+                                  <label
+                                    htmlFor={`select-all-${schedule.id}`}
+                                    className="text-sm cursor-pointer"
+                                  >
+                                    全選択
+                                  </label>
+                                </div>
+                                {validSelectedCount > 0 && (
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={() => openBulkMoveDialog(schedule.id)}
+                                    data-testid={`button-bulk-move-${schedule.id}`}
+                                  >
+                                    {validSelectedCount}人を移動
+                                  </Button>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         <div className="space-y-4">
@@ -647,8 +684,15 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                               </h4>
                               {confirmedAttendances.map(attendance => (
                                 <div key={attendance.id} className="flex items-center gap-2 text-sm">
+                                  {selectedDaySchedules.length > 1 && (
+                                    <Checkbox
+                                      checked={selectedParticipantIds.includes(attendance.id)}
+                                      onCheckedChange={() => toggleParticipantSelection(attendance.id)}
+                                      data-testid={`checkbox-participant-${attendance.id}`}
+                                    />
+                                  )}
                                   <span className="text-green-600 dark:text-green-400">○</span>
-                                  <span>
+                                  <span className="flex-1">
                                     {getStudentName(attendance.studentId)}
                                     {attendance.comment && <span className="text-muted-foreground">（{attendance.comment}）</span>}
                                   </span>
@@ -676,8 +720,15 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                               </h4>
                               {absentAttendances.map(attendance => (
                                 <div key={attendance.id} className="flex items-center gap-2 text-sm">
+                                  {selectedDaySchedules.length > 1 && (
+                                    <Checkbox
+                                      checked={selectedParticipantIds.includes(attendance.id)}
+                                      onCheckedChange={() => toggleParticipantSelection(attendance.id)}
+                                      data-testid={`checkbox-participant-${attendance.id}`}
+                                    />
+                                  )}
                                   <span className="text-red-600 dark:text-red-400">×</span>
-                                  <span>
+                                  <span className="flex-1">
                                     {getStudentName(attendance.studentId)}
                                     {attendance.comment && <span className="text-muted-foreground">（{attendance.comment}）</span>}
                                   </span>
@@ -705,8 +756,15 @@ export function CalendarView({ schedules, categories, attendances, students, onS
                               </h4>
                               {maybeAttendances.map(attendance => (
                                 <div key={attendance.id} className="flex items-center gap-2 text-sm">
+                                  {selectedDaySchedules.length > 1 && (
+                                    <Checkbox
+                                      checked={selectedParticipantIds.includes(attendance.id)}
+                                      onCheckedChange={() => toggleParticipantSelection(attendance.id)}
+                                      data-testid={`checkbox-participant-${attendance.id}`}
+                                    />
+                                  )}
                                   <span className="text-yellow-600 dark:text-yellow-400">△</span>
-                                  <span>
+                                  <span className="flex-1">
                                     {getStudentName(attendance.studentId)}
                                     {attendance.comment && <span className="text-muted-foreground">（{attendance.comment}）</span>}
                                   </span>
