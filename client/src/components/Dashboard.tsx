@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Calendar, Users, MapPin, Plus, Clock, FileText, Download, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -44,6 +45,9 @@ export function Dashboard() {
     studentName: string;
   } | null>(null);
   const [targetScheduleId, setTargetScheduleId] = useState("");
+  const [selectedParticipantIds, setSelectedParticipantIds] = useState<string[]>([]);
+  const [bulkMoveDialogOpen, setBulkMoveDialogOpen] = useState(false);
+  const [bulkMoveTargetScheduleId, setBulkMoveTargetScheduleId] = useState("");
   const [, setLocation] = useLocation();
 
   // Get teamId from localStorage
@@ -89,6 +93,17 @@ export function Dashboard() {
     },
     enabled: !!teamId,
   });
+
+  // スケジュールダイアログが閉じられたとき、または別のスケジュールが選択されたときに選択状態をリセット
+  useEffect(() => {
+    if (!showScheduleDialog) {
+      setSelectedParticipantIds([]);
+    }
+  }, [showScheduleDialog]);
+
+  useEffect(() => {
+    setSelectedParticipantIds([]);
+  }, [selectedSchedule?.id]);
 
   // カテゴリ順にソートした生徒リスト
   const teamStudents = students.filter(s => s.teamId === teamId);
@@ -229,6 +244,90 @@ export function Dashboard() {
       moveParticipantMutation.mutate({
         attendanceId: moveParticipantData.attendance.id,
         scheduleId: targetScheduleId,
+      });
+    }
+  };
+
+  // チェックボックスのトグル
+  const toggleParticipantSelection = (attendanceId: string) => {
+    setSelectedParticipantIds(prev => 
+      prev.includes(attendanceId) 
+        ? prev.filter(id => id !== attendanceId)
+        : [...prev, attendanceId]
+    );
+  };
+
+  // 全選択/全解除のトグル
+  const toggleAllParticipants = (checked: boolean) => {
+    if (!selectedSchedule) return;
+    
+    if (checked) {
+      const allAttendanceIds = attendances
+        .filter(a => a.scheduleId === selectedSchedule.id)
+        .map(a => a.id);
+      setSelectedParticipantIds(allAttendanceIds);
+    } else {
+      setSelectedParticipantIds([]);
+    }
+  };
+
+  // 一括移動ダイアログを開く
+  const openBulkMoveDialog = () => {
+    setBulkMoveDialogOpen(true);
+    setBulkMoveTargetScheduleId("");
+  };
+
+  // 一括移動ダイアログを閉じる
+  const closeBulkMoveDialog = () => {
+    setBulkMoveDialogOpen(false);
+    setBulkMoveTargetScheduleId("");
+    setSelectedParticipantIds([]);
+  };
+
+  // 一括移動のミューテーション
+  const bulkMoveParticipantsMutation = useMutation({
+    mutationFn: async ({ attendanceIds, scheduleId }: { attendanceIds: string[]; scheduleId: string }) => {
+      // 各参加者を順番に移動
+      const promises = attendanceIds.map(attendanceId => 
+        apiRequest("PUT", `/api/attendances/${attendanceId}`, { scheduleId })
+      );
+      return await Promise.all(promises);
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/attendances"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats", teamId, schedulePeriod] });
+      toast({
+        title: "成功",
+        description: `${variables.attendanceIds.length}人の参加者を移動しました`,
+      });
+      closeBulkMoveDialog();
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "参加者の移動に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // 一括移動を実行
+  const handleBulkMove = () => {
+    if (!selectedSchedule) return;
+    
+    // 現在のスケジュールに属する参加者のみをフィルタ
+    const currentScheduleAttendanceIds = attendances
+      .filter(a => a.scheduleId === selectedSchedule.id)
+      .map(a => a.id);
+    
+    const validSelectedIds = selectedParticipantIds.filter(id => 
+      currentScheduleAttendanceIds.includes(id)
+    );
+    
+    if (validSelectedIds.length > 0 && bulkMoveTargetScheduleId) {
+      bulkMoveParticipantsMutation.mutate({
+        attendanceIds: validSelectedIds,
+        scheduleId: bulkMoveTargetScheduleId,
       });
     }
   };
@@ -611,10 +710,53 @@ export function Dashboard() {
 
               {/* 参加者リスト */}
               <div className="space-y-2 pt-4 border-t">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-primary" />
-                  <h4 className="font-semibold">参加者</h4>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-primary" />
+                    <h4 className="font-semibold">
+                      参加者情報
+                    </h4>
+                  </div>
+                  {(() => {
+                    const currentScheduleAttendanceIds = attendances
+                      .filter(a => a.scheduleId === selectedSchedule.id)
+                      .map(a => a.id);
+                    const validSelectedCount = selectedParticipantIds.filter(id => 
+                      currentScheduleAttendanceIds.includes(id)
+                    ).length;
+                    
+                    return getSameDaySchedules().length > 0 && currentScheduleAttendanceIds.length > 0 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={openBulkMoveDialog}
+                        disabled={validSelectedCount === 0}
+                        data-testid="button-bulk-move"
+                        className="text-xs"
+                      >
+                        選択した参加者を移動
+                        {validSelectedCount > 0 && ` (${validSelectedCount})`}
+                      </Button>
+                    );
+                  })()}
                 </div>
+                
+                {attendances.filter(a => a.scheduleId === selectedSchedule.id).length > 0 && (
+                  <div className="text-sm text-muted-foreground flex items-center gap-2 pb-1">
+                    {getSameDaySchedules().length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={selectedParticipantIds.length === attendances.filter(a => a.scheduleId === selectedSchedule.id).length}
+                          onCheckedChange={(checked) => toggleAllParticipants(checked as boolean)}
+                          data-testid="checkbox-select-all"
+                        />
+                        <span className="text-xs">全選択</span>
+                      </div>
+                    )}
+                    <span>参加者 {attendances.filter(a => a.scheduleId === selectedSchedule.id).length}名</span>
+                  </div>
+                )}
+
                 <div className="space-y-1 max-h-48 overflow-y-auto">
                   {attendances
                     .filter(a => a.scheduleId === selectedSchedule.id)
@@ -632,6 +774,13 @@ export function Dashboard() {
                           className="flex items-center gap-2 p-2 rounded-lg bg-muted/30"
                           data-testid={`participant-${student.id}`}
                         >
+                          {sameDaySchedules.length > 0 && (
+                            <Checkbox
+                              checked={selectedParticipantIds.includes(attendance.id)}
+                              onCheckedChange={() => toggleParticipantSelection(attendance.id)}
+                              data-testid={`checkbox-participant-${student.id}`}
+                            />
+                          )}
                           <span className="w-6 text-center font-semibold">{statusIcon}</span>
                           <span className="flex-1">{getFullName(student.lastName, student.firstName)}</span>
                           {attendance.comment && (
@@ -727,6 +876,54 @@ export function Dashboard() {
               data-testid="button-confirm-move"
             >
               {moveParticipantMutation.isPending ? "移動中..." : "移動する"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 一括移動ダイアログ */}
+      <Dialog open={bulkMoveDialogOpen} onOpenChange={(open) => !open && closeBulkMoveDialog()}>
+        <DialogContent data-testid="dialog-bulk-move">
+          <DialogHeader>
+            <DialogTitle>参加者を一括移動</DialogTitle>
+            <DialogDescription>
+              {selectedParticipantIds.length}人を別のイベントに移動しますか？
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <div className="text-sm">
+                <span className="font-semibold">現在のイベント:</span> {selectedSchedule?.title}
+              </div>
+              <div className="space-y-2 mt-4">
+                <label className="text-sm font-semibold">移動先のイベント</label>
+                <Select value={bulkMoveTargetScheduleId} onValueChange={setBulkMoveTargetScheduleId}>
+                  <SelectTrigger data-testid="select-bulk-target-schedule">
+                    <SelectValue placeholder="イベントを選択してください" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getSameDaySchedules().map(schedule => (
+                      <SelectItem key={schedule.id} value={schedule.id}>
+                        {schedule.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeBulkMoveDialog} data-testid="button-cancel-bulk-move">
+              キャンセル
+            </Button>
+            <Button 
+              onClick={handleBulkMove} 
+              disabled={!bulkMoveTargetScheduleId || bulkMoveParticipantsMutation.isPending} 
+              data-testid="button-confirm-bulk-move"
+            >
+              {bulkMoveParticipantsMutation.isPending ? "移動中..." : `${selectedParticipantIds.length}人を移動する`}
             </Button>
           </DialogFooter>
         </DialogContent>
