@@ -179,6 +179,19 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
     return colors[index % colors.length] || colors[0];
   };
 
+  const getCategoryBorderColor = (categoryId: string) => {
+    const index = categories.findIndex(c => c.id === categoryId);
+    const colors = [
+      "border-l-blue-500",
+      "border-l-purple-500",
+      "border-l-green-500",
+      "border-l-orange-500",
+      "border-l-pink-500",
+      "border-l-cyan-500",
+    ];
+    return colors[index % colors.length] || colors[0];
+  };
+
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(c => c.id === categoryId);
     return category?.name || "不明";
@@ -296,7 +309,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                           : null;
                         const categoryIds = getScheduleCategoryIds(schedule);
                         const primaryCategoryId = categoryIds[0];
-                        const colorClasses = primaryCategoryId ? getCategoryColor(primaryCategoryId) : 'bg-muted/10 text-muted-foreground border-muted/20';
+                        const borderColor = primaryCategoryId ? getCategoryBorderColor(primaryCategoryId) : 'border-l-muted';
                         const attendanceCounts = getAttendanceCounts(schedule.id);
 
                         const endTime = schedule.endHour !== null && schedule.endMinute !== null
@@ -309,7 +322,7 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                         return (
                           <div
                             key={schedule.id}
-                            className={`p-2 rounded-md border ${colorClasses} hover-elevate cursor-pointer`}
+                            className={`p-2 pl-3 rounded-sm border-l-4 ${borderColor} bg-card hover-elevate cursor-pointer`}
                             onClick={() => setSelectedSchedule(schedule)}
                             data-testid={`week-schedule-${schedule.id}`}
                           >
