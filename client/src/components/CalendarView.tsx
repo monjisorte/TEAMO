@@ -147,6 +147,82 @@ export function CalendarView({ schedules, categories, attendances, students, onS
     }
   };
 
+  // 参加者選択切り替え
+  const toggleParticipantSelection = (attendanceId: string) => {
+    setSelectedParticipantIds(prev =>
+      prev.includes(attendanceId)
+        ? prev.filter(id => id !== attendanceId)
+        : [...prev, attendanceId]
+    );
+  };
+
+  // 全参加者選択切り替え
+  const toggleAllParticipants = (checked: boolean, scheduleId: string) => {
+    if (checked) {
+      const scheduleAttendanceIds = attendances
+        .filter(a => a.scheduleId === scheduleId)
+        .map(a => a.id);
+      setSelectedParticipantIds(scheduleAttendanceIds);
+    } else {
+      setSelectedParticipantIds([]);
+    }
+  };
+
+  // 一括移動ダイアログを開く
+  const openBulkMoveDialog = (scheduleId: string) => {
+    setBulkMoveScheduleId(scheduleId);
+    setBulkMoveDialogOpen(true);
+  };
+
+  // 一括移動ダイアログを閉じる
+  const closeBulkMoveDialog = () => {
+    setBulkMoveDialogOpen(false);
+    setBulkMoveTargetScheduleId("");
+    setBulkMoveScheduleId("");
+  };
+
+  // ダイアログが閉じられたときに選択状態をリセット
+  useEffect(() => {
+    if (!selectedDate) {
+      setSelectedParticipantIds([]);
+    }
+  }, [selectedDate]);
+
+  // 一括移動ミューテーション
+  const bulkMoveParticipantsMutation = useMutation({
+    mutationFn: async ({ attendanceIds, scheduleId }: { attendanceIds: string[]; scheduleId: string }) => {
+      const promises = attendanceIds.map(attendanceId =>
+        apiRequest("PUT", `/api/attendances/${attendanceId}`, { scheduleId })
+      );
+      return await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/attendances"] });
+      toast({
+        title: "成功",
+        description: "参加者を一括移動しました",
+      });
+      closeBulkMoveDialog();
+      setSelectedParticipantIds([]);
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "参加者の一括移動に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // 一括移動実行
+  const handleBulkMove = () => {
+    if (!bulkMoveTargetScheduleId || selectedParticipantIds.length === 0) return;
+    bulkMoveParticipantsMutation.mutate({
+      attendanceIds: selectedParticipantIds,
+      scheduleId: bulkMoveTargetScheduleId,
+    });
+  };
+
   const getCategoryColor = (categoryId: string) => {
     const index = categories.findIndex(c => c.id === categoryId);
     const colors = [
