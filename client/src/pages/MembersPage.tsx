@@ -270,6 +270,7 @@ export default function MembersPage({ teamId }: MembersPageProps) {
     },
     onSuccess: async (data: any) => {
       await queryClient.invalidateQueries({ queryKey: ["/api/students"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/student-categories"] });
       toast({
         title: "インポート完了",
         description: data.message || "インポートが完了しました",
