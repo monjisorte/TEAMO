@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Users, ArrowRight, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +24,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import type { Schedule, Category, Attendance, Student } from "@shared/schema";
 import { getFullName } from "@/lib/nameUtils";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface CalendarViewProps {
   schedules: Schedule[];
@@ -44,6 +47,10 @@ export function CalendarView({ schedules, categories, attendances, students, onS
     studentName: string;
   } | null>(null);
   const [targetScheduleId, setTargetScheduleId] = useState("");
+  const [selectedParticipantIds, setSelectedParticipantIds] = useState<string[]>([]);
+  const [bulkMoveDialogOpen, setBulkMoveDialogOpen] = useState(false);
+  const [bulkMoveScheduleId, setBulkMoveScheduleId] = useState("");
+  const [bulkMoveTargetScheduleId, setBulkMoveTargetScheduleId] = useState("");
 
   const handleFileDownload = async (fileUrl: string, fileName: string) => {
     try {
