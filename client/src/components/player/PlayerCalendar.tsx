@@ -322,18 +322,14 @@ export default function StudentCalendar({ studentId, teamId, selectedCategories 
                         return (
                           <div
                             key={schedule.id}
-                            className={`p-2 pl-3 rounded-sm border-l-4 ${borderColor} bg-card hover-elevate cursor-pointer`}
+                            className={`p-2 pl-3 rounded-none border-l-4 ${borderColor} bg-card hover-elevate cursor-pointer`}
                             onClick={() => setSelectedSchedule(schedule)}
                             data-testid={`week-schedule-${schedule.id}`}
                           >
                             <div className="space-y-0.5">
                               <div className="flex items-center gap-1.5">
                                 <Badge 
-                                  variant={
-                                    attendance?.status === "○" ? "default" :
-                                    attendance?.status === "△" ? "secondary" :
-                                    "outline"
-                                  }
+                                  variant="outline"
                                   className="text-sm px-1.5 py-0 h-5"
                                 >
                                   {attendance?.status || "-"}
