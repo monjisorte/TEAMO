@@ -2254,6 +2254,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Recalculate storage usage for a team based on actual documents
+  app.post("/api/documents/recalculate-storage", isAuthenticated, async (req, res) => {
+    try {
+      const { teamId } = req.body;
+      
+      if (!teamId) {
+        return res.status(400).json({ error: "teamId is required" });
+      }
+
+      // Get all documents for the team
+      const documents = await db.select().from(sharedDocuments).where(eq(sharedDocuments.teamId, teamId));
+      
+      // Calculate total storage used
+      const totalStorageUsed = documents.reduce((total, doc) => {
+        return total + (Number(doc.fileSize) || 0);
+      }, 0);
+
+      // Update team storage usage
+      await db.update(teams)
+        .set({ storageUsed: totalStorageUsed })
+        .where(eq(teams.id, teamId));
+
+      res.json({ 
+        success: true, 
+        storageUsed: totalStorageUsed,
+        documentCount: documents.length,
+        storageUsedMB: (totalStorageUsed / (1024 * 1024)).toFixed(2)
+      });
+    } catch (error) {
+      console.error("Error recalculating storage:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Students Management
   app.get("/api/students", isAuthenticated, async (req, res) => {
     try {

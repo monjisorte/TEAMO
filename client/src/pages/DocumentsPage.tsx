@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { FolderPlus, FilePlus, Folder, FileText, Trash2, Download, X } from "lucide-react";
+import { FolderPlus, FilePlus, Folder, FileText, Trash2, Download, X, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ObjectUploader } from "@/components/ObjectUploader";
@@ -104,6 +104,31 @@ export default function DocumentsPage() {
     },
   });
 
+  const recalculateStorageMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/documents/recalculate-storage", { teamId }) as unknown as {
+        success: boolean;
+        storageUsed: number;
+        documentCount: number;
+        storageUsedMB: string;
+      };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}`] });
+      toast({
+        title: "ストレージ再計算完了",
+        description: `ストレージ使用量を再計算しました: ${data.storageUsedMB} MB (${data.documentCount}ファイル)`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "ストレージ使用量の再計算に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateFolder = () => {
     if (newFolderName.trim()) {
       createFolderMutation.mutate(newFolderName.trim());
@@ -185,11 +210,24 @@ export default function DocumentsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
-        <div className="text-sm text-muted-foreground" data-testid="text-storage-usage">
-          ストレージ使用量: <span className="font-semibold">{storageUsedMB} MB</span> / {maxStorageMB} MB
-          {team?.subscriptionPlan === 'free' && (
-            <span className="ml-2 text-xs">({storagePercentage}%)</span>
-          )}
+        <div className="flex items-center gap-2">
+          <div className="text-sm text-muted-foreground" data-testid="text-storage-usage">
+            ストレージ使用量: <span className="font-semibold">{storageUsedMB} MB</span> / {maxStorageMB} MB
+            {team?.subscriptionPlan === 'free' && (
+              <span className="ml-2 text-xs">({storagePercentage}%)</span>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => recalculateStorageMutation.mutate()}
+            disabled={recalculateStorageMutation.isPending}
+            title="ストレージ使用量を再計算"
+            data-testid="button-recalculate-storage"
+            className="h-8 w-8"
+          >
+            <RefreshCw className={`h-4 w-4 ${recalculateStorageMutation.isPending ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
         <div className="flex items-center gap-2">
           <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
