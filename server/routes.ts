@@ -31,6 +31,20 @@ const stripe = new Stripe(stripeSecretKey, {
   apiVersion: "2025-09-30.clover",
 });
 
+// 翌月初日を計算する関数
+function getNextMonthFirstDay(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1; // 翌月 (0-11 → 1-12)
+  
+  // 12月の場合は翌年1月
+  const nextYear = month === 12 ? year + 1 : year;
+  const nextMonth = month === 12 ? 1 : month + 1;
+  
+  // YYYY-MM-DD形式で返す（Drizzleのdate型用）
+  return `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
@@ -1090,6 +1104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: hashedPassword,
         teamId: team[0].id,
         playerType,
+        startDate: getNextMonthFirstDay(), // 翌月初日を設定
       }).returning();
 
       res.status(201).json({ student: { id: newStudent[0].id, lastName: newStudent[0].lastName, firstName: newStudent[0].firstName, email: newStudent[0].email, teamId: newStudent[0].teamId, playerType: newStudent[0].playerType } });
@@ -2581,6 +2596,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               birthDate: birthDate?.trim() || null,
               jerseyNumber: jerseyNumber,
               playerType: playerType,
+              startDate: getNextMonthFirstDay(), // 翌月初日を設定
             }).returning();
             
             // Add categories

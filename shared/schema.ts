@@ -108,6 +108,7 @@ export const students = pgTable("students", {
   firstName: text("first_name").notNull(), // 名
   lastNameKana: text("last_name_kana"), // 姓 かな
   firstNameKana: text("first_name_kana"), // 名 かな
+  startDate: date("start_date"), // 開始月（登録した翌月初日）
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
