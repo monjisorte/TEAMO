@@ -187,10 +187,23 @@ export function Dashboard() {
     };
   };
 
-  // 他のスケジュールを取得（現在のスケジュール以外のすべて）
-  const getOtherSchedules = () => {
+  // 同じ日のスケジュールを取得
+  const getSameDaySchedules = () => {
     if (!selectedSchedule || !stats?.schedules) return [];
-    return stats.schedules.filter(s => s.id !== selectedSchedule.id);
+    const scheduleDate = new Date(selectedSchedule.date).toDateString();
+    const sameDaySchedules = stats.schedules.filter(s => 
+      new Date(s.date).toDateString() === scheduleDate && s.id !== selectedSchedule.id
+    );
+    
+    // デバッグ情報
+    console.log('=== getSameDaySchedules Debug ===');
+    console.log('selectedSchedule:', selectedSchedule);
+    console.log('scheduleDate:', scheduleDate);
+    console.log('all schedules:', stats.schedules);
+    console.log('sameDaySchedules:', sameDaySchedules);
+    console.log('attendances for this schedule:', attendances.filter(a => a.scheduleId === selectedSchedule.id));
+    
+    return sameDaySchedules;
   };
 
   // 参加者移動ダイアログを開く
@@ -722,7 +735,7 @@ export function Dashboard() {
                       currentScheduleAttendanceIds.includes(id)
                     ).length;
                     
-                    return getOtherSchedules().length > 0 && currentScheduleAttendanceIds.length > 0 && (
+                    return getSameDaySchedules().length > 0 && currentScheduleAttendanceIds.length > 0 && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -740,7 +753,7 @@ export function Dashboard() {
                 
                 {attendances.filter(a => a.scheduleId === selectedSchedule.id).length > 0 && (
                   <div className="text-sm text-muted-foreground flex items-center gap-2 pb-1">
-                    {getOtherSchedules().length > 0 && (
+                    {getSameDaySchedules().length > 0 && (
                       <div className="flex items-center gap-2">
                         <Checkbox
                           checked={selectedParticipantIds.length === attendances.filter(a => a.scheduleId === selectedSchedule.id).length}
@@ -763,7 +776,7 @@ export function Dashboard() {
                       
                       const statusIcon = attendance.status || "-";
                       
-                      const otherSchedules = getOtherSchedules();
+                      const sameDaySchedules = getSameDaySchedules();
                       
                       return (
                         <div 
@@ -771,7 +784,7 @@ export function Dashboard() {
                           className="flex items-center gap-2 p-2 rounded-lg bg-muted/30"
                           data-testid={`participant-${student.id}`}
                         >
-                          {otherSchedules.length > 0 && (
+                          {sameDaySchedules.length > 0 && (
                             <Checkbox
                               checked={selectedParticipantIds.includes(attendance.id)}
                               onCheckedChange={() => toggleParticipantSelection(attendance.id)}
@@ -785,7 +798,7 @@ export function Dashboard() {
                               {attendance.comment}
                             </span>
                           )}
-                          {otherSchedules.length > 0 && (
+                          {sameDaySchedules.length > 0 && (
                             <Button
                               size="sm"
                               variant="ghost"
@@ -852,7 +865,7 @@ export function Dashboard() {
                     <SelectValue placeholder="イベントを選択してください" />
                   </SelectTrigger>
                   <SelectContent>
-                    {getOtherSchedules().map(schedule => (
+                    {getSameDaySchedules().map(schedule => (
                       <SelectItem key={schedule.id} value={schedule.id}>
                         {schedule.title}
                       </SelectItem>
@@ -900,7 +913,7 @@ export function Dashboard() {
                     <SelectValue placeholder="イベントを選択してください" />
                   </SelectTrigger>
                   <SelectContent>
-                    {getOtherSchedules().map(schedule => (
+                    {getSameDaySchedules().map(schedule => (
                       <SelectItem key={schedule.id} value={schedule.id}>
                         {schedule.title}
                       </SelectItem>
