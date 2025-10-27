@@ -187,13 +187,10 @@ export function Dashboard() {
     };
   };
 
-  // 同じ日のスケジュールを取得
-  const getSameDaySchedules = () => {
+  // 他のスケジュールを取得（現在のスケジュール以外のすべて）
+  const getOtherSchedules = () => {
     if (!selectedSchedule || !stats?.schedules) return [];
-    const scheduleDate = new Date(selectedSchedule.date).toDateString();
-    return stats.schedules.filter(s => 
-      new Date(s.date).toDateString() === scheduleDate && s.id !== selectedSchedule.id
-    );
+    return stats.schedules.filter(s => s.id !== selectedSchedule.id);
   };
 
   // 参加者移動ダイアログを開く
@@ -725,7 +722,7 @@ export function Dashboard() {
                       currentScheduleAttendanceIds.includes(id)
                     ).length;
                     
-                    return getSameDaySchedules().length > 0 && currentScheduleAttendanceIds.length > 0 && (
+                    return getOtherSchedules().length > 0 && currentScheduleAttendanceIds.length > 0 && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -743,7 +740,7 @@ export function Dashboard() {
                 
                 {attendances.filter(a => a.scheduleId === selectedSchedule.id).length > 0 && (
                   <div className="text-sm text-muted-foreground flex items-center gap-2 pb-1">
-                    {getSameDaySchedules().length > 0 && (
+                    {getOtherSchedules().length > 0 && (
                       <div className="flex items-center gap-2">
                         <Checkbox
                           checked={selectedParticipantIds.length === attendances.filter(a => a.scheduleId === selectedSchedule.id).length}
@@ -766,7 +763,7 @@ export function Dashboard() {
                       
                       const statusIcon = attendance.status || "-";
                       
-                      const sameDaySchedules = getSameDaySchedules();
+                      const otherSchedules = getOtherSchedules();
                       
                       return (
                         <div 
@@ -774,7 +771,7 @@ export function Dashboard() {
                           className="flex items-center gap-2 p-2 rounded-lg bg-muted/30"
                           data-testid={`participant-${student.id}`}
                         >
-                          {sameDaySchedules.length > 0 && (
+                          {otherSchedules.length > 0 && (
                             <Checkbox
                               checked={selectedParticipantIds.includes(attendance.id)}
                               onCheckedChange={() => toggleParticipantSelection(attendance.id)}
@@ -788,7 +785,7 @@ export function Dashboard() {
                               {attendance.comment}
                             </span>
                           )}
-                          {sameDaySchedules.length > 0 && (
+                          {otherSchedules.length > 0 && (
                             <Button
                               size="sm"
                               variant="ghost"
@@ -855,7 +852,7 @@ export function Dashboard() {
                     <SelectValue placeholder="イベントを選択してください" />
                   </SelectTrigger>
                   <SelectContent>
-                    {getSameDaySchedules().map(schedule => (
+                    {getOtherSchedules().map(schedule => (
                       <SelectItem key={schedule.id} value={schedule.id}>
                         {schedule.title}
                       </SelectItem>
@@ -903,7 +900,7 @@ export function Dashboard() {
                     <SelectValue placeholder="イベントを選択してください" />
                   </SelectTrigger>
                   <SelectContent>
-                    {getSameDaySchedules().map(schedule => (
+                    {getOtherSchedules().map(schedule => (
                       <SelectItem key={schedule.id} value={schedule.id}>
                         {schedule.title}
                       </SelectItem>
