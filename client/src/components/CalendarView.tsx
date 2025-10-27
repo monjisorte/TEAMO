@@ -851,6 +851,57 @@ export function CalendarView({ schedules, categories, attendances, students, onS
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Move Dialog */}
+      <Dialog open={bulkMoveDialogOpen} onOpenChange={(open) => !open && closeBulkMoveDialog()}>
+        <DialogContent data-testid="dialog-bulk-move">
+          <DialogHeader>
+            <DialogTitle>参加者を一括移動</DialogTitle>
+            <DialogDescription>
+              選択した{selectedParticipantIds.length}人の参加者を別のイベントに移動します
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <div className="text-sm">
+                <span className="font-semibold">現在のイベント:</span>{" "}
+                {selectedDaySchedules.find(s => s.id === bulkMoveScheduleId)?.title}
+              </div>
+              <div className="space-y-2 mt-4">
+                <label className="text-sm font-semibold">移動先のイベント</label>
+                <Select value={bulkMoveTargetScheduleId} onValueChange={setBulkMoveTargetScheduleId}>
+                  <SelectTrigger data-testid="select-bulk-target-schedule">
+                    <SelectValue placeholder="イベントを選択してください" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedDaySchedules
+                      .filter(s => s.id !== bulkMoveScheduleId)
+                      .map(schedule => (
+                        <SelectItem key={schedule.id} value={schedule.id}>
+                          {schedule.title}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeBulkMoveDialog} data-testid="button-cancel-bulk-move">
+              キャンセル
+            </Button>
+            <Button 
+              onClick={handleBulkMove} 
+              disabled={!bulkMoveTargetScheduleId || selectedParticipantIds.length === 0}
+              data-testid="button-confirm-bulk-move"
+            >
+              {selectedParticipantIds.length}人を移動
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
