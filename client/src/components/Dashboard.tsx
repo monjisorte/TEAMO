@@ -189,19 +189,27 @@ export function Dashboard() {
 
   // 同じ日のスケジュールを取得
   const getSameDaySchedules = () => {
-    if (!selectedSchedule || !stats?.schedules) return [];
-    const scheduleDate = new Date(selectedSchedule.date).toDateString();
-    const sameDaySchedules = stats.schedules.filter(s => 
-      new Date(s.date).toDateString() === scheduleDate && s.id !== selectedSchedule.id
-    );
+    if (!selectedSchedule || !stats?.schedules) {
+      console.log('getSameDaySchedules: No selectedSchedule or schedules');
+      return [];
+    }
     
-    // デバッグ情報
-    console.log('=== getSameDaySchedules Debug ===');
-    console.log('selectedSchedule:', selectedSchedule);
-    console.log('scheduleDate:', scheduleDate);
-    console.log('all schedules:', stats.schedules);
-    console.log('sameDaySchedules:', sameDaySchedules);
-    console.log('attendances for this schedule:', attendances.filter(a => a.scheduleId === selectedSchedule.id));
+    const scheduleDate = new Date(selectedSchedule.date).toDateString();
+    const sameDaySchedules = stats.schedules.filter(s => {
+      const sDate = new Date(s.date).toDateString();
+      const isSameDay = sDate === scheduleDate;
+      const isDifferentSchedule = s.id !== selectedSchedule.id;
+      
+      console.log(`Schedule "${s.title}": ${s.date} -> ${sDate}, sameDay=${isSameDay}, different=${isDifferentSchedule}`);
+      
+      return isSameDay && isDifferentSchedule;
+    });
+    
+    console.log('=== getSameDaySchedules Result ===');
+    console.log('Selected:', selectedSchedule.title, selectedSchedule.date, '->', scheduleDate);
+    console.log('Total schedules:', stats.schedules.length);
+    console.log('Same day schedules:', sameDaySchedules.length, sameDaySchedules.map(s => s.title));
+    console.log('Attendances for this schedule:', attendances.filter(a => a.scheduleId === selectedSchedule.id).length);
     
     return sameDaySchedules;
   };
