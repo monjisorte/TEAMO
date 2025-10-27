@@ -103,6 +103,9 @@ export function ScheduleList() {
   const [scheduleToDelete, setScheduleToDelete] = useState<Schedule | null>(null);
   const [showRecurringEditDialog, setShowRecurringEditDialog] = useState(false);
   const [pendingScheduleData, setPendingScheduleData] = useState<Partial<Schedule> | null>(null);
+  const [selectedParticipantIds, setSelectedParticipantIds] = useState<string[]>([]);
+  const [bulkMoveDialogOpen, setBulkMoveDialogOpen] = useState(false);
+  const [bulkMoveTargetScheduleId, setBulkMoveTargetScheduleId] = useState("");
 
   // ファイルダウンロードハンドラー
   const handleFileDownload = async (fileUrl: string, fileName: string) => {
@@ -562,6 +565,88 @@ export function ScheduleList() {
     } catch (error) {
       toast({ title: "エラーが発生しました", variant: "destructive" });
     }
+  };
+
+  // 同じ日のスケジュールを取得
+  const getSameDaySchedules = (currentSchedule: Schedule) => {
+    const scheduleDate = new Date(currentSchedule.date).toDateString();
+    return schedules.filter(s => 
+      new Date(s.date).toDateString() === scheduleDate && s.id !== currentSchedule.id
+    );
+  };
+
+  // 参加者選択切り替え
+  const toggleParticipantSelection = (attendanceId: string) => {
+    setSelectedParticipantIds(prev =>
+      prev.includes(attendanceId)
+        ? prev.filter(id => id !== attendanceId)
+        : [...prev, attendanceId]
+    );
+  };
+
+  // 全参加者選択切り替え
+  const toggleAllParticipants = (checked: boolean, scheduleId: string) => {
+    if (checked) {
+      const scheduleAttendanceIds = attendances
+        .filter(a => a.scheduleId === scheduleId)
+        .map(a => a.id);
+      setSelectedParticipantIds(scheduleAttendanceIds);
+    } else {
+      setSelectedParticipantIds([]);
+    }
+  };
+
+  // 一括移動ダイアログを開く
+  const openBulkMoveDialog = () => {
+    setBulkMoveDialogOpen(true);
+  };
+
+  // 一括移動ダイアログを閉じる
+  const closeBulkMoveDialog = () => {
+    setBulkMoveDialogOpen(false);
+    setBulkMoveTargetScheduleId("");
+  };
+
+  // スケジュールダイアログが閉じられたときに選択状態をリセット
+  useEffect(() => {
+    if (!selectedSchedule) {
+      setSelectedParticipantIds([]);
+    }
+  }, [selectedSchedule]);
+
+  // 一括移動ミューテーション
+  const bulkMoveParticipantsMutation = useMutation({
+    mutationFn: async ({ attendanceIds, scheduleId }: { attendanceIds: string[]; scheduleId: string }) => {
+      const promises = attendanceIds.map(attendanceId =>
+        apiRequest("PUT", `/api/attendances/${attendanceId}`, { scheduleId })
+      );
+      return await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/attendances"] });
+      toast({
+        title: "成功",
+        description: "参加者を一括移動しました",
+      });
+      closeBulkMoveDialog();
+      setSelectedParticipantIds([]);
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "参加者の一括移動に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // 一括移動実行
+  const handleBulkMove = () => {
+    if (!bulkMoveTargetScheduleId || selectedParticipantIds.length === 0) return;
+    bulkMoveParticipantsMutation.mutate({
+      attendanceIds: selectedParticipantIds,
+      scheduleId: bulkMoveTargetScheduleId,
+    });
   };
 
   // 出席状況を集計
@@ -1163,32 +1248,80 @@ export function ScheduleList() {
                 </div>
 
                 <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Users className="h-4 w-4" />
-                    <span>参加者 {participants.length}名</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-5 w-5 text-primary" />
+                      <h4 className="font-semibold">参加者情報</h4>
+                    </div>
+                    {(() => {
+                      if (!schedule) return null;
+                      const sameDaySchedules = getSameDaySchedules(schedule);
+                      const currentScheduleAttendanceIds = attendances
+                        .filter(a => a.scheduleId === selectedSchedule)
+                        .map(a => a.id);
+                      const validSelectedCount = selectedParticipantIds.filter(id => 
+                        currentScheduleAttendanceIds.includes(id)
+                      ).length;
+                      
+                      return sameDaySchedules.length > 0 && currentScheduleAttendanceIds.length > 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={openBulkMoveDialog}
+                          disabled={validSelectedCount === 0}
+                          data-testid="button-bulk-move"
+                          className="text-xs"
+                        >
+                          選択した参加者を移動
+                          {validSelectedCount > 0 && ` (${validSelectedCount})`}
+                        </Button>
+                      );
+                    })()}
                   </div>
+
+                  {participants.length > 0 && schedule && getSameDaySchedules(schedule).length > 0 && (
+                    <div className="text-sm text-muted-foreground flex items-center gap-2 pb-1">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={selectedParticipantIds.length === participants.length && participants.length > 0}
+                          onCheckedChange={(checked) => toggleAllParticipants(checked as boolean, selectedSchedule)}
+                          data-testid="checkbox-select-all"
+                        />
+                        <span className="text-xs">全選択</span>
+                      </div>
+                      <span>参加者 {participants.length}名</span>
+                    </div>
+                  )}
 
                   {participants.length === 0 ? (
                     <div className="text-center text-muted-foreground py-8">
                       参加者がいません
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-1 max-h-64 overflow-y-auto">
                       {/* 参加者 (○) */}
                       {(() => {
                         const present = participants.filter(p => p.status === 'present' || p.status === '○');
                         if (present.length === 0) return null;
+                        const sameDaySchedules = schedule ? getSameDaySchedules(schedule) : [];
                         return (
                           <div className="space-y-2">
                             <h4 className="font-semibold text-sm">参加者</h4>
                             {present.map((participant) => (
                               <div 
                                 key={participant.student!.id} 
-                                className="flex items-center gap-2 text-sm"
+                                className="flex items-center gap-2 p-2 rounded-lg bg-muted/30"
                                 data-testid={`participant-present-${participant.student!.id}`}
                               >
+                                {sameDaySchedules.length > 0 && (
+                                  <Checkbox
+                                    checked={selectedParticipantIds.includes(participant.id)}
+                                    onCheckedChange={() => toggleParticipantSelection(participant.id)}
+                                    data-testid={`checkbox-participant-${participant.student!.id}`}
+                                  />
+                                )}
                                 <span className="text-green-600 dark:text-green-400">○</span>
-                                <span>
+                                <span className="flex-1">
                                   {getFullName(participant.student!.lastName, participant.student!.firstName)}
                                   {participant.comment && <span className="text-muted-foreground">（{participant.comment}）</span>}
                                 </span>
@@ -1202,17 +1335,25 @@ export function ScheduleList() {
                       {(() => {
                         const absent = participants.filter(p => p.status === 'absent' || p.status === '×');
                         if (absent.length === 0) return null;
+                        const sameDaySchedules = schedule ? getSameDaySchedules(schedule) : [];
                         return (
                           <div className="space-y-2">
                             <h4 className="font-semibold text-sm">不参加</h4>
                             {absent.map((participant) => (
                               <div 
                                 key={participant.student!.id} 
-                                className="flex items-center gap-2 text-sm"
+                                className="flex items-center gap-2 p-2 rounded-lg bg-muted/30"
                                 data-testid={`participant-absent-${participant.student!.id}`}
                               >
+                                {sameDaySchedules.length > 0 && (
+                                  <Checkbox
+                                    checked={selectedParticipantIds.includes(participant.id)}
+                                    onCheckedChange={() => toggleParticipantSelection(participant.id)}
+                                    data-testid={`checkbox-participant-${participant.student!.id}`}
+                                  />
+                                )}
                                 <span className="text-red-600 dark:text-red-400">×</span>
-                                <span>
+                                <span className="flex-1">
                                   {getFullName(participant.student!.lastName, participant.student!.firstName)}
                                   {participant.comment && <span className="text-muted-foreground">（{participant.comment}）</span>}
                                 </span>
@@ -1226,17 +1367,25 @@ export function ScheduleList() {
                       {(() => {
                         const maybe = participants.filter(p => p.status === 'maybe' || p.status === '△');
                         if (maybe.length === 0) return null;
+                        const sameDaySchedules = schedule ? getSameDaySchedules(schedule) : [];
                         return (
                           <div className="space-y-2">
                             <h4 className="font-semibold text-sm">未定</h4>
                             {maybe.map((participant) => (
                               <div 
                                 key={participant.student!.id} 
-                                className="flex items-center gap-2 text-sm"
+                                className="flex items-center gap-2 p-2 rounded-lg bg-muted/30"
                                 data-testid={`participant-maybe-${participant.student!.id}`}
                               >
+                                {sameDaySchedules.length > 0 && (
+                                  <Checkbox
+                                    checked={selectedParticipantIds.includes(participant.id)}
+                                    onCheckedChange={() => toggleParticipantSelection(participant.id)}
+                                    data-testid={`checkbox-participant-${participant.student!.id}`}
+                                  />
+                                )}
                                 <span className="text-yellow-600 dark:text-yellow-400">△</span>
-                                <span>
+                                <span className="flex-1">
                                   {getFullName(participant.student!.lastName, participant.student!.firstName)}
                                   {participant.comment && <span className="text-muted-foreground">（{participant.comment}）</span>}
                                 </span>
@@ -1711,6 +1860,59 @@ export function ScheduleList() {
               data-testid="button-cancel-update"
             >
               キャンセル
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 一括移動ダイアログ */}
+      <Dialog open={bulkMoveDialogOpen} onOpenChange={(open) => !open && closeBulkMoveDialog()}>
+        <DialogContent data-testid="dialog-bulk-move">
+          <DialogHeader>
+            <DialogTitle>参加者を一括移動</DialogTitle>
+            <DialogDescription>
+              {selectedParticipantIds.length}人を別のイベントに移動しますか？
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <div className="text-sm">
+                <span className="font-semibold">現在のイベント:</span> {schedules.find(s => s.id === selectedSchedule)?.title}
+              </div>
+              <div className="space-y-2 mt-4">
+                <label className="text-sm font-semibold">移動先のイベント</label>
+                <Select value={bulkMoveTargetScheduleId} onValueChange={setBulkMoveTargetScheduleId}>
+                  <SelectTrigger data-testid="select-bulk-target-schedule">
+                    <SelectValue placeholder="イベントを選択してください" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedSchedule && (() => {
+                      const currentSchedule = schedules.find(s => s.id === selectedSchedule);
+                      if (!currentSchedule) return null;
+                      const sameDaySchedules = getSameDaySchedules(currentSchedule);
+                      return sameDaySchedules.map(schedule => (
+                        <SelectItem key={schedule.id} value={schedule.id}>
+                          {schedule.title} ({formatTime(schedule.startHour ?? null, schedule.startMinute ?? null)})
+                        </SelectItem>
+                      ));
+                    })()}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeBulkMoveDialog} data-testid="button-cancel-bulk-move">
+              キャンセル
+            </Button>
+            <Button 
+              onClick={handleBulkMove} 
+              disabled={!bulkMoveTargetScheduleId || bulkMoveParticipantsMutation.isPending} 
+              data-testid="button-confirm-bulk-move"
+            >
+              {bulkMoveParticipantsMutation.isPending ? "移動中..." : `${selectedParticipantIds.length}人を移動する`}
             </Button>
           </DialogFooter>
         </DialogContent>
