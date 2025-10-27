@@ -2347,7 +2347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allStudentCategories = await db.select().from(studentCategories);
       
       // Build CSV header
-      const header = '姓,名,姓（カナ）,名（カナ）,メールアドレス,学校名,生年月日,背番号,メンバータイプ,所属カテゴリ\n';
+      const header = '姓,名,姓（カナ）,名（カナ）,メールアドレス,学校名,生年月日,背番号,メンバータイプ,所属カテゴリ,開始日\n';
       
       // Build CSV rows
       const rows = allStudents.map(student => {
@@ -2375,7 +2375,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           student.birthDate || '',
           student.jerseyNumber || '',
           playerTypeLabel,
-          studentCats
+          studentCats,
+          student.startDate || ''
         ].map(field => {
           // Escape quotes and wrap in quotes if contains comma, quote, or newline
           const str = String(field);
