@@ -2534,7 +2534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             continue;
           }
           
-          const [lastName, firstName, lastNameKana, firstNameKana, email, schoolName, birthDate, jerseyNumberStr, playerTypeLabel, categoriesStr] = fields;
+          const [lastName, firstName, lastNameKana, firstNameKana, email, schoolName, birthDate, jerseyNumberStr, playerTypeLabel, categoriesStr, startDateStr] = fields;
           
           if (!lastName || !firstName || !email) {
             errors.push(`行${i + 2}: 姓、名、メールアドレスは必須です`);
@@ -2549,17 +2549,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           if (existing.length > 0) {
             // Update existing student
+            const updateData: any = {
+              lastName: lastName.trim(),
+              firstName: firstName.trim(),
+              lastNameKana: lastNameKana?.trim() || null,
+              firstNameKana: firstNameKana?.trim() || null,
+              schoolName: schoolName?.trim() || null,
+              birthDate: birthDate?.trim() || null,
+              jerseyNumber: jerseyNumber,
+              playerType: playerType,
+            };
+            
+            // 開始日：CSVに値がある場合のみ更新、空欄の場合は既存の値を保持
+            if (startDateStr?.trim()) {
+              updateData.startDate = startDateStr.trim();
+            }
+            
             await db.update(students)
-              .set({
-                lastName: lastName.trim(),
-                firstName: firstName.trim(),
-                lastNameKana: lastNameKana?.trim() || null,
-                firstNameKana: firstNameKana?.trim() || null,
-                schoolName: schoolName?.trim() || null,
-                birthDate: birthDate?.trim() || null,
-                jerseyNumber: jerseyNumber,
-                playerType: playerType,
-              })
+              .set(updateData)
               .where(eq(students.id, existing[0].id));
             
             // Update categories
@@ -2585,6 +2592,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Create new student with default password
             const defaultPassword = await hashPassword('password123');
             
+            // 開始日：CSVに値がある場合はその値、空欄の場合は翌月初日
+            const startDate = startDateStr?.trim() || getNextMonthFirstDay();
+            
             const [newStudent] = await db.insert(students).values({
               lastName: lastName.trim(),
               firstName: firstName.trim(),
@@ -2597,7 +2607,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               birthDate: birthDate?.trim() || null,
               jerseyNumber: jerseyNumber,
               playerType: playerType,
-              startDate: getNextMonthFirstDay(), // 翌月初日を設定
+              startDate: startDate, // CSV指定値または翌月初日
             }).returning();
             
             // Add categories
