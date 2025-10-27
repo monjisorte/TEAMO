@@ -2811,31 +2811,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Only create if there's no paid payment
         if (paidPayment.length === 0) {
-          // Determine base amount based on student type
+          // Check if this month is before the student's start date
+          let isBeforeStartDate = false;
+          if (student.startDate) {
+            const startDate = new Date(student.startDate);
+            const startYear = startDate.getFullYear();
+            const startMonth = startDate.getMonth() + 1;
+            
+            // Compare year and month
+            if (year < startYear || (year === startYear && month < startMonth)) {
+              isBeforeStartDate = true;
+            }
+          }
+
+          // Determine base amount based on student type (0 if before start date)
           let baseAmount = 0;
-          if (student.playerType === "team") {
-            baseAmount = team[0].monthlyFeeMember || 0;
-          } else if (student.playerType === "school") {
-            baseAmount = team[0].monthlyFeeSchool || 0;
+          if (!isBeforeStartDate) {
+            if (student.playerType === "team") {
+              baseAmount = team[0].monthlyFeeMember || 0;
+            } else if (student.playerType === "school") {
+              baseAmount = team[0].monthlyFeeSchool || 0;
+            }
           }
 
-          // Set annual fee for the configured month (default: April)
+          // Set annual fee for the configured month (0 if before start date)
           let annualFee = 0;
-          const annualFeeMonth = team[0].annualFeeMonth || 4;
-          if (month === annualFeeMonth) {
-            annualFee = team[0].annualFee || 0;
+          if (!isBeforeStartDate) {
+            const annualFeeMonth = team[0].annualFeeMonth || 4;
+            if (month === annualFeeMonth) {
+              annualFee = team[0].annualFee || 0;
+            }
           }
 
-          // Set insurance fee for the configured month (default: April)
+          // Set insurance fee for the configured month (0 if before start date)
           let insuranceFee = 0;
-          const insuranceFeeMonth = team[0].insuranceFeeMonth || 4;
-          if (month === insuranceFeeMonth) {
-            insuranceFee = team[0].insuranceFee || 0;
+          if (!isBeforeStartDate) {
+            const insuranceFeeMonth = team[0].insuranceFeeMonth || 4;
+            if (month === insuranceFeeMonth) {
+              insuranceFee = team[0].insuranceFee || 0;
+            }
           }
 
           // Set entrance fee for the start month only (based on startDate)
           let entranceFee = 0;
-          if (student.startDate) {
+          if (!isBeforeStartDate && student.startDate) {
             const startDate = new Date(student.startDate);
             const startYear = startDate.getFullYear();
             const startMonth = startDate.getMonth() + 1;
