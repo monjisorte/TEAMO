@@ -2833,14 +2833,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             insuranceFee = team[0].insuranceFee || 0;
           }
 
-          // Set entrance fee for the registration month only
+          // Set entrance fee for the start month only (based on startDate)
           let entranceFee = 0;
-          const registrationDate = new Date(student.createdAt);
-          const registrationYear = registrationDate.getFullYear();
-          const registrationMonth = registrationDate.getMonth() + 1;
-          
-          if (year === registrationYear && month === registrationMonth) {
-            entranceFee = team[0].entranceFee || 0;
+          if (student.startDate) {
+            const startDate = new Date(student.startDate);
+            const startYear = startDate.getFullYear();
+            const startMonth = startDate.getMonth() + 1;
+            
+            if (year === startYear && month === startMonth) {
+              entranceFee = team[0].entranceFee || 0;
+            }
           }
 
           // Check if student has approved sibling links
