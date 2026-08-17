@@ -26,5 +26,9 @@ GitHub `main` に push すると Vercel（チーム SORTE / project `teamo`）�
 注意: server/ の相対 import は必ず `.js` 拡張子付き（Vercel が ESM としてそのまま実行するため）
 
 ## メモ
-- 認証はダミー実装（`server/auth.ts`）。本番公開前に要作り直し。
+- 認証: JWT を HttpOnly Cookie（`teamo_session`, 30日）で発行（`server/auth.ts`）。`SESSION_SECRET` 必須。
+  - `/api` 全体で「公開ルート以外はログイン必須」。管理者ルートは admin のみ、選手は許可リストのみ。
+  - `server/authz.ts` がパスパラメータ（:teamId / :studentId / :coachId / :id …）と query/body の ID を
+    セッションの所属チーム／本人（＋承認済み兄弟）と突き合わせる。一覧 API はセッションのチームに限定。
+  - 認可テスト: `scripts/authz_test.sh`（U=<base url> で実行。テスト用チームが DB に残るので後で削除）（2チーム作成し越境アクセスが 403 になることを確認）。
 - 設計メモ: `docs/ARCHITECTURE_NOTES.md`（旧 replit.md）
