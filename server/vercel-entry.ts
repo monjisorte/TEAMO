@@ -2,6 +2,8 @@
 import type { IncomingMessage, ServerResponse } from "http";
 import { createApp } from "./app";
 
+export const maxDuration = 30;
+
 const appPromise = createApp();
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
