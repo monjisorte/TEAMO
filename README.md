@@ -14,7 +14,7 @@
 ## 開発
 ```
 npm install
-cp .env.example .env   # 値を記入
+vercel env pull .env.local   # または .env.example を元に .env.local を作成
 npm run db:push        # スキーマを DB に反映
 npm run dev            # http://localhost:5000
 ```

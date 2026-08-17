@@ -67,13 +67,16 @@ export class ObjectStorageService {
   normalizeObjectEntityPath(rawPath: string): string {
     if (!rawPath) return rawPath;
     if (rawPath.startsWith("/objects/")) return rawPath;
-    let pathname: string;
+    let url: URL;
     try {
-      pathname = new URL(rawPath).pathname; // presigned URL → "/uploads/<uuid>" 等
+      url = new URL(rawPath);
     } catch {
       return rawPath;
     }
-    const m = pathname.match(/\/((?:uploads|public)\/[^/?#]+)$/);
+    // presigned URL は "https://vercel.com/api/blob/?pathname=uploads%2F<uuid>&..." の形。
+    // 念のためパス末尾に pathname が含まれる形式（CDN URL 等）にも対応する。
+    const candidate = url.searchParams.get("pathname") ?? url.pathname;
+    const m = candidate.match(/(?:^|\/)((?:uploads|public)\/[^/?#]+)$/);
     return m ? `/objects/${m[1]}` : rawPath;
   }
 
