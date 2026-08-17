@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { storage } from "./storage.js";
-import { setupAuth, isAuthenticated } from "./auth.js";
+import { setupAuth, isAuthenticated, issueSession, requireRole } from "./auth.js";
+import { allowedStudentIds } from "./authz.js";
 import {
   ObjectStorageService,
   ObjectNotFoundError,
@@ -44,6 +45,14 @@ function getNextMonthFirstDay(): string {
   
   // YYYY-MM-DD形式で返す（Drizzleのdate型用）
   return `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
+}
+
+/** セッションから対象チームを決める。admin は ?teamId= 指定があればそれ、無ければ null（=全件） */
+function scopeTeamId(req: any): string | null {
+  const a = req.auth;
+  if (!a) return null;
+  if (a.role === "admin") return (req.query?.teamId as string) || null;
+  return a.teamId;
 }
 
 export async function registerRoutes(app: Express): Promise<void> {
@@ -97,7 +106,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       return res.status(400).json({ error: "scheduleId and files are required" });
     }
 
-    const userId = req.user?.claims?.sub;
+    const userId = req.auth?.id;
     if (!userId) {
       return res.status(401).json({ error: "User not authenticated" });
     }
@@ -120,7 +129,10 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Schedule Endpoints
   app.get("/api/schedules", isAuthenticated, async (req, res) => {
     try {
-      const allSchedules = await db.select().from(schedules);
+      const teamId = scopeTeamId(req);
+      const allSchedules = teamId
+        ? await db.select().from(schedules).where(eq(schedules.teamId, teamId))
+        : await db.select().from(schedules);
       res.json(allSchedules);
     } catch (error) {
       console.error("Error fetching schedules:", error);
@@ -131,7 +143,12 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Get all schedule files
   app.get("/api/schedule-files", isAuthenticated, async (req, res) => {
     try {
-      const allFiles = await db.select().from(scheduleFiles);
+      const teamId = scopeTeamId(req);
+      const allFiles = teamId
+        ? await db.select({ f: scheduleFiles }).from(scheduleFiles)
+            .innerJoin(schedules, eq(scheduleFiles.scheduleId, schedules.id))
+            .where(eq(schedules.teamId, teamId)).then((r) => r.map((x) => x.f))
+        : await db.select().from(scheduleFiles);
       res.json(allFiles);
     } catch (error) {
       console.error("Error fetching schedule files:", error);
@@ -211,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       // Log activity
-      const userId = req.user?.claims?.sub;
+      const userId = req.auth?.id;
       if (userId && newSchedule[0].teamId) {
         try {
           // Format date as "M月D日"
@@ -329,7 +346,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       const updated = await db.select().from(schedules).where(eq(schedules.id, id)).limit(1);
 
       // Log activity
-      const userId = req.user?.claims?.sub;
+      const userId = req.auth?.id;
       if (userId && updated[0].teamId) {
         try {
           // Format date as "M月D日"
@@ -403,7 +420,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       // Log activity
-      const userId = req.user?.claims?.sub;
+      const userId = req.auth?.id;
       if (userId && schedule[0].teamId) {
         try {
           // Format date as "M月D日"
@@ -441,7 +458,7 @@ export async function registerRoutes(app: Express): Promise<void> {
 
   // Cleanup old schedules for free plan teams (1 month retention)
   // This endpoint should be called by a scheduled job or admin only
-  app.post("/api/schedules/cleanup-old", isAuthenticated, async (req, res) => {
+  app.post("/api/schedules/cleanup-old", isAuthenticated, requireRole("admin"), async (req, res) => {
     try {
       // Get all teams on free plan
       const freeTeams = await db.select().from(teams).where(eq(teams.subscriptionPlan, "free"));
@@ -497,7 +514,18 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Attendance Endpoints
   app.get("/api/attendances", isAuthenticated, async (req, res) => {
     try {
-      const allAttendances = await db.select().from(attendances);
+      let allAttendances;
+      if (req.auth!.role === "student") {
+        const ids = Array.from(await allowedStudentIds(req));
+        allAttendances = await db.select().from(attendances).where(inArray(attendances.studentId, ids));
+      } else {
+        const teamId = scopeTeamId(req);
+        allAttendances = teamId
+          ? await db.select({ a: attendances }).from(attendances)
+              .innerJoin(students, eq(attendances.studentId, students.id))
+              .where(eq(students.teamId, teamId)).then((r) => r.map((x) => x.a))
+          : await db.select().from(attendances);
+      }
       res.json(allAttendances);
     } catch (error) {
       console.error("Error fetching attendances:", error);
@@ -867,7 +895,10 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Team Management Endpoints
   app.get("/api/teams", isAuthenticated, async (req, res) => {
     try {
-      const allTeams = await db.select().from(teams);
+      const teamId = scopeTeamId(req);
+      const allTeams = teamId
+        ? await db.select().from(teams).where(eq(teams.id, teamId))
+        : await db.select().from(teams);
       res.json(allTeams);
     } catch (error) {
       console.error("Error fetching teams:", error);
@@ -980,6 +1011,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         .set({ ownerCoachId: newCoach[0].id })
         .where(eq(teams.id, newTeam[0].id));
 
+      await issueSession(res, { role: "coach", id: newCoach[0].id, teamId: newCoach[0].teamId });
       res.status(201).json({
         team: { ...newTeam[0], ownerCoachId: newCoach[0].id },
         coach: {
@@ -1050,6 +1082,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         startDate: getNextMonthFirstDay(), // 翌月初日を設定
       }).returning();
 
+      await issueSession(res, { role: "student", id: newStudent[0].id, teamId: newStudent[0].teamId });
       res.status(201).json({ student: { id: newStudent[0].id, lastName: newStudent[0].lastName, firstName: newStudent[0].firstName, email: newStudent[0].email, teamId: newStudent[0].teamId, playerType: newStudent[0].playerType } });
     } catch (error) {
       console.error("Error registering student:", error);
@@ -1077,6 +1110,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
+      await issueSession(res, { role: "student", id: student[0].id, teamId: student[0].teamId });
       res.status(200).json({ 
         student: { 
           id: student[0].id, 
@@ -1285,6 +1319,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
+      await issueSession(res, { role: "coach", id: coach[0].id, teamId: coach[0].teamId });
       res.status(200).json({ 
         coach: { 
           id: coach[0].id, 
@@ -1759,7 +1794,18 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Get all student-category relationships
   app.get("/api/student-categories", isAuthenticated, async (req, res) => {
     try {
-      const allStudentCategories = await db.select().from(studentCategories);
+      let allStudentCategories;
+      if (req.auth!.role === "student") {
+        const ids = Array.from(await allowedStudentIds(req));
+        allStudentCategories = await db.select().from(studentCategories).where(inArray(studentCategories.studentId, ids));
+      } else {
+        const teamId = scopeTeamId(req);
+        allStudentCategories = teamId
+          ? await db.select({ sc: studentCategories }).from(studentCategories)
+              .innerJoin(students, eq(studentCategories.studentId, students.id))
+              .where(eq(students.teamId, teamId)).then((r) => r.map((x) => x.sc))
+          : await db.select().from(studentCategories);
+      }
       res.json(allStudentCategories);
     } catch (error) {
       console.error("Error fetching student-categories:", error);
@@ -2036,7 +2082,8 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Folders Management
   app.get("/api/folders", isAuthenticated, async (req, res) => {
     try {
-      const { parentFolderId, teamId } = req.query;
+      const { parentFolderId } = req.query;
+      const teamId = (req.query.teamId as string) || scopeTeamId(req);
       
       let result;
       if (parentFolderId && teamId) {
@@ -2052,7 +2099,9 @@ export async function registerRoutes(app: Express): Promise<void> {
           eq(folders.teamId, teamId as string)
         ));
       } else {
-        result = await db.select().from(folders).where(isNull(folders.parentFolderId));
+        result = req.auth!.role === "admin"
+          ? await db.select().from(folders).where(isNull(folders.parentFolderId))
+          : [];
       }
 
       res.json(result);
@@ -2127,7 +2176,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(400).json({ error: "title, fileUrl, and teamId are required" });
       }
 
-      const userId = req.user?.claims?.sub;
+      const userId = req.auth?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2245,11 +2294,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
       
-      const { teamId } = req.query;
+      const teamId = scopeTeamId(req);
       
       let allStudents;
       if (teamId) {
-        allStudents = await db.select().from(students).where(eq(students.teamId, teamId as string));
+        allStudents = await db.select().from(students).where(eq(students.teamId, teamId));
       } else {
         allStudents = await db.select().from(students);
       }
@@ -3275,6 +3324,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       const { password: _, ...adminData } = admin[0];
+      await issueSession(res, { role: "admin", id: admin[0].id, teamId: null });
       res.json(adminData);
     } catch (error) {
       console.error("Error during admin login:", error);

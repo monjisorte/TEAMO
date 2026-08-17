@@ -1,3 +1,4 @@
+import { serverLogout } from "@/lib/queryClient";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -500,6 +501,7 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
         description: "退会処理が完了しました",
       });
       // Clear localStorage and redirect to login
+      serverLogout();
       localStorage.removeItem("playerData");
       localStorage.removeItem("selectedCategoryIds");
       window.location.href = "/player/login";

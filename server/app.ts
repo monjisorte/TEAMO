@@ -1,5 +1,7 @@
 import express, { type Express, type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes.js";
+import { apiGate, registerAuthRoutes } from "./auth.js";
+import { registerAuthz, checkIdsInPayload } from "./authz.js";
 
 export function log(message: string, source = "express") {
   const t = new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true });
@@ -30,6 +32,12 @@ export async function createApp(): Promise<Express> {
     });
     next();
   });
+
+  // 認証・認可（/api 全体）
+  app.use("/api", apiGate);            // セッション必須 + ロール別ポリシー
+  app.use("/api", checkIdsInPayload);  // query/body 内の ID がセッションの所属と一致するか
+  registerAuthz(app);                  // パスパラメータ（:teamId 等）の所属チェック
+  registerAuthRoutes(app);             // /api/auth/me, /api/auth/logout
 
   await registerRoutes(app);
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
+import { serverLogout } from "@/lib/queryClient";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -268,6 +269,7 @@ function PlayerPortal() {
   };
 
   const handleLogout = () => {
+    serverLogout();
     localStorage.removeItem("playerData");
     setPlayerId(null);
     setLocation("/");
@@ -389,6 +391,7 @@ function CoachPortal() {
   };
 
   const handleLogout = () => {
+    serverLogout();
     localStorage.removeItem("coachData");
     setCoachId(null);
     setLocation("/login");
@@ -496,6 +499,7 @@ function AdminPortal() {
   };
 
   const handleLogout = () => {
+    serverLogout();
     localStorage.removeItem("adminData");
     setAdminId(null);
     setLocation("/admins/login");
