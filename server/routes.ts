@@ -1,14 +1,14 @@
 import type { Express } from "express";
-import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./auth";
+import { storage } from "./storage.js";
+import { setupAuth, isAuthenticated } from "./auth.js";
 import {
   ObjectStorageService,
   ObjectNotFoundError,
-} from "./objectStorage";
-import { db } from "./db";
-import { teams, students, coaches, studentCategories, attendances, schedules, scheduleFiles, categories, sharedDocuments, folders, tuitionPayments, venues, admins, activityLogs, coachCategories, passwordResetTokens, sports, insertSportSchema, siblingLinks } from "../shared/schema";
+} from "./objectStorage.js";
+import { db } from "./db.js";
+import { teams, students, coaches, studentCategories, attendances, schedules, scheduleFiles, categories, sharedDocuments, folders, tuitionPayments, venues, admins, activityLogs, coachCategories, passwordResetTokens, sports, insertSportSchema, siblingLinks } from "../shared/schema.js";
 import { eq, and, inArray, isNull, or, count, sql as drizzleSql, desc, gt, asc } from "drizzle-orm";
-import { generateTeamCode, hashPassword, verifyPassword } from "./utils";
+import { generateTeamCode, hashPassword, verifyPassword } from "./utils.js";
 import { Resend } from "resend";
 import crypto from "crypto";
 import Stripe from "stripe";

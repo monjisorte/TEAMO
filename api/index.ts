@@ -1,6 +1,6 @@
 // Vercel Serverless Function エントリ。/api/* と /objects/* がここに rewrite される（vercel.json）。
 import type { IncomingMessage, ServerResponse } from "http";
-import { createApp } from "./app";
+import { createApp } from "../server/app.js";
 
 export const maxDuration = 30;
 

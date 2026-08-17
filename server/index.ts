@@ -1,7 +1,7 @@
 // ローカル開発用エントリ（npm run dev / npm start）。Vercel では api/index.ts が使われる。
 import { createServer } from "http";
-import { createApp, log } from "./app";
-import { setupVite, serveStatic } from "./vite";
+import { createApp, log } from "./app.js";
+import { setupVite, serveStatic } from "./vite.js";
 
 (async () => {
   const app = await createApp();
