@@ -267,13 +267,18 @@ export default function PlayerProfilePage({ playerId, teamId }: PlayerProfilePag
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileFormValues) => {
-      // TODO: Upload photo to object storage if photoFile is set
       let photoUrl = player?.photoUrl;
       
       if (photoFile) {
-        // For now, use base64 as a placeholder
-        // In production, you should upload to object storage
-        photoUrl = photoPreview;
+        const uploadRes = await fetch("/api/objects/upload-public", { method: "POST", credentials: "include" });
+        const { uploadURL, publicURL } = await uploadRes.json();
+        const putRes = await fetch(uploadURL, {
+          method: "PUT",
+          body: photoFile,
+          headers: { "Content-Type": photoFile.type || "image/jpeg" },
+        });
+        if (!putRes.ok) throw new Error("写真のアップロードに失敗しました");
+        photoUrl = publicURL;
       }
 
       const requestData = {

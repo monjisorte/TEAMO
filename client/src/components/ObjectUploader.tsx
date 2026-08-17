@@ -1,113 +1,75 @@
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import type { ReactNode } from "react";
-import Uppy from "@uppy/core";
-import AwsS3 from "@uppy/aws-s3";
-import type { UploadResult } from "@uppy/core";
 import { Button } from "@/components/ui/button";
+
+export interface UploadedFile {
+  name: string;
+  size: number;
+  type: string;
+  /** サーバーが発行したアップロード先 URL（そのまま fileUrl として保存し、サーバー側で正規化する） */
+  uploadURL: string;
+}
+
+export interface UploadResult {
+  successful: UploadedFile[];
+  failed: { name: string; error: string }[];
+}
 
 interface ObjectUploaderProps {
   maxNumberOfFiles?: number;
   maxFileSize?: number;
-  onGetUploadParameters: () => Promise<{
-    method: "PUT";
-    url: string;
-  }>;
-  onComplete?: (
-    result: UploadResult<Record<string, unknown>, Record<string, unknown>>
-  ) => void;
+  /** アップロード先（presigned PUT URL）を1ファイルごとに取得する */
+  onGetUploadParameters: () => Promise<{ method: "PUT"; url: string }>;
+  onComplete?: (result: UploadResult) => void;
   buttonClassName?: string;
   children: ReactNode;
 }
 
 /**
- * A file upload component that opens a native file picker on click
- * and automatically uploads selected files.
- * 
- * Features:
- * - Opens native file picker dialog when button is clicked
- * - Automatically uploads files after selection
- * - Progress tracking and error handling
+ * ボタンを押すとファイル選択ダイアログを開き、選択後すぐにアップロードする。
+ * 各ファイルは onGetUploadParameters() で得た URL に PUT される（Vercel Blob の presigned URL）。
  */
 export function ObjectUploader({
   maxNumberOfFiles = 1,
-  maxFileSize = 10485760, // 10MB default
+  maxFileSize = 10 * 1024 * 1024,
   onGetUploadParameters,
   onComplete,
   buttonClassName,
   children,
 }: ObjectUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uppy] = useState(() =>
-    new Uppy({
-      restrictions: {
-        maxNumberOfFiles,
-        maxFileSize,
-      },
-      autoProceed: true, // Auto-upload after file selection
-    })
-      .use(AwsS3, {
-        shouldUseMultipart: false,
-        getUploadParameters: async (file) => {
-          console.log("Getting upload parameters for file:", file);
-          try {
-            const params = await onGetUploadParameters();
-            console.log("Upload parameters received:", params);
-            
-            // Store the upload URL in file metadata so we can access it later
-            uppy.setFileMeta(file.id, { uploadURL: params.url });
-            
-            return params;
-          } catch (error) {
-            console.error("Error getting upload parameters:", error);
-            throw error;
-          }
-        },
-      })
-      .on("upload", () => {
-        console.log("Upload started");
-      })
-      .on("upload-success", (file, response) => {
-        console.log("Upload success:", file, response);
-        // Store uploadURL in the file object for easy access in complete handler
-        if (file) {
-          (file as any).uploadURL = file.meta.uploadURL;
-        }
-      })
-      .on("upload-error", (file, error) => {
-        console.error("Upload error:", file, error);
-      })
-      .on("complete", (result) => {
-        console.log("Upload complete:", result);
-        onComplete?.(result);
-        // Reset the input after upload
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-        // Clear all files from Uppy
-        uppy.cancelAll();
-      })
-  );
+  const [uploading, setUploading] = useState(false);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      // Add files to Uppy
-      Array.from(files).forEach((file) => {
-        try {
-          uppy.addFile({
-            name: file.name,
-            type: file.type,
-            data: file,
-          });
-        } catch (error) {
-          console.error("Error adding file to Uppy:", error);
-        }
-      });
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []).slice(0, maxNumberOfFiles);
+    if (files.length === 0) return;
+
+    setUploading(true);
+    const result: UploadResult = { successful: [], failed: [] };
+
+    for (const file of files) {
+      if (file.size > maxFileSize) {
+        result.failed.push({ name: file.name, error: "ファイルサイズが上限を超えています" });
+        continue;
+      }
+      try {
+        const { url } = await onGetUploadParameters();
+        const res = await fetch(url, {
+          method: "PUT",
+          body: file,
+          headers: { "Content-Type": file.type || "application/octet-stream" },
+        });
+        if (!res.ok) throw new Error(`upload failed: ${res.status}`);
+        result.successful.push({ name: file.name, size: file.size, type: file.type, uploadURL: url });
+      } catch (e: any) {
+        console.error("Upload error:", file.name, e);
+        result.failed.push({ name: file.name, error: e?.message || "upload failed" });
+      }
     }
-  };
 
-  const handleButtonClick = () => {
-    fileInputRef.current?.click();
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    onComplete?.(result);
   };
 
   return (
@@ -116,12 +78,17 @@ export function ObjectUploader({
         ref={fileInputRef}
         type="file"
         onChange={handleFileChange}
-        style={{ display: 'none' }}
+        style={{ display: "none" }}
         multiple={maxNumberOfFiles > 1}
         data-testid="input-file-upload"
       />
-      <Button onClick={handleButtonClick} className={buttonClassName} type="button">
-        {children}
+      <Button
+        onClick={() => fileInputRef.current?.click()}
+        className={buttonClassName}
+        type="button"
+        disabled={uploading}
+      >
+        {uploading ? "アップロード中…" : children}
       </Button>
     </div>
   );

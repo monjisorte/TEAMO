@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, Plus, Clock, Edit, Trash2, CalendarDays, List, Users, Paperclip, FileText, X as XIcon, Repeat, Share2, Download } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ObjectUploader } from "@/components/ObjectUploader";
-import type { UploadResult } from "@uppy/core";
+import type { UploadResult } from "@/components/ObjectUploader";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -269,7 +269,7 @@ export function ScheduleList() {
     };
   };
 
-  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+  const handleUploadComplete = async (result: UploadResult) => {
     if (result.successful && result.successful.length > 0) {
       const newFiles = result.successful.map((file) => ({
         name: file.name,

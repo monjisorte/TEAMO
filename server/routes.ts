@@ -1,33 +1,34 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./auth";
 import {
   ObjectStorageService,
   ObjectNotFoundError,
 } from "./objectStorage";
-import { ObjectPermission } from "./objectAcl";
 import { db } from "./db";
-import { teams, students, coaches, studentCategories, attendances, schedules, scheduleFiles, categories, sharedDocuments, folders, tuitionPayments, venues, admins, activityLogs, coachCategories, passwordResetTokens, sports, insertSportSchema, siblingLinks } from "@shared/schema";
+import { teams, students, coaches, studentCategories, attendances, schedules, scheduleFiles, categories, sharedDocuments, folders, tuitionPayments, venues, admins, activityLogs, coachCategories, passwordResetTokens, sports, insertSportSchema, siblingLinks } from "../shared/schema";
 import { eq, and, inArray, isNull, or, count, sql as drizzleSql, desc, gt, asc } from "drizzle-orm";
 import { generateTeamCode, hashPassword, verifyPassword } from "./utils";
 import { Resend } from "resend";
 import crypto from "crypto";
 import Stripe from "stripe";
 
-// Use testing key in development, production key in production
-const stripeSecretKey = process.env.NODE_ENV === 'development' 
-  ? process.env.TESTING_STRIPE_SECRET_KEY 
-  : process.env.STRIPE_SECRET_KEY;
-
+// STRIPE_SECRET_KEY を使う（本番/テストの切替は Vercel の環境変数で行う）。
+// 未設定でもアプリ全体は起動させ、Stripe を使う API だけ失敗させる。
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || process.env.TESTING_STRIPE_SECRET_KEY;
 if (!stripeSecretKey) {
-  throw new Error('Missing required Stripe secret key');
+  console.warn("STRIPE_SECRET_KEY が未設定です。サブスクリプション関連 API は動作しません。");
 }
 
-// Log the key prefix for debugging (only first 7 characters to avoid exposing the key)
-console.log('Using Stripe key:', stripeSecretKey.substring(0, 7) + '...');
 
-const stripe = new Stripe(stripeSecretKey, {
+// Stripe API 2025-09-30 以降、current_period_end は subscription item 側に移動した
+function getSubscriptionPeriodEnd(subscription: Stripe.Subscription): number | null {
+  const item = subscription.items?.data?.[0] as any;
+  const v = item?.current_period_end ?? (subscription as any).current_period_end;
+  return typeof v === "number" ? v : null;
+}
+
+const stripe = new Stripe(stripeSecretKey || "sk_test_not_configured", {
   apiVersion: "2025-09-30.clover",
 });
 
@@ -45,94 +46,48 @@ function getNextMonthFirstDay(): string {
   return `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
 }
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: Express): Promise<void> {
   await setupAuth(app);
 
-  // Object Storage endpoints
-  app.get("/objects/:objectPath(*)", isAuthenticated, async (req, res) => {
-    const userId = req.user?.claims?.sub;
-    const objectStorageService = new ObjectStorageService();
+  // Object Storage endpoints（Vercel Blob）
+  const objectStorageService = new ObjectStorageService();
+
+  // /objects/public/* は認証なしで配信（プロフィール写真等）。/objects/uploads/* は要ログイン。
+  app.get("/objects/:objectPath(*)", async (req, res, next) => {
+    if (req.path.startsWith("/objects/public/")) return next();
+    return isAuthenticated(req, res, next);
+  }, async (req, res) => {
     try {
-      const objectFile = await objectStorageService.getObjectEntityFile(
-        req.path,
-      );
-      const canAccess = await objectStorageService.canAccessObjectEntity({
-        objectFile,
-        userId: userId,
-        requestedPermission: ObjectPermission.READ,
-      });
-      if (!canAccess) {
-        return res.sendStatus(401);
-      }
-      objectStorageService.downloadObject(objectFile, res);
+      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+      await objectStorageService.downloadObject(objectFile, res);
     } catch (error) {
-      console.error("Error checking object access:", error);
-      if (error instanceof ObjectNotFoundError) {
-        return res.sendStatus(404);
-      }
-      return res.sendStatus(500);
+      if (error instanceof ObjectNotFoundError) return res.sendStatus(404);
+      console.error("Error serving object:", error);
+      if (!res.headersSent) res.sendStatus(500);
     }
   });
 
-  app.post("/api/objects/upload", isAuthenticated, async (req, res) => {
-    const objectStorageService = new ObjectStorageService();
+  app.post("/api/objects/upload", isAuthenticated, async (_req, res) => {
     const uploadURL = await objectStorageService.getObjectEntityUploadURL();
     res.json({ uploadURL });
   });
 
-  app.post("/api/objects/upload-public", isAuthenticated, async (req, res) => {
-    const objectStorageService = new ObjectStorageService();
-    const uploadURL = await objectStorageService.getPublicUploadURL();
-    res.json({ uploadURL });
+  app.post("/api/objects/upload-public", isAuthenticated, async (_req, res) => {
+    const { uploadURL, publicURL } = await objectStorageService.getPublicUpload();
+    res.json({ uploadURL, publicURL });
   });
 
   app.post("/api/objects/download-url", isAuthenticated, async (req, res) => {
     try {
       const { url } = req.body;
-      if (!url) {
-        return res.status(400).json({ error: "URL is required" });
-      }
-
-      const userId = req.user?.claims?.sub;
-      const objectStorageService = new ObjectStorageService();
-      
-      // Normalize the URL to object entity path format
+      if (!url) return res.status(400).json({ error: "URL is required" });
       const normalizedPath = objectStorageService.normalizeObjectEntityPath(url);
-      
-      // Get the file object and check access permissions
-      const objectFile = await objectStorageService.getObjectEntityFile(normalizedPath);
-      
-      // If the file doesn't have an ACL policy, set it to public
-      // This handles files that were uploaded before ACL implementation
-      const { getObjectAclPolicy, setObjectAclPolicy } = await import("./objectAcl");
-      const aclPolicy = await getObjectAclPolicy(objectFile);
-      if (!aclPolicy) {
-        await setObjectAclPolicy(objectFile, {
-          owner: userId || "system",
-          visibility: "public",
-        });
-      }
-      
-      const canAccess = await objectStorageService.canAccessObjectEntity({
-        objectFile,
-        userId: userId,
-        requestedPermission: ObjectPermission.READ,
-      });
-
-      if (!canAccess) {
-        return res.status(403).json({ error: "Access denied" });
-      }
-
-      // Generate presigned URL for download using the file's bucket and name
-      const [metadata] = await objectFile.getMetadata();
-      const gcsUrl = `https://storage.googleapis.com/${objectFile.bucket.name}/${objectFile.name}`;
-      const downloadURL = await objectStorageService.getDownloadURL(gcsUrl);
+      await objectStorageService.getObjectEntityFile(normalizedPath); // 存在確認
+      const downloadURL = await objectStorageService.getDownloadURL(normalizedPath);
       res.json({ downloadURL });
     } catch (error) {
+      if (error instanceof ObjectNotFoundError) return res.status(404).json({ error: "File not found" });
       console.error("Error generating download URL:", error);
-      if (error instanceof ObjectNotFoundError) {
-        return res.status(404).json({ error: "File not found" });
-      }
       res.status(500).json({ error: "Failed to generate download URL" });
     }
   });
@@ -148,22 +103,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const objectStorageService = new ObjectStorageService();
-      const normalizedFiles = [];
-
-      for (const file of req.body.files) {
-        const normalizedPath = await objectStorageService.trySetObjectEntityAclPolicy(
-          file.url,
-          {
-            owner: userId,
-            visibility: "public",
-          },
-        );
-        normalizedFiles.push({
-          ...file,
-          url: normalizedPath,
-        });
-      }
+      const normalizedFiles = req.body.files.map((file: any) => ({
+        ...file,
+        url: objectStorageService.normalizeObjectEntityPath(file.url),
+      }));
 
       res.status(200).json({
         files: normalizedFiles,
@@ -2204,16 +2147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const objectStorageService = new ObjectStorageService();
-      
-      // Set ACL policy for the uploaded file (team-wide public visibility)
-      const normalizedPath = await objectStorageService.trySetObjectEntityAclPolicy(
-        fileUrl,
-        {
-          owner: userId,
-          visibility: "public", // Team members can access
-        }
-      );
+      const normalizedPath = objectStorageService.normalizeObjectEntityPath(fileUrl);
 
       // Save document to database
       const newDocument = await db.insert(sharedDocuments).values({
@@ -4145,17 +4079,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         teamData.stripeSubscriptionId
       );
 
-      console.log("Retrieved subscription:", {
-        id: subscription.id,
-        current_period_end: subscription.current_period_end,
-        current_period_end_type: typeof subscription.current_period_end,
-        cancel_at_period_end: subscription.cancel_at_period_end,
-        status: subscription.status
-      });
-
-      const currentPeriodEnd = subscription.current_period_end 
-        ? new Date(subscription.current_period_end * 1000)
-        : null;
+      const periodEnd = getSubscriptionPeriodEnd(subscription);
+      const currentPeriodEnd = periodEnd ? new Date(periodEnd * 1000) : null;
 
       console.log("Date to save:", currentPeriodEnd, currentPeriodEnd ? currentPeriodEnd.toISOString() : "null");
 
@@ -4213,9 +4138,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         teamData.stripeSubscriptionId
       );
 
-      const currentPeriodEnd = subscription.current_period_end 
-        ? new Date(subscription.current_period_end * 1000)
-        : null;
+      const periodEnd = getSubscriptionPeriodEnd(subscription);
+      const currentPeriodEnd = periodEnd ? new Date(periodEnd * 1000) : null;
 
       await db.update(teams)
         .set({ 
@@ -4231,7 +4155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: subscription.id,
           status: subscription.status,
           cancel_at_period_end: subscription.cancel_at_period_end,
-          current_period_end: subscription.current_period_end
+          current_period_end: getSubscriptionPeriodEnd(subscription)
         }
       });
     } catch (error: any) {
@@ -4382,7 +4306,4 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const httpServer = createServer(app);
-
-  return httpServer;
 }

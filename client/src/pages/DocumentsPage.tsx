@@ -8,7 +8,7 @@ import { FolderPlus, FilePlus, Folder, FileText, Trash2, Download, X, RefreshCw 
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ObjectUploader } from "@/components/ObjectUploader";
-import type { UploadResult } from "@uppy/core";
+import type { UploadResult } from "@/components/ObjectUploader";
 import type { Folder as FolderType, SharedDocument } from "@shared/schema";
 
 export default function DocumentsPage() {
@@ -155,7 +155,7 @@ export default function DocumentsPage() {
     };
   };
 
-  const handleUploadComplete = useCallback(async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+  const handleUploadComplete = useCallback(async (result: UploadResult) => {
     try {
       console.log("Upload complete result:", result);
       

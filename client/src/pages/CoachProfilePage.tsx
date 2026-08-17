@@ -178,17 +178,18 @@ export default function CoachProfilePage() {
           method: "POST",
           credentials: "include",
         });
-        const { uploadURL } = await uploadRes.json();
+        const { uploadURL, publicURL } = await uploadRes.json();
         
-        await fetch(uploadURL, {
+        const putRes = await fetch(uploadURL, {
           method: "PUT",
           body: photoFile,
           headers: {
-            "Content-Type": "image/jpeg",
+            "Content-Type": photoFile.type || "image/jpeg",
           },
         });
+        if (!putRes.ok) throw new Error("写真のアップロードに失敗しました");
         
-        photoUrl = uploadURL.split("?")[0];
+        photoUrl = publicURL;
       }
 
       const res = await apiRequest("PUT", `/api/coach/${coachId}`, {
