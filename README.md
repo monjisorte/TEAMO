@@ -21,7 +21,9 @@ npm run dev            # http://localhost:5000
 
 ## デプロイ
 GitHub `main` に push すると Vercel（チーム SORTE / project `teamo`）が自動デプロイ。
+本番URL: https://teamo-roan.vercel.app（独自ドメイン未設定）
 手動: `GIT_DIR=/nonexistent vercel --prod --scope sorte3`
+注意: server/ の相対 import は必ず `.js` 拡張子付き（Vercel が ESM としてそのまま実行するため）
 
 ## メモ
 - 認証はダミー実装（`server/auth.ts`）。本番公開前に要作り直し。
