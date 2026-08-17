@@ -11,10 +11,9 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Student } from "@shared/schema";
 
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
-}
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+// 公開キー未設定でもアプリ全体は落とさない（決済画面のみ案内を出す）
+const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY as string | undefined;
+const stripePromise = STRIPE_PUBLIC_KEY ? loadStripe(STRIPE_PUBLIC_KEY) : null;
 
 function SubscribeForm({ teamId, onSuccess }: { teamId: string, onSuccess: () => void }) {
   const stripe = useStripe();
@@ -391,9 +390,13 @@ export default function SubscriptionPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Elements stripe={stripePromise} options={{ clientSecret }}>
-              <SubscribeForm teamId={teamId!} onSuccess={handleSuccess} />
-            </Elements>
+            {stripePromise ? (
+              <Elements stripe={stripePromise} options={{ clientSecret }}>
+                <SubscribeForm teamId={teamId!} onSuccess={handleSuccess} />
+              </Elements>
+            ) : (
+              <p className="text-sm text-muted-foreground">決済機能は現在準備中です。</p>
+            )}
           </CardContent>
         </Card>
       </div>
